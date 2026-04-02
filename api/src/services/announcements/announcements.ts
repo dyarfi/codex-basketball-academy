@@ -1,0 +1,49 @@
+import type {
+  QueryResolvers,
+  MutationResolvers,
+  AnnouncementRelationResolvers,
+} from 'types/graphql'
+
+import { db } from 'src/lib/db'
+
+export const announcements: QueryResolvers['announcements'] = () => {
+  return db.announcement.findMany()
+}
+
+export const announcement: QueryResolvers['announcement'] = ({ id }) => {
+  return db.announcement.findUnique({
+    where: { id },
+  })
+}
+
+export const createAnnouncement: MutationResolvers['createAnnouncement'] = ({
+  input,
+}) => {
+  return db.announcement.create({
+    data: input,
+  })
+}
+
+export const updateAnnouncement: MutationResolvers['updateAnnouncement'] = ({
+  id,
+  input,
+}) => {
+  return db.announcement.update({
+    data: input,
+    where: { id },
+  })
+}
+
+export const deleteAnnouncement: MutationResolvers['deleteAnnouncement'] = ({
+  id,
+}) => {
+  return db.announcement.delete({
+    where: { id },
+  })
+}
+
+export const Announcement: AnnouncementRelationResolvers = {
+  createdBy: (_obj, { root }) => {
+    return db.announcement.findUnique({ where: { id: root?.id } }).createdBy()
+  },
+}
