@@ -20,12 +20,14 @@ enum Role {
   COACH
   PLAYER
   PARENT
+  PROSPECT
 }
 
 enum ProgramLevel {
   BEGINNER
   INTERMEDIATE
   ADVANCED
+  ELITE
 }
 
 enum PaymentStatus {
