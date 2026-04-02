@@ -5,7 +5,7 @@
 // https://www.prisma.io/docs/orm/prisma-migrate
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,11 +14,338 @@ generator client {
   binaryTargets = "native"
 }
 
-// Define your own datamodels here and run `yarn redwood prisma migrate dev`
-// to create migrations for them and apply to your dev DB.
-// TODO: Please remove the following example:
-model UserExample {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+// Enums
+enum Role {
+  ADMIN
+  COACH
+  PLAYER
+  PARENT
+}
+
+enum ProgramLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+// User Model
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  hashedPassword      String
+  salt                String
+  resetToken          String?
+  resetTokenExpiresAt DateTime?
+  role                Role      @default(PLAYER)
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relationships
+  profile             Profile?
+  enrollments         Enrollment[]
+  attendances         Attendance[]
+  payments            Payment[]
+  invoices            Invoice[]
+  certificates        Certificate[]
+  skillAssessments    SkillAssessment[]
+  playerStats         PlayerStats[]
+  announcements       Announcement[] @relation("CreatedBy")
+  sentMessages        Message[] @relation("Sender")
+  receivedMessages    Message[] @relation("Recipient")
+  classesAsTutor      Class[] @relation("Coach")
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+// Profile Model
+model Profile {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName             String
+  lastName              String
+  dateOfBirth           DateTime?
+  phoneNumber           String?
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  country               String?
+  position              String?
+  jerseyNumber          Int?
+  heightCm              Float?
+  weightKg              Float?
+  medicalInfo           String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  relationshipToPlayer  String?
+  playerUserId          String?
+  profilePhoto          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// Program Model
+model Program {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  level             ProgramLevel
+  minAge            Int?
+  maxAge            Int?
+  capacity          Int
+  durationWeeks     Int
+  pricePerMonth     Float
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relationships
+  classes           Class[]
+  enrollments       Enrollment[]
+  certificates      Certificate[]
+  skillAssessments  SkillAssessment[]
+
+  @@index([level])
+  @@index([isActive])
+}
+
+// Class Model
+model Class {
+  id                String    @id @default(cuid())
+  programId         String
+  program           Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  scheduleDay       String
+  scheduleTime      String
+  capacity          Int
+  currentEnrollment Int       @default(0)
+  startDate         DateTime
+  endDate           DateTime?
+  coachId           String
+  coach             User      @relation("Coach", fields: [coachId], references: [id])
+  coachName         String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relationships
+  enrollments       Enrollment[]
+  attendances       Attendance[]
+
+  @@index([programId])
+  @@index([coachId])
+  @@index([startDate])
+  @@index([isActive])
+}
+
+// Enrollment Model
+model Enrollment {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classId          String
+  class           Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  programId       String
+  program         Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  enrollmentDate  DateTime  @default(now())
+  completionDate  DateTime?
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Unique constraint
+  @@unique([userId, classId])
+  @@index([userId])
+  @@index([classId])
+  @@index([programId])
+  @@index([status])
+}
+
+// Attendance Model
+model Attendance {
+  id              String    @id @default(cuid())
+  classId         String
+  class           Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendanceDate  DateTime
+  status          AttendanceStatus
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Unique constraint
+  @@unique([classId, userId, attendanceDate])
+  @@index([classId])
+  @@index([userId])
+  @@index([attendanceDate])
+}
+
+// Payment Model
+model Payment {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount                Float
+  currency              String    @default("USD")
+  status                PaymentStatus
+  stripePaymentIntentId String?
+  stripeTransactionId   String?
+  description           String?
+  invoiceId             String?
+  invoice               Invoice?  @relation(fields: [invoiceId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Invoice Model
+model Invoice {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceNumber String    @unique
+  amount        Float
+  dueDate       DateTime
+  paidDate      DateTime?
+  status        PaymentStatus @default(PENDING)
+  description   String?
+  payments      Payment[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Certificate Model
+model Certificate {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programId         String
+  program           Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  classId           String?
+  title             String
+  description       String?
+  graduationClass   String?
+  ageGroupTeam      String?
+  achievementDate   DateTime
+  certificateNumber String    @unique
+  pdfUrl            String?
+  qrCode            String?
+  issuedBy          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([programId])
+  @@index([achievementDate])
+}
+
+// SkillAssessment Model
+model SkillAssessment {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programId      String
+  program        Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  shooting       Int       // 0-100
+  dribbling      Int       // 0-100
+  defense        Int       // 0-100
+  basketballIQ   Int       // 0-100
+  athleticism    Int       // 0-100
+  overallScore   Int       // 0-100
+  feedback       String?
+  assessedBy     String?
+  assessmentDate DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([programId])
+  @@index([assessmentDate])
+}
+
+// PlayerStats Model
+model PlayerStats {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameDate       DateTime
+  points         Int       @default(0)
+  rebounds       Int       @default(0)
+  assists        Int       @default(0)
+  steals         Int       @default(0)
+  blocks         Int       @default(0)
+  minutesPlayed  Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([gameDate])
+}
+
+// Announcement Model
+model Announcement {
+  id          String    @id @default(cuid())
+  createdById String
+  createdBy   User      @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  imageUrl    String?
+  publishDate DateTime  @default(now())
+  expiryDate  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdById])
+  @@index([isActive])
+  @@index([publishDate])
+}
+
+// Message Model
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("Recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  subject     String?
+  content     String
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([isRead])
 }
