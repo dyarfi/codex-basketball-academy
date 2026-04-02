@@ -1,84 +1,139 @@
 import { db } from '../src/lib/db'
-import { hashPassword } from '@redwoodjs/auth-dbauth-api'
+import { createHash, randomBytes } from 'crypto'
+
+// Simple password hashing function using crypto
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString('hex')
+  const hash = createHash('sha256')
+    .update(password + salt)
+    .digest('hex')
+  return { hash, salt }
+}
 
 export async function seed() {
   try {
     console.log('Seeding database...')
 
-    // Delete existing data in the correct order
+    // Delete existing data in correct dependency order
     console.log('Clearing existing data...')
+    await db.message.deleteMany({})
+    await db.announcement.deleteMany({})
+    await db.playerStats.deleteMany({})
+    await db.skillAssessment.deleteMany({})
+    await db.certificate.deleteMany({})
+    await db.payment.deleteMany({})
+    await db.invoice.deleteMany({})
+    await db.attendance.deleteMany({})
     await db.enrollment.deleteMany({})
     await db.class.deleteMany({})
     await db.program.deleteMany({})
-    await db.payment.deleteMany({})
+    await db.profile.deleteMany({})
     await db.user.deleteMany({})
 
-    // Create test users
-    console.log('Creating users...')
-    const hashedPassword = hashPassword('password123')
+    // Hash password for all users
+    const { hash: passwordHash, salt: passwordSalt } = hashPassword('password123')
 
+    // Create Admin User
+    console.log('Creating admin user...')
     const adminUser = await db.user.create({
       data: {
-        email: 'admin@academy.com',
-        hashedPassword: hashedPassword.hash,
-        salt: hashedPassword.salt,
+        email: 'admin@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
         role: 'ADMIN',
         isActive: true,
+        profile: {
+          create: {
+            firstName: 'Admin',
+            lastName: 'User',
+            phoneNumber: '+1-555-0100',
+            address: '123 Academy Way',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62701',
+            country: 'USA',
+          },
+        },
       },
     })
 
-    const coachUser = await db.user.create({
+    // Create Coach Users
+    console.log('Creating coach users...')
+    const coach1 = await db.user.create({
       data: {
-        email: 'coach@academy.com',
-        hashedPassword: hashedPassword.hash,
-        salt: hashedPassword.salt,
+        email: 'coach.johnson@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
         role: 'COACH',
-        isActive: true,
-      },
-    })
-
-    const playerUser = await db.user.create({
-      data: {
-        email: 'player@academy.com',
-        hashedPassword: hashedPassword.hash,
-        salt: hashedPassword.salt,
-        role: 'PLAYER',
         isActive: true,
         profile: {
           create: {
             firstName: 'Michael',
-            lastName: 'Player',
-            dateOfBirth: new Date('2010-05-15'),
-            position: 'Guard',
-            jerseyNumber: 23,
+            lastName: 'Johnson',
+            dateOfBirth: new Date('1985-03-20'),
+            phoneNumber: '+1-555-0101',
+            address: '456 Coaching Drive',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62702',
+            country: 'USA',
           },
         },
       },
-      include: { profile: true },
     })
 
-    const parentUser = await db.user.create({
+    const coach2 = await db.user.create({
       data: {
-        email: 'parent@academy.com',
-        hashedPassword: hashedPassword.hash,
-        salt: hashedPassword.salt,
-        role: 'PARENT',
+        email: 'coach.williams@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
+        role: 'COACH',
         isActive: true,
         profile: {
           create: {
             firstName: 'Sarah',
-            lastName: 'Parent',
+            lastName: 'Williams',
+            dateOfBirth: new Date('1988-07-15'),
+            phoneNumber: '+1-555-0102',
+            address: '789 Court Lane',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62703',
+            country: 'USA',
           },
         },
       },
-      include: { profile: true },
     })
 
+    const coach3 = await db.user.create({
+      data: {
+        email: 'coach.brown@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
+        role: 'COACH',
+        isActive: true,
+        profile: {
+          create: {
+            firstName: 'David',
+            lastName: 'Brown',
+            dateOfBirth: new Date('1982-11-10'),
+            phoneNumber: '+1-555-0103',
+            address: '321 Basketball Blvd',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62704',
+            country: 'USA',
+          },
+        },
+      },
+    })
+
+    // Create Programs
     console.log('Creating programs...')
-    // Create programs
     const beginnerProgram = await db.program.create({
       data: {
-        name: 'Beginner',
+        name: 'Beginner Basketball Fundamentals',
+        description: 'Learn basic basketball skills including dribbling, passing, and shooting.',
         level: 'BEGINNER',
         minAge: 6,
         maxAge: 10,
@@ -91,7 +146,8 @@ export async function seed() {
 
     const intermediateProgram = await db.program.create({
       data: {
-        name: 'Intermediate',
+        name: 'Intermediate Basketball Development',
+        description: 'Develop intermediate skills including ball handling, defense, and game strategy.',
         level: 'INTERMEDIATE',
         minAge: 11,
         maxAge: 14,
@@ -104,7 +160,8 @@ export async function seed() {
 
     const advancedProgram = await db.program.create({
       data: {
-        name: 'Advanced',
+        name: 'Advanced Basketball Training',
+        description: 'Advanced competitive training with emphasis on skill refinement and game play.',
         level: 'ADVANCED',
         minAge: 15,
         maxAge: 18,
@@ -115,57 +172,458 @@ export async function seed() {
       },
     })
 
+    const eliteProgram = await db.program.create({
+      data: {
+        name: 'Elite Basketball Academy',
+        description: 'Elite level training for competitive and aspiring professional players.',
+        level: 'ELITE',
+        minAge: 16,
+        maxAge: 21,
+        capacity: 12,
+        durationWeeks: 16,
+        pricePerMonth: 299.99,
+        isActive: true,
+      },
+    })
+
+    // Create Classes for each program
     console.log('Creating classes...')
-    // Create classes
-    const beginnerClass = await db.class.create({
+    const beginnerClass1 = await db.class.create({
       data: {
         programId: beginnerProgram.id,
         name: 'Beginner - Monday Evening',
+        description: 'Beginner class on Monday evenings for young players just starting out.',
         scheduleDay: 'MONDAY',
         scheduleTime: '18:00-19:00',
         capacity: 15,
         currentEnrollment: 0,
         startDate: new Date('2026-04-06'),
-        coachId: coachUser.id,
-        coachName: 'Coach Name',
+        endDate: new Date('2026-06-01'),
+        coachId: coach1.id,
+        coachName: 'Michael Johnson',
         isActive: true,
       },
     })
 
-    const intermediateClass = await db.class.create({
+    const beginnerClass2 = await db.class.create({
+      data: {
+        programId: beginnerProgram.id,
+        name: 'Beginner - Saturday Morning',
+        description: 'Beginner class on Saturday mornings for young players just starting out.',
+        scheduleDay: 'SATURDAY',
+        scheduleTime: '09:00-10:00',
+        capacity: 15,
+        currentEnrollment: 0,
+        startDate: new Date('2026-04-04'),
+        endDate: new Date('2026-05-30'),
+        coachId: coach2.id,
+        coachName: 'Sarah Williams',
+        isActive: true,
+      },
+    })
+
+    const intermediateClass1 = await db.class.create({
       data: {
         programId: intermediateProgram.id,
-        name: 'Intermediate - Wed/Fri',
+        name: 'Intermediate - Wed/Fri Evening',
+        description: 'Intermediate class meeting on Wednesday and Friday evenings.',
         scheduleDay: 'WEDNESDAY',
         scheduleTime: '17:30-18:30',
         capacity: 18,
         currentEnrollment: 0,
         startDate: new Date('2026-04-08'),
-        coachId: coachUser.id,
-        coachName: 'Coach Name',
+        endDate: new Date('2026-06-26'),
+        coachId: coach1.id,
+        coachName: 'Michael Johnson',
         isActive: true,
       },
     })
 
-    console.log('Creating enrollments...')
-    // Create enrollment
-    await db.enrollment.create({
+    const intermediateClass2 = await db.class.create({
       data: {
-        userId: playerUser.id,
-        classId: beginnerClass.id,
-        programId: beginnerProgram.id,
-        enrollmentDate: new Date(),
-        status: 'ACTIVE',
+        programId: intermediateProgram.id,
+        name: 'Intermediate - Sunday Afternoon',
+        description: 'Intermediate class on Sunday afternoons.',
+        scheduleDay: 'SUNDAY',
+        scheduleTime: '14:00-15:30',
+        capacity: 18,
+        currentEnrollment: 0,
+        startDate: new Date('2026-04-05'),
+        endDate: new Date('2026-06-28'),
+        coachId: coach3.id,
+        coachName: 'David Brown',
+        isActive: true,
       },
     })
 
-    // Update class current enrollment
+    const advancedClass = await db.class.create({
+      data: {
+        programId: advancedProgram.id,
+        name: 'Advanced - Tuesday/Thursday Evening',
+        description: 'Advanced competitive training meeting Tuesday and Thursday.',
+        scheduleDay: 'TUESDAY',
+        scheduleTime: '19:00-20:30',
+        capacity: 16,
+        currentEnrollment: 0,
+        startDate: new Date('2026-04-07'),
+        endDate: new Date('2026-06-30'),
+        coachId: coach2.id,
+        coachName: 'Sarah Williams',
+        isActive: true,
+      },
+    })
+
+    const eliteClass = await db.class.create({
+      data: {
+        programId: eliteProgram.id,
+        name: 'Elite - Premium Training',
+        description: 'Elite level training with personalized coaching and competitive game play.',
+        scheduleDay: 'MONDAY',
+        scheduleTime: '19:30-21:00',
+        capacity: 12,
+        currentEnrollment: 0,
+        startDate: new Date('2026-04-06'),
+        endDate: new Date('2026-07-31'),
+        coachId: coach1.id,
+        coachName: 'Michael Johnson',
+        isActive: true,
+      },
+    })
+
+    // Create Player Users
+    console.log('Creating player users...')
+    const players = []
+    const playerData = [
+      { firstName: 'Michael', lastName: 'Jordan', position: 'Guard', jersey: 23, birthYear: 2012 },
+      { firstName: 'LeBron', lastName: 'James', position: 'Forward', jersey: 4, birthYear: 2011 },
+      { firstName: 'Kobe', lastName: 'Bryant', position: 'Guard', jersey: 24, birthYear: 2013 },
+      { firstName: 'Stephen', lastName: 'Curry', position: 'Guard', jersey: 30, birthYear: 2012 },
+      { firstName: 'Kevin', lastName: 'Durant', position: 'Forward', jersey: 35, birthYear: 2011 },
+    ]
+
+    for (const player of playerData) {
+      const playerUser = await db.user.create({
+        data: {
+          email: `${player.firstName.toLowerCase()}.${player.lastName.toLowerCase()}@basketballacademy.com`,
+          hashedPassword: passwordHash,
+          salt: passwordSalt,
+          role: 'PLAYER',
+          isActive: true,
+          profile: {
+            create: {
+              firstName: player.firstName,
+              lastName: player.lastName,
+              dateOfBirth: new Date(`${player.birthYear}-06-15`),
+              phoneNumber: `+1-555-${2000 + Math.floor(Math.random() * 9000)}`,
+              position: player.position,
+              jerseyNumber: player.jersey,
+              heightCm: 170 + Math.floor(Math.random() * 20),
+              weightKg: 70 + Math.floor(Math.random() * 30),
+              city: 'Springfield',
+              state: 'IL',
+              country: 'USA',
+            },
+          },
+        },
+      })
+      players.push(playerUser)
+    }
+
+    // Create Parent Users
+    console.log('Creating parent users...')
+    const parent1 = await db.user.create({
+      data: {
+        email: 'parent.smith@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
+        role: 'PARENT',
+        isActive: true,
+        profile: {
+          create: {
+            firstName: 'John',
+            lastName: 'Smith',
+            phoneNumber: '+1-555-0201',
+            address: '999 Family Lane',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62705',
+            country: 'USA',
+          },
+        },
+      },
+    })
+
+    const parent2 = await db.user.create({
+      data: {
+        email: 'parent.davis@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
+        role: 'PARENT',
+        isActive: true,
+        profile: {
+          create: {
+            firstName: 'Jennifer',
+            lastName: 'Davis',
+            phoneNumber: '+1-555-0202',
+            address: '888 Parent Ave',
+            city: 'Springfield',
+            state: 'IL',
+            zipCode: '62706',
+            country: 'USA',
+          },
+        },
+      },
+    })
+
+    // Create Prospect Users
+    console.log('Creating prospect users...')
+    const prospect = await db.user.create({
+      data: {
+        email: 'prospect.miller@basketballacademy.com',
+        hashedPassword: passwordHash,
+        salt: passwordSalt,
+        role: 'PROSPECT',
+        isActive: true,
+        profile: {
+          create: {
+            firstName: 'Chris',
+            lastName: 'Miller',
+            dateOfBirth: new Date('2010-08-20'),
+            phoneNumber: '+1-555-0300',
+            position: 'Forward',
+            heightCm: 185,
+            weightKg: 85,
+            city: 'Springfield',
+            state: 'IL',
+            country: 'USA',
+          },
+        },
+      },
+    })
+
+    // Create Enrollments
+    console.log('Creating enrollments...')
+    const enrollmentData = [
+      { userId: players[0].id, classId: beginnerClass1.id, programId: beginnerProgram.id },
+      { userId: players[1].id, classId: beginnerClass2.id, programId: beginnerProgram.id },
+      { userId: players[2].id, classId: intermediateClass1.id, programId: intermediateProgram.id },
+      { userId: players[3].id, classId: advancedClass.id, programId: advancedProgram.id },
+      { userId: players[4].id, classId: eliteClass.id, programId: eliteProgram.id },
+    ]
+
+    let enrollmentCount = 0
+    for (const enrollment of enrollmentData) {
+      await db.enrollment.create({
+        data: {
+          userId: enrollment.userId,
+          classId: enrollment.classId,
+          programId: enrollment.programId,
+          enrollmentDate: new Date('2026-04-01'),
+          status: 'ACTIVE',
+        },
+      })
+      enrollmentCount++
+    }
+
+    // Update class current enrollment counts
+    console.log('Updating class enrollment counts...')
     await db.class.update({
-      where: { id: beginnerClass.id },
+      where: { id: beginnerClass1.id },
+      data: { currentEnrollment: 1 },
+    })
+    await db.class.update({
+      where: { id: beginnerClass2.id },
+      data: { currentEnrollment: 1 },
+    })
+    await db.class.update({
+      where: { id: intermediateClass1.id },
+      data: { currentEnrollment: 1 },
+    })
+    await db.class.update({
+      where: { id: advancedClass.id },
+      data: { currentEnrollment: 1 },
+    })
+    await db.class.update({
+      where: { id: eliteClass.id },
       data: { currentEnrollment: 1 },
     })
 
+    // Create Attendance records
+    console.log('Creating attendance records...')
+    const attendanceStatuses = ['PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'EXCUSED']
+    for (let i = 0; i < 3; i++) {
+      for (const enrollment of enrollmentData) {
+        const attendanceDate = new Date('2026-04-06')
+        attendanceDate.setDate(attendanceDate.getDate() + i * 7)
+
+        await db.attendance.create({
+          data: {
+            classId: enrollment.classId,
+            userId: enrollment.userId,
+            attendanceDate,
+            status: attendanceStatuses[Math.floor(Math.random() * attendanceStatuses.length)],
+            notes: Math.random() > 0.8 ? 'Great effort today!' : undefined,
+          },
+        })
+      }
+    }
+
+    // Create Invoices
+    console.log('Creating invoices...')
+    for (const player of players) {
+      await db.invoice.create({
+        data: {
+          userId: player.id,
+          invoiceNumber: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          amount: 149.99,
+          dueDate: new Date('2026-05-01'),
+          status: 'PENDING',
+          description: 'Monthly training program fee',
+        },
+      })
+    }
+
+    // Create Payments
+    console.log('Creating payments...')
+    const invoices = await db.invoice.findMany({ take: 2 })
+    for (const invoice of invoices) {
+      await db.payment.create({
+        data: {
+          userId: invoice.userId,
+          amount: invoice.amount,
+          currency: 'USD',
+          status: 'COMPLETED',
+          description: 'Training program payment',
+          invoiceId: invoice.id,
+        },
+      })
+
+      await db.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          status: 'COMPLETED',
+          paidDate: new Date(),
+        },
+      })
+    }
+
+    // Create Certificates
+    console.log('Creating certificates...')
+    await db.certificate.create({
+      data: {
+        userId: players[0].id,
+        programId: beginnerProgram.id,
+        title: 'Basketball Fundamentals Completion',
+        description: 'Successfully completed the Beginner Basketball Fundamentals program.',
+        graduationClass: 'Spring 2026',
+        ageGroupTeam: 'U-12',
+        achievementDate: new Date('2026-06-01'),
+        certificateNumber: `CERT-${Date.now()}-001`,
+        issuedBy: 'Basketball Academy Administration',
+      },
+    })
+
+    // Create Skill Assessments
+    console.log('Creating skill assessments...')
+    for (const player of players) {
+      await db.skillAssessment.create({
+        data: {
+          userId: player.id,
+          programId: beginnerProgram.id,
+          shooting: 65 + Math.floor(Math.random() * 30),
+          dribbling: 70 + Math.floor(Math.random() * 25),
+          defense: 60 + Math.floor(Math.random() * 35),
+          basketballIQ: 75 + Math.floor(Math.random() * 20),
+          athleticism: 68 + Math.floor(Math.random() * 28),
+          overallScore: 67 + Math.floor(Math.random() * 28),
+          feedback: 'Excellent progress in fundamentals. Keep practicing ball handling.',
+          assessedBy: coach1.profile?.firstName + ' ' + coach1.profile?.lastName,
+          assessmentDate: new Date('2026-04-15'),
+        },
+      })
+    }
+
+    // Create Player Stats
+    console.log('Creating player statistics...')
+    for (const player of players) {
+      await db.playerStats.create({
+        data: {
+          userId: player.id,
+          gameDate: new Date('2026-04-10'),
+          points: Math.floor(Math.random() * 30),
+          rebounds: Math.floor(Math.random() * 15),
+          assists: Math.floor(Math.random() * 10),
+          steals: Math.floor(Math.random() * 5),
+          blocks: Math.floor(Math.random() * 5),
+          minutesPlayed: 20 + Math.floor(Math.random() * 20),
+        },
+      })
+    }
+
+    // Create Announcements
+    console.log('Creating announcements...')
+    await db.announcement.create({
+      data: {
+        createdById: adminUser.id,
+        title: 'Welcome to Basketball Academy!',
+        content: 'We are excited to have you join our basketball training program. This season promises to be filled with learning, growth, and fun!',
+        publishDate: new Date('2026-04-01'),
+        expiryDate: new Date('2026-05-31'),
+        isActive: true,
+      },
+    })
+
+    await db.announcement.create({
+      data: {
+        createdById: coach1.id,
+        title: 'Upcoming Tournament',
+        content: 'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
+        publishDate: new Date('2026-04-02'),
+        expiryDate: new Date('2026-05-15'),
+        isActive: true,
+      },
+    })
+
+    // Create Messages
+    console.log('Creating messages...')
+    await db.message.create({
+      data: {
+        senderId: coach1.id,
+        recipientId: players[0].id,
+        subject: 'Great Performance!',
+        content: 'Great job in yesterdays practice session! Your shooting technique has improved significantly.',
+        isRead: false,
+      },
+    })
+
+    await db.message.create({
+      data: {
+        senderId: parent1.id,
+        recipientId: adminUser.id,
+        subject: 'Question about billing',
+        content: 'Could you please clarify the invoice amount and payment terms?',
+        isRead: false,
+      },
+    })
+
     console.log('✅ Database seeded successfully!')
+    console.log(`Created:`)
+    console.log(`  - 1 Admin user`)
+    console.log(`  - 3 Coaches`)
+    console.log(`  - 5 Players`)
+    console.log(`  - 2 Parents`)
+    console.log(`  - 1 Prospect`)
+    console.log(`  - 4 Programs (Beginner, Intermediate, Advanced, Elite)`)
+    console.log(`  - 6 Classes`)
+    console.log(`  - 5 Enrollments`)
+    console.log(`  - 15 Attendance records`)
+    console.log(`  - 5 Invoices`)
+    console.log(`  - 2 Payments`)
+    console.log(`  - 1 Certificate`)
+    console.log(`  - 5 Skill Assessments`)
+    console.log(`  - 5 Player Stats`)
+    console.log(`  - 2 Announcements`)
+    console.log(`  - 2 Messages`)
   } catch (error) {
     console.error('🔥 Error seeding database:', error)
     throw error
