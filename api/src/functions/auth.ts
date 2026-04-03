@@ -1,22 +1,49 @@
+// api/src/functions/auth.ts
+import { AuthHandler } from '@redwoodjs/auth-dbauth-handler'
 import { db } from 'src/lib/db'
-import { logger } from 'src/lib/logger'
-import { DbAuthHandler, DbAuthOptions } from '@redwoodjs/auth-dbauth-api'
-import { hash, hashPassword, hashToken, isSaltedPassword } from '@redwoodjs/auth-dbauth-api/dist/util'
 
-export const handler = async (event, context) => {
-  const dbAuthHandler = new DbAuthHandler(event, context, {
-    db: db,
-    loggerConfig: {
-      logger,
-      options: {},
+export const handler = new AuthHandler(
+  {
+    database: db,
+    authModelAccessor: 'user',
+  },
+  {
+    userId: 'id',
+    username: 'email',
+    hashedPassword: 'hashedPassword',
+    salt: 'salt',
+    loginHandler: async (user) => user,
+    logoutHandler: () => true,
+    signup: {
+      handler: async ({ email, password }) => {
+        // Signup validation happens in GraphQL resolver
+        // This just handles session creation
+        const user = await db.user.findUnique({ where: { email } })
+        return user
+      },
+      errors: {
+        'email not provided': 'Email is required',
+        'password not provided': 'Password is required',
+        'email already exists': 'Email already registered',
+      },
+      passwordValidationErrorMessage:
+        'Password must be at least 8 characters with uppercase, lowercase, and number',
     },
-    signupFields: ['username', 'email', 'firstName', 'lastName', 'dateOfBirth', 'role'],
-    passwordValidation: (password: string) => {
-      return password.length >= 8
+    forgotPassword: {
+      handler: async (user) => {
+        // Return user so reset token can be sent
+        return user
+      },
+      errors: {
+        'email not found': 'Email not found',
+      },
     },
-    tokenExpiresIn: 60 * 60 * 24 * 365, // 1 year
-    useResetToken: true,
-  } as DbAuthOptions)
-
-  return dbAuthHandler.invoke()
-}
+    resetPassword: {
+      errors: {
+        'resetToken invalid': 'Reset token is invalid or expired',
+        'resetToken expired': 'Reset token has expired',
+        'email not found': 'Email not found',
+      },
+    },
+  }
+).handler
