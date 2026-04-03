@@ -1,34 +1,37 @@
-// In this file, all Page components from 'src/pages` are auto-imported. Nested
-// directories are supported, and should be uppercase. Each subdirectory will be
-// prepended onto the component name.
-//
-// Examples:
-//
-// 'src/pages/HomePage/HomePage.js'         -> HomePage
-// 'src/pages/Admin/BooksPage/BooksPage.js' -> AdminBooksPage
+import { Router, Route, PrivateSet } from '@redwoodjs/router'
+import { RoleRoute } from 'src/components/RoleRoute'
 
-import { Router, Route } from '@redwoodjs/router'
+import LoginPage from 'src/pages/LoginPage/LoginPage'
+import SignupPage from 'src/pages/SignupPage/SignupPage'
+import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
+import ResetPasswordPage from 'src/pages/ResetPasswordPage/ResetPasswordPage'
+import HomePage from 'src/pages/HomePage/HomePage'
+import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
+import AdminPanelPage from 'src/pages/AdminPanelPage/AdminPanelPage'
+import CoachPage from 'src/pages/CoachPage/CoachPage'
 
 const Routes = () => {
   return (
     <Router>
-      {/* Public routes */}
-      <Route path="/" page={HomePage} name="home" />
       <Route path="/login" page={LoginPage} name="login" />
       <Route path="/signup" page={SignupPage} name="signup" />
       <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
+      <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
+      <Route path="/" page={HomePage} name="home" />
 
-      {/* Protected routes */}
-      <Route path="/dashboard" page={DashboardPage} name="dashboard" />
+      <PrivateSet unauthenticated="login">
+        <Route path="/dashboard" page={DashboardPage} name="dashboard" />
 
-      {/* Admin routes */}
-      <Route path="/admin-panel" page={AdminPanelPage} name="adminPanel" />
+        <RoleRoute requiredRoles="ADMIN">
+          <Route path="/admin-panel" page={AdminPanelPage} name="adminPanel" />
+        </RoleRoute>
 
-      {/* Coach routes */}
-      <Route path="/coach" page={CoachPage} name="coach" />
+        <RoleRoute requiredRoles="COACH">
+          <Route path="/coach-page" page={CoachPage} name="coach" />
+        </RoleRoute>
+      </PrivateSet>
 
-      {/* Fallback */}
-      <Route notfound page={NotFoundPage} />
+      <Route notFoundPage={LoginPage} />
     </Router>
   )
 }
