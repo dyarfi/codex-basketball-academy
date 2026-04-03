@@ -4,11 +4,6 @@ export const schema = gql`
     user: User!
   }
 
-  type PasswordResetResult {
-    success: Boolean!
-    message: String
-  }
-
   type Query {
     me: User @requireAuth
   }
