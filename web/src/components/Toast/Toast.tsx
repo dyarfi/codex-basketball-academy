@@ -21,12 +21,16 @@ export const Toast: React.FC<ToastProps> = ({
   duration = 4000,
   onClose,
 }) => {
+  const handleClose = useCallback(() => {
+    onClose(id)
+  }, [id, onClose])
+
   useEffect(() => {
     if (duration > 0) {
-      const timer = setTimeout(() => onClose(id), duration)
+      const timer = setTimeout(() => handleClose(), duration)
       return () => clearTimeout(timer)
     }
-  }, [id, duration])
+  }, [duration, handleClose])
 
   const bgColor = useMemo(
     () =>
