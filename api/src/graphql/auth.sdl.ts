@@ -9,7 +9,7 @@ export const schema = gql`
   }
 
   type Mutation {
-    login(email: String!, password: String!): AuthPayload
+    login(email: String!, password: String!): AuthPayload @skipAuth
     signup(
       email: String!
       password: String!
@@ -17,9 +17,9 @@ export const schema = gql`
       lastName: String!
       role: Role!
       dateOfBirth: DateTime
-    ): AuthPayload
-    forgotPassword(email: String!): Boolean
-    resetPassword(resetToken: String!, password: String!): AuthPayload
+    ): AuthPayload @skipAuth
+    forgotPassword(email: String!): Boolean @skipAuth
+    resetPassword(resetToken: String!, password: String!): AuthPayload @skipAuth
     logout: Boolean @requireAuth
   }
 `
