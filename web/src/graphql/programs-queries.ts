@@ -1,5 +1,8 @@
 import gql from 'graphql-tag'
 
+/**
+ * Fetch all programs
+ */
 export const GET_PROGRAMS = gql`
   query GetPrograms {
     programs {
@@ -19,6 +22,9 @@ export const GET_PROGRAMS = gql`
   }
 `
 
+/**
+ * Fetch a single program by ID
+ */
 export const GET_PROGRAM = gql`
   query GetProgram($id: String!) {
     program(id: $id) {
@@ -32,10 +38,15 @@ export const GET_PROGRAM = gql`
       durationWeeks
       pricePerMonth
       isActive
+      createdAt
+      updatedAt
     }
   }
 `
 
+/**
+ * Create a new program
+ */
 export const CREATE_PROGRAM = gql`
   mutation CreateProgram($input: CreateProgramInput!) {
     createProgram(input: $input) {
@@ -55,6 +66,9 @@ export const CREATE_PROGRAM = gql`
   }
 `
 
+/**
+ * Update an existing program
+ */
 export const UPDATE_PROGRAM = gql`
   mutation UpdateProgram($id: String!, $input: UpdateProgramInput!) {
     updateProgram(id: $id, input: $input) {
@@ -74,6 +88,9 @@ export const UPDATE_PROGRAM = gql`
   }
 `
 
+/**
+ * Delete a program by ID
+ */
 export const DELETE_PROGRAM = gql`
   mutation DeleteProgram($id: String!) {
     deleteProgram(id: $id) {
