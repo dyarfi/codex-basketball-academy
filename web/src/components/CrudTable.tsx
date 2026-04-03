@@ -1,7 +1,7 @@
 interface Column<T> {
   key: keyof T
   header: string
-  render?: (value: unknown, item: T) => React.ReactNode
+  render?: (value: T[keyof T], item: T) => React.ReactNode
 }
 
 interface CrudTableProps<T extends { id: string }> {
@@ -43,12 +43,13 @@ export function CrudTable<T extends { id: string }>({
             {columns.map((col) => (
               <th
                 key={String(col.key)}
+                scope="col"
                 className="px-6 py-3 text-left text-sm font-semibold text-gray-900"
               >
                 {col.header}
               </th>
             ))}
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
               Actions
             </th>
           </tr>
@@ -71,15 +72,17 @@ export function CrudTable<T extends { id: string }>({
                     : String(item[col.key])}
                 </td>
               ))}
-              <td className="px-6 py-4 text-sm space-x-2">
+              <td className="px-6 py-4 text-sm flex space-x-2">
                 <button
                   onClick={() => onEdit(item)}
+                  aria-label="Edit item"
                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => onDelete(item)}
+                  aria-label="Delete item"
                   className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 font-medium"
                 >
                   Delete
