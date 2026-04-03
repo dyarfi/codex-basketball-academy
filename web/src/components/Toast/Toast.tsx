@@ -1,5 +1,5 @@
 // web/src/components/Toast/Toast.tsx
-import { useEffect } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -26,37 +26,54 @@ export const Toast: React.FC<ToastProps> = ({
       const timer = setTimeout(() => onClose(id), duration)
       return () => clearTimeout(timer)
     }
-  }, [id, duration, onClose])
+  }, [id, duration])
 
-  const bgColor = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    info: 'bg-blue-50 border-blue-200',
-    warning: 'bg-yellow-50 border-yellow-200',
-  }[type]
+  const bgColor = useMemo(
+    () =>
+      ({
+        success: 'bg-green-50 border-green-200',
+        error: 'bg-red-50 border-red-200',
+        info: 'bg-blue-50 border-blue-200',
+        warning: 'bg-yellow-50 border-yellow-200',
+      })[type],
+    [type]
+  )
 
-  const textColor = {
-    success: 'text-green-800',
-    error: 'text-red-800',
-    info: 'text-blue-800',
-    warning: 'text-yellow-800',
-  }[type]
+  const textColor = useMemo(
+    () =>
+      ({
+        success: 'text-green-800',
+        error: 'text-red-800',
+        info: 'text-blue-800',
+        warning: 'text-yellow-800',
+      })[type],
+    [type]
+  )
 
-  const icon = {
-    success: '✓',
-    error: '✕',
-    info: 'ℹ',
-    warning: '⚠',
-  }[type]
+  const icon = useMemo(
+    () =>
+      ({
+        success: '✓',
+        error: '✕',
+        info: 'ℹ',
+        warning: '⚠',
+      })[type],
+    [type]
+  )
+
+  const handleClose = useCallback(() => {
+    onClose(id)
+  }, [id, onClose])
 
   return (
     <div
-      className={`fixed top-4 right-4 border rounded-lg p-4 shadow-lg flex items-center gap-3 max-w-md ${bgColor}`}
+      className={`border rounded-lg p-4 shadow-lg flex items-center gap-3 max-w-md ${bgColor}`}
     >
-      <span className={`text-xl font-bold ${textColor}`}>{icon}</span>
+      <span className={`text-xl font-bold ${textColor}`} aria-hidden="true">{icon}</span>
       <p className={`flex-1 ${textColor}`}>{message}</p>
       <button
-        onClick={() => onClose(id)}
+        onClick={handleClose}
+        aria-label="Close"
         className={`text-lg font-bold hover:opacity-70 ${textColor}`}
       >
         ×

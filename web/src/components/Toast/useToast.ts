@@ -2,7 +2,17 @@
 import { useState, useCallback } from 'react'
 import type { Toast, ToastType } from './Toast'
 
-export const useToast = () => {
+interface UseToastReturn {
+  toasts: Toast[]
+  addToast: (message: string, type: ToastType, duration?: number) => string
+  removeToast: (id: string) => void
+  success: (message: string) => string
+  error: (message: string) => string
+  info: (message: string) => string
+  warning: (message: string) => string
+}
+
+export const useToast = (): UseToastReturn => {
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const addToast = useCallback(
