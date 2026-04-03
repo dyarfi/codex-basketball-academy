@@ -20,6 +20,6 @@ export const schema = gql`
     ): AuthPayload
     forgotPassword(email: String!): Boolean
     resetPassword(resetToken: String!, password: String!): AuthPayload
-    logout: Boolean
+    logout: Boolean @requireAuth
   }
 `
