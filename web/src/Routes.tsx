@@ -1,37 +1,76 @@
-import { Router, Route, PrivateSet } from '@redwoodjs/router'
-import { RoleRoute } from 'src/components/RoleRoute'
+import type { ReactNode } from 'react'
 
-import LoginPage from 'src/pages/LoginPage/LoginPage'
-import SignupPage from 'src/pages/SignupPage/SignupPage'
-import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
-import ResetPasswordPage from 'src/pages/ResetPasswordPage/ResetPasswordPage'
-import HomePage from 'src/pages/HomePage/HomePage'
-import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
-import AdminPanelPage from 'src/pages/AdminPanelPage/AdminPanelPage'
+import { Router, Route, PrivateSet, Set } from '@redwoodjs/router'
+
+import RequireRole from 'src/components/RequireRole/RequireRole'
+import AdminClassesPage from 'src/pages/AdminClassesPage/AdminClassesPage'
+import AdminDashboardPage from 'src/pages/AdminDashboardPage/AdminDashboardPage'
+import AdminPaymentsPage from 'src/pages/AdminPaymentsPage/AdminPaymentsPage'
+import AdminProgramsPage from 'src/pages/AdminProgramsPage/AdminProgramsPage'
+import AdminReportsPage from 'src/pages/AdminReportsPage/AdminReportsPage'
+import AdminUsersPage from 'src/pages/AdminUsersPage/AdminUsersPage'
 import CoachPage from 'src/pages/CoachPage/CoachPage'
+import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
+import EnrollmentPage from 'src/pages/EnrollmentPage/EnrollmentPage'
+import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
+import HomePage from 'src/pages/HomePage/HomePage'
+import LoginPage from 'src/pages/LoginPage/LoginPage'
+import NotFoundPage from 'src/pages/NotFoundPage/NotFoundPage'
+import ProgramDetailsPage from 'src/pages/ProgramDetailsPage/ProgramDetailsPage'
+import ProgramsListPage from 'src/pages/ProgramsListPage/ProgramsListPage'
+import ResetPasswordPage from 'src/pages/ResetPasswordPage/ResetPasswordPage'
+import SignupPage from 'src/pages/SignupPage/SignupPage'
+import UserProfilePage from 'src/pages/UserProfilePage/UserProfilePage'
+
+import { AuthProvider, useAuth } from './auth'
+
+const AuthAdminPanel = ({ children }: { children: ReactNode }) => (
+  <AuthProvider>
+    <main id="auth">{children}</main>
+  </AuthProvider>
+)
+
+const AdminSet = ({ children }: { children: ReactNode }) => (
+  <RequireRole roles="ADMIN">{children}</RequireRole>
+)
+
+const CoachSet = ({ children }: { children: ReactNode }) => (
+  <RequireRole roles="COACH">{children}</RequireRole>
+)
 
 const Routes = () => {
   return (
-    <Router>
-      <Route path="/login" page={LoginPage} name="login" />
-      <Route path="/signup" page={SignupPage} name="signup" />
-      <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
-      <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
-      <Route path="/" page={HomePage} name="home" />
+    <Router useAuth={useAuth}>
+      <Set wrap={AuthAdminPanel} useAuth={useAuth}>
+        <Route path="/login" page={LoginPage} name="login" />
+        <Route path="/signup" page={SignupPage} name="signup" />
+        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
+        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
+        <Route path="/" page={HomePage} name="home" />
 
-      <PrivateSet unauthenticated="login">
-        <Route path="/dashboard" page={DashboardPage} name="dashboard" />
+        <PrivateSet unauthenticated="login" wrap={AuthAdminPanel}>
+          <Route path="/dashboard" page={DashboardPage} name="dashboard" />
+          <Route path="/programs" page={ProgramsListPage} name="ProgramsListPage" />
+          <Route path="/programs/{id}" page={ProgramDetailsPage} name="ProgramsDetailPage" />
+          <Route path="/enrollment" page={EnrollmentPage} name="EnrollmentPage" />
+          <Route path="/profile" page={UserProfilePage} name="UserProfile" />
 
-        <RoleRoute requiredRoles="ADMIN">
-          <Route path="/admin-panel" page={AdminPanelPage} name="adminPanel" />
-        </RoleRoute>
+          <Set wrap={AdminSet}>
+            <Route path="/admin-panel" page={AdminDashboardPage} name="adminPanel" />
+            <Route path="/admin-panel/users" page={AdminUsersPage} name="adminUsers" />
+            <Route path="/admin-panel/programs" page={AdminProgramsPage} name="programs" />
+            <Route path="/admin-panel/classes" page={AdminClassesPage} name="adminClasses" />
+            <Route path="/admin-panel/payments" page={AdminPaymentsPage} name="adminPayments" />
+            <Route path="/admin-panel/reports" page={AdminReportsPage} name="adminReports" />
+          </Set>
 
-        <RoleRoute requiredRoles="COACH">
-          <Route path="/coach-page" page={CoachPage} name="coach" />
-        </RoleRoute>
-      </PrivateSet>
+          <Set wrap={CoachSet}>
+            <Route path="/coach-page" page={CoachPage} name="CoachPage" />
+          </Set>
+        </PrivateSet>
+      </Set>
 
-      <Route notFoundPage={LoginPage} />
+      <Route notfound page={NotFoundPage} name="notFound" />
     </Router>
   )
 }

@@ -1,8 +1,10 @@
 // api/src/services/auth/auth.ts
 import type { QueryResolvers, MutationResolvers } from 'types/graphql'
-import { db } from 'src/lib/db'
-import { hashPassword } from '@redwoodjs/auth-dbauth-api'
 import { v4 as uuid } from 'uuid'
+
+import { hashPassword } from '@redwoodjs/auth-dbauth-api'
+
+import { db } from 'src/lib/db'
 
 // Constants
 const ONE_HOUR_MS = 60 * 60 * 1000
@@ -15,9 +17,15 @@ export const me: QueryResolvers['me'] = (_obj, _args, { currentUser }) => {
 
   return db.user.findUniqueOrThrow({
     where: { id: currentUser.id },
-    include: {
-      profile: true,
+    select: {
+      id: true,
+      email: true,
+      role: true,
     },
+    // include: {
+    //   role: true,
+    //   profile: true,
+    // },
   })
 }
 

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
+
 import { useMutation } from '@apollo/client'
+
 import { Link, navigate } from '@redwoodjs/router'
-import { useAuth } from 'src/providers/AuthProvider'
+
+import { useAuth } from 'src/auth'
 import { SIGNUP_MUTATION } from 'src/graphql/mutations'
 
 const SignupPage = () => {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, loading: isLoading } = useAuth()
 
   const [formData, setFormData] = useState({
     email: '',

@@ -1,7 +1,20 @@
+/* eslint-disable import/order */
+import React from 'react'
+import {
+  Table,
+  Group,
+  Button,
+  ActionIcon,
+  Tooltip,
+  Loader,
+  Text,
+} from '@mantine/core'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
+
 interface Column<T> {
   key: keyof T
   header: string
-  render?: (value: T[keyof T], item: T) => React.ReactNode
+  render?: (value: any, item: T) => React.ReactNode
 }
 
 interface CrudTableProps<T extends { id: string }> {
@@ -21,77 +34,89 @@ export function CrudTable<T extends { id: string }>({
 }: CrudTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="text-gray-600">Loading...</div>
+      <div className="flex justify-center py-12">
+        <Loader size="lg" />
       </div>
     )
   }
 
   if (data.length === 0) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="text-gray-600">No records found</div>
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 py-12">
+        <Text size="lg" fw={500} className="text-gray-500">
+          No records found
+        </Text>
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <Table
+        striped
+        highlightOnHover
+        verticalSpacing="md"
+        horizontalSpacing="lg"
+      >
+        <Table.Thead className="bg-gray-50">
+          <Table.Tr>
             {columns.map((col) => (
-              <th
+              <Table.Th
                 key={String(col.key)}
-                scope="col"
-                className="px-6 py-3 text-left text-sm font-semibold text-gray-900"
+                className="text-sm font-semibold text-gray-900"
               >
                 {col.header}
-              </th>
+              </Table.Th>
             ))}
-            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+            <Table.Th className="text-sm font-semibold text-gray-900">
               Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, idx) => (
-            <tr
+            </Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {data.map((item) => (
+            <Table.Tr
               key={item.id}
-              className={`border-b border-gray-200 ${
-                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-              } hover:bg-gray-100`}
+              className="transition-colors hover:bg-gray-50/50"
             >
               {columns.map((col) => (
-                <td
+                <Table.Td
                   key={String(col.key)}
-                  className="px-6 py-4 text-sm text-gray-700"
+                  className="text-sm text-gray-700"
                 >
                   {col.render
                     ? col.render(item[col.key], item)
-                    : String(item[col.key])}
-                </td>
+                    : String(item[col.key] ?? '—')}
+                </Table.Td>
               ))}
-              <td className="px-6 py-4 text-sm flex space-x-2">
-                <button
-                  onClick={() => onEdit(item)}
-                  aria-label="Edit item"
-                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDelete(item)}
-                  aria-label="Delete item"
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 font-medium"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
+              <Table.Td>
+                <Group gap="xs">
+                  <Tooltip label="Edit">
+                    <ActionIcon
+                      variant="light"
+                      color="blue"
+                      onClick={() => onEdit(item)}
+                      aria-label="Edit item"
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Delete">
+                    <ActionIcon
+                      variant="light"
+                      color="red"
+                      onClick={() => onDelete(item)}
+                      aria-label="Delete item"
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </Table.Td>
+            </Table.Tr>
           ))}
-        </tbody>
-      </table>
+        </Table.Tbody>
+      </Table>
     </div>
   )
 }

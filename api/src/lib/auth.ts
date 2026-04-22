@@ -1,4 +1,7 @@
 import type { APIGatewayEvent, Context } from 'aws-lambda'
+
+import type { Decoded } from '@redwoodjs/api'
+
 import { db } from './db'
 
 type RedwoodContext = Context & {
@@ -63,19 +66,50 @@ export const requireAuth = ({ roles }: { roles?: string | string[] } = {}) => {
  * Retrieves the current user from the database based on the user ID in the context.
  * This is called by the `currentUser()` query in GraphQL.
  */
-export const getCurrentUser = async (
-  _user: Record<string, unknown>,
-  _params: Record<string, unknown>,
-  context: RedwoodContext
-) => {
-  if (!context.currentUser) {
-    return null
+export const getCurrentUser = async (session: Decoded) => {
+  // if (!session || typeof session.id !== 'number') {
+  if (!session || typeof session.id !== 'string') {
+    throw new Error('Invalid session')
   }
 
-  return db.user.findUnique({
-    where: { id: context.currentUser.id as string },
-    include: {
-      profile: true,
+  // console.log({ session })
+
+  return await db.user.findUnique({
+    where: { id: session.id },
+    // select: { id: true, email: true, roles: { select: { name: true } } },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      isActive: true,
+      profile: {
+        select: {
+          firstName: true,
+          lastName: true,
+          dateOfBirth: true,
+          phoneNumber: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          emergencyContactName: true,
+          emergencyContactPhone: true,
+          relationshipToPlayer: true,
+        },
+      },
     },
   })
+
+  // return {
+  //   ...currUser,
+  //   // roles: currUser.roles.map((role) => role.name.toLowerCase()),
+  //   roles: currUser.roles.map((role) => role.name),
+  // }
+  // return currUser
+  //   return await db.user.findUnique({
+  //     where: { id: session.id },
+  //     select: { id: true, email: true, roles: true },
+  //   })
 }
+
+export const cookieName = 'basketball_academy_session_%port%'

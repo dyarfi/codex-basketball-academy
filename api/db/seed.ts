@@ -1,14 +1,7 @@
-import { db } from '../src/lib/db'
-import { createHash, randomBytes } from 'crypto'
+// We use the official Redwood hashPassword utility for dbAuth compatibility
+import { hashPassword } from '@redwoodjs/auth-dbauth-api'
 
-// Simple password hashing function using crypto
-function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex')
-  const hash = createHash('sha256')
-    .update(password + salt)
-    .digest('hex')
-  return { hash, salt }
-}
+import { db } from '../src/lib/db'
 
 export async function seed() {
   try {
@@ -31,7 +24,7 @@ export async function seed() {
     await db.user.deleteMany({})
 
     // Hash password for all users
-    const { hash: passwordHash, salt: passwordSalt } = hashPassword('password123')
+    const [passwordHash, passwordSalt] = hashPassword('password123')
 
     // Create Admin User
     console.log('Creating admin user...')
@@ -80,6 +73,9 @@ export async function seed() {
           },
         },
       },
+      include: {
+        profile: true,
+      },
     })
 
     const coach2 = await db.user.create({
@@ -102,6 +98,9 @@ export async function seed() {
             country: 'USA',
           },
         },
+      },
+      include: {
+        profile: true,
       },
     })
 
@@ -126,6 +125,9 @@ export async function seed() {
           },
         },
       },
+      include: {
+        profile: true,
+      },
     })
 
     // Create Programs
@@ -133,7 +135,8 @@ export async function seed() {
     const beginnerProgram = await db.program.create({
       data: {
         name: 'Beginner Basketball Fundamentals',
-        description: 'Learn basic basketball skills including dribbling, passing, and shooting.',
+        description:
+          'Learn basic basketball skills including dribbling, passing, and shooting.',
         level: 'BEGINNER',
         minAge: 6,
         maxAge: 10,
@@ -147,7 +150,8 @@ export async function seed() {
     const intermediateProgram = await db.program.create({
       data: {
         name: 'Intermediate Basketball Development',
-        description: 'Develop intermediate skills including ball handling, defense, and game strategy.',
+        description:
+          'Develop intermediate skills including ball handling, defense, and game strategy.',
         level: 'INTERMEDIATE',
         minAge: 11,
         maxAge: 14,
@@ -161,7 +165,8 @@ export async function seed() {
     const advancedProgram = await db.program.create({
       data: {
         name: 'Advanced Basketball Training',
-        description: 'Advanced competitive training with emphasis on skill refinement and game play.',
+        description:
+          'Advanced competitive training with emphasis on skill refinement and game play.',
         level: 'ADVANCED',
         minAge: 15,
         maxAge: 18,
@@ -175,7 +180,8 @@ export async function seed() {
     const eliteProgram = await db.program.create({
       data: {
         name: 'Elite Basketball Academy',
-        description: 'Elite level training for competitive and aspiring professional players.',
+        description:
+          'Elite level training for competitive and aspiring professional players.',
         level: 'ELITE',
         minAge: 16,
         maxAge: 21,
@@ -192,7 +198,8 @@ export async function seed() {
       data: {
         programId: beginnerProgram.id,
         name: 'Beginner - Monday Evening',
-        description: 'Beginner class on Monday evenings for young players just starting out.',
+        description:
+          'Beginner class on Monday evenings for young players just starting out.',
         scheduleDay: 'MONDAY',
         scheduleTime: '18:00-19:00',
         capacity: 15,
@@ -209,7 +216,8 @@ export async function seed() {
       data: {
         programId: beginnerProgram.id,
         name: 'Beginner - Saturday Morning',
-        description: 'Beginner class on Saturday mornings for young players just starting out.',
+        description:
+          'Beginner class on Saturday mornings for young players just starting out.',
         scheduleDay: 'SATURDAY',
         scheduleTime: '09:00-10:00',
         capacity: 15,
@@ -226,7 +234,8 @@ export async function seed() {
       data: {
         programId: intermediateProgram.id,
         name: 'Intermediate - Wed/Fri Evening',
-        description: 'Intermediate class meeting on Wednesday and Friday evenings.',
+        description:
+          'Intermediate class meeting on Wednesday and Friday evenings.',
         scheduleDay: 'WEDNESDAY',
         scheduleTime: '17:30-18:30',
         capacity: 18,
@@ -260,7 +269,8 @@ export async function seed() {
       data: {
         programId: advancedProgram.id,
         name: 'Advanced - Tuesday/Thursday Evening',
-        description: 'Advanced competitive training meeting Tuesday and Thursday.',
+        description:
+          'Advanced competitive training meeting Tuesday and Thursday.',
         scheduleDay: 'TUESDAY',
         scheduleTime: '19:00-20:30',
         capacity: 16,
@@ -277,7 +287,8 @@ export async function seed() {
       data: {
         programId: eliteProgram.id,
         name: 'Elite - Premium Training',
-        description: 'Elite level training with personalized coaching and competitive game play.',
+        description:
+          'Elite level training with personalized coaching and competitive game play.',
         scheduleDay: 'MONDAY',
         scheduleTime: '19:30-21:00',
         capacity: 12,
@@ -294,11 +305,41 @@ export async function seed() {
     console.log('Creating player users...')
     const players = []
     const playerData = [
-      { firstName: 'Michael', lastName: 'Jordan', position: 'Guard', jersey: 23, birthYear: 2012 },
-      { firstName: 'LeBron', lastName: 'James', position: 'Forward', jersey: 4, birthYear: 2011 },
-      { firstName: 'Kobe', lastName: 'Bryant', position: 'Guard', jersey: 24, birthYear: 2013 },
-      { firstName: 'Stephen', lastName: 'Curry', position: 'Guard', jersey: 30, birthYear: 2012 },
-      { firstName: 'Kevin', lastName: 'Durant', position: 'Forward', jersey: 35, birthYear: 2011 },
+      {
+        firstName: 'Michael',
+        lastName: 'Jordan',
+        position: 'Guard',
+        jersey: 23,
+        birthYear: 2012,
+      },
+      {
+        firstName: 'LeBron',
+        lastName: 'James',
+        position: 'Forward',
+        jersey: 4,
+        birthYear: 2011,
+      },
+      {
+        firstName: 'Kobe',
+        lastName: 'Bryant',
+        position: 'Guard',
+        jersey: 24,
+        birthYear: 2013,
+      },
+      {
+        firstName: 'Stephen',
+        lastName: 'Curry',
+        position: 'Guard',
+        jersey: 30,
+        birthYear: 2012,
+      },
+      {
+        firstName: 'Kevin',
+        lastName: 'Durant',
+        position: 'Forward',
+        jersey: 35,
+        birthYear: 2011,
+      },
     ]
 
     for (const player of playerData) {
@@ -404,11 +445,31 @@ export async function seed() {
     // Create Enrollments
     console.log('Creating enrollments...')
     const enrollmentData = [
-      { userId: players[0].id, classId: beginnerClass1.id, programId: beginnerProgram.id },
-      { userId: players[1].id, classId: beginnerClass2.id, programId: beginnerProgram.id },
-      { userId: players[2].id, classId: intermediateClass1.id, programId: intermediateProgram.id },
-      { userId: players[3].id, classId: advancedClass.id, programId: advancedProgram.id },
-      { userId: players[4].id, classId: eliteClass.id, programId: eliteProgram.id },
+      {
+        userId: players[0].id,
+        classId: beginnerClass1.id,
+        programId: beginnerProgram.id,
+      },
+      {
+        userId: players[1].id,
+        classId: beginnerClass2.id,
+        programId: beginnerProgram.id,
+      },
+      {
+        userId: players[2].id,
+        classId: intermediateClass1.id,
+        programId: intermediateProgram.id,
+      },
+      {
+        userId: players[3].id,
+        classId: advancedClass.id,
+        programId: advancedProgram.id,
+      },
+      {
+        userId: players[4].id,
+        classId: eliteClass.id,
+        programId: eliteProgram.id,
+      },
     ]
 
     let enrollmentCount = 0
@@ -450,7 +511,13 @@ export async function seed() {
 
     // Create Attendance records
     console.log('Creating attendance records...')
-    const attendanceStatuses = ['PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'EXCUSED']
+    const attendanceStatuses = [
+      'PRESENT',
+      'PRESENT',
+      'LATE',
+      'ABSENT',
+      'EXCUSED',
+    ]
     for (let i = 0; i < 3; i++) {
       for (const enrollment of enrollmentData) {
         const attendanceDate = new Date('2026-04-06')
@@ -461,7 +528,10 @@ export async function seed() {
             classId: enrollment.classId,
             userId: enrollment.userId,
             attendanceDate,
-            status: attendanceStatuses[Math.floor(Math.random() * attendanceStatuses.length)],
+            status:
+              attendanceStatuses[
+                Math.floor(Math.random() * attendanceStatuses.length)
+              ],
             notes: Math.random() > 0.8 ? 'Great effort today!' : undefined,
           },
         })
@@ -514,7 +584,8 @@ export async function seed() {
         userId: players[0].id,
         programId: beginnerProgram.id,
         title: 'Basketball Fundamentals Completion',
-        description: 'Successfully completed the Beginner Basketball Fundamentals program.',
+        description:
+          'Successfully completed the Beginner Basketball Fundamentals program.',
         graduationClass: 'Spring 2026',
         ageGroupTeam: 'U-12',
         achievementDate: new Date('2026-06-01'),
@@ -536,8 +607,10 @@ export async function seed() {
           basketballIQ: 75 + Math.floor(Math.random() * 20),
           athleticism: 68 + Math.floor(Math.random() * 28),
           overallScore: 67 + Math.floor(Math.random() * 28),
-          feedback: 'Excellent progress in fundamentals. Keep practicing ball handling.',
-          assessedBy: coach1.profile?.firstName + ' ' + coach1.profile?.lastName,
+          feedback:
+            'Excellent progress in fundamentals. Keep practicing ball handling.',
+          assessedBy:
+            coach1.profile?.firstName + ' ' + coach1.profile?.lastName,
           assessmentDate: new Date('2026-04-15'),
         },
       })
@@ -566,7 +639,8 @@ export async function seed() {
       data: {
         createdById: adminUser.id,
         title: 'Welcome to Basketball Academy!',
-        content: 'We are excited to have you join our basketball training program. This season promises to be filled with learning, growth, and fun!',
+        content:
+          'We are excited to have you join our basketball training program. This season promises to be filled with learning, growth, and fun!',
         publishDate: new Date('2026-04-01'),
         expiryDate: new Date('2026-05-31'),
         isActive: true,
@@ -577,7 +651,8 @@ export async function seed() {
       data: {
         createdById: coach1.id,
         title: 'Upcoming Tournament',
-        content: 'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
+        content:
+          'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
         publishDate: new Date('2026-04-02'),
         expiryDate: new Date('2026-05-15'),
         isActive: true,
@@ -591,7 +666,8 @@ export async function seed() {
         senderId: coach1.id,
         recipientId: players[0].id,
         subject: 'Great Performance!',
-        content: 'Great job in yesterdays practice session! Your shooting technique has improved significantly.',
+        content:
+          'Great job in yesterdays practice session! Your shooting technique has improved significantly.',
         isRead: false,
       },
     })
@@ -601,7 +677,8 @@ export async function seed() {
         senderId: parent1.id,
         recipientId: adminUser.id,
         subject: 'Question about billing',
-        content: 'Could you please clarify the invoice amount and payment terms?',
+        content:
+          'Could you please clarify the invoice amount and payment terms?',
         isRead: false,
       },
     })

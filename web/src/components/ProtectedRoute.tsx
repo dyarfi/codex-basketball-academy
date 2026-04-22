@@ -1,7 +1,9 @@
 // web/src/components/ProtectedRoute.tsx
-import { useAuth } from 'src/providers/AuthProvider'
-import { navigate } from '@redwoodjs/router'
 import { useEffect } from 'react'
+
+import { navigate, routes } from '@redwoodjs/router'
+
+import { useAuth } from '../auth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -12,18 +14,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   fallback,
 }) => {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login')
+    if (!loading && !isAuthenticated) {
+      navigate(routes.login())
     }
-  }, [isAuthenticated, isLoading])
+  }, [isAuthenticated, loading])
 
-  if (isLoading) {
+  if (loading) {
     return (
       fallback || (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex min-h-screen items-center justify-center">
           <div className="text-xl text-gray-600">Loading...</div>
         </div>
       )

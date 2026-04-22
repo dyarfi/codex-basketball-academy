@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+
 import { useNavigate } from '@redwoodjs/router'
+
 import { useAuth } from 'src/auth'
 
 interface PrivateRouteProps {
@@ -7,24 +9,24 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const { user, isLoading } = useAuth()
+  const { currentUser, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !currentUser) {
       navigate('/login')
     }
-  }, [user, isLoading, navigate])
+  }, [currentUser, loading, navigate])
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-600">Loading...</div>
       </div>
     )
   }
 
-  if (!user) {
+  if (!currentUser) {
     return null
   }
 

@@ -1,5 +1,6 @@
 // web/src/components/Toast/useToast.ts
 import { useState, useCallback } from 'react'
+
 import type { Toast, ToastType } from './Toast'
 
 interface UseToastReturn {
@@ -28,10 +29,22 @@ export const useToast = (): UseToastReturn => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id))
   }, [])
 
-  const success = useCallback((message: string) => addToast(message, 'success'), [addToast])
-  const error = useCallback((message: string) => addToast(message, 'error'), [addToast])
-  const info = useCallback((message: string) => addToast(message, 'info'), [addToast])
-  const warning = useCallback((message: string) => addToast(message, 'warning'), [addToast])
+  const success = useCallback(
+    (message: string) => addToast(message, 'success'),
+    [addToast]
+  )
+  const error = useCallback(
+    (message: string) => addToast(message, 'error'),
+    [addToast]
+  )
+  const info = useCallback(
+    (message: string) => addToast(message, 'info'),
+    [addToast]
+  )
+  const warning = useCallback(
+    (message: string) => addToast(message, 'warning'),
+    [addToast]
+  )
 
   return {
     toasts,

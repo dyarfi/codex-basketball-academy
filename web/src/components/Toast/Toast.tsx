@@ -21,6 +21,10 @@ export const Toast: React.FC<ToastProps> = ({
   duration = 4000,
   onClose,
 }) => {
+  const handleClose = useCallback(() => {
+    onClose(id)
+  }, [id, onClose])
+
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => handleClose(), duration)
@@ -61,15 +65,13 @@ export const Toast: React.FC<ToastProps> = ({
     [type]
   )
 
-  const handleClose = useCallback(() => {
-    onClose(id)
-  }, [id, onClose])
-
   return (
     <div
-      className={`border rounded-lg p-4 shadow-lg flex items-center gap-3 max-w-md ${bgColor}`}
+      className={`z- flex max-w-md items-center gap-3 rounded-lg border p-4 shadow-lg ${bgColor}`}
     >
-      <span className={`text-xl font-bold ${textColor}`} aria-hidden="true">{icon}</span>
+      <span className={`text-xl font-bold ${textColor}`} aria-hidden="true">
+        {icon}
+      </span>
       <p className={`flex-1 ${textColor}`}>{message}</p>
       <button
         onClick={handleClose}
@@ -88,7 +90,7 @@ export const ToastContainer: React.FC<{
   onRemove: (id: string) => void
 }> = ({ toasts, onRemove }) => {
   return (
-    <div className="fixed top-4 right-4 space-y-2 z-50">
+    <div className="fixed right-4 top-4 z-50 space-y-2">
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={onRemove} />
       ))}

@@ -1,49 +1,106 @@
-// api/src/functions/auth.ts
-import { AuthHandler } from '@redwoodjs/auth-dbauth-handler'
-import { db } from 'src/lib/db'
+import type { APIGatewayProxyEvent, Context } from 'aws-lambda'
 
-export const handler = new AuthHandler(
-  {
-    database: db,
-    authModelAccessor: 'user',
-  },
-  {
-    userId: 'id',
-    username: 'email',
-    hashedPassword: 'hashedPassword',
-    salt: 'salt',
-    loginHandler: async (user) => user,
-    logoutHandler: () => true,
-    signup: {
-      handler: async ({ email, password }) => {
-        // Signup validation happens in GraphQL resolver
-        // This just handles session creation
-        const user = await db.user.findUnique({ where: { email } })
-        return user
-      },
-      errors: {
-        'email not provided': 'Email is required',
-        'password not provided': 'Password is required',
-        'email already exists': 'Email already registered',
-      },
-      passwordValidationErrorMessage:
-        'Password must be at least 8 characters with uppercase, lowercase, and number',
-    },
-    forgotPassword: {
-      handler: async (user) => {
-        // Return user so reset token can be sent
-        return user
-      },
-      errors: {
-        'email not found': 'Email not found',
-      },
-    },
-    resetPassword: {
-      errors: {
-        'resetToken invalid': 'Reset token is invalid or expired',
-        'resetToken expired': 'Reset token has expired',
-        'email not found': 'Email not found',
-      },
+import { DbAuthHandler } from '@redwoodjs/auth-dbauth-api'
+import type { DbAuthHandlerOptions, UserType } from '@redwoodjs/auth-dbauth-api'
+
+import { cookieName } from '../lib/auth'
+import { db } from '../lib/db'
+
+export const handler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+) => {
+  const forgotPasswordOptions: DbAuthHandlerOptions['forgotPassword'] = {
+    handler: (user) => user,
+    expires: 60 * 60 * 24,
+    errors: {
+      usernameNotFound: 'Email not found',
+      usernameRequired: 'Email is required',
     },
   }
-).handler
+
+  const loginOptions: DbAuthHandlerOptions['login'] = {
+    handler: (user) => {
+      if (!user.isActive) {
+        throw new Error('Please activate your account first!')
+      } else {
+        return user
+      }
+    },
+    errors: {
+      usernameOrPasswordMissing: 'Email and password are required',
+      usernameNotFound: 'Email ${username} not found',
+      incorrectPassword: 'Incorrect password for ${username}',
+    },
+    expires: 60 * 60 * 24 * 30,
+  }
+
+  const resetPasswordOptions: DbAuthHandlerOptions['resetPassword'] = {
+    handler: () => true,
+    allowReusedPassword: true,
+    errors: {
+      resetTokenExpired: 'resetToken is expired',
+      resetTokenInvalid: 'resetToken is invalid',
+      resetTokenRequired: 'resetToken is required',
+      reusedPassword: 'Must choose a new password',
+    },
+  }
+
+  interface UserAttributes {
+    roles?: string
+  }
+
+  const signupOptions: DbAuthHandlerOptions<
+    UserType,
+    UserAttributes
+  >['signup'] = {
+    handler: ({ username, hashedPassword, salt, userAttributes }) => {
+      if (process.env.ALLOW_ADMIN_SIGNUP !== 'true') {
+        throw new Error('Admin signup is disabled')
+      }
+
+      return db.user.create({
+        data: {
+          email: username,
+          hashedPassword,
+          salt,
+          roles: userAttributes?.roles || 'admin',
+        },
+      })
+    },
+    passwordValidation: () => true,
+    errors: {
+      fieldMissing: '${field} is required',
+      usernameTaken: 'Email `${username}` already in use',
+    },
+  }
+
+  const authHandler = new DbAuthHandler(event, context, {
+    db,
+    authModelAccessor: 'user',
+    authFields: {
+      id: 'id',
+      username: 'email',
+      hashedPassword: 'hashedPassword',
+      salt: 'salt',
+      resetToken: 'resetToken',
+      resetTokenExpiresAt: 'resetTokenExpiresAt',
+    },
+    allowedUserFields: ['id', 'email', 'role'],
+    cookie: {
+      name: cookieName,
+      attributes: {
+        HttpOnly: true,
+        Path: '/',
+        SameSite: 'Strict',
+        Secure: process.env.NODE_ENV !== 'development',
+      },
+    },
+    forgotPassword: forgotPasswordOptions,
+    login: loginOptions,
+    resetPassword: resetPasswordOptions,
+    signup: signupOptions,
+  })
+
+  return authHandler.invoke()
+}

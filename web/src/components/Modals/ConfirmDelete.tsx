@@ -53,27 +53,30 @@ export const ConfirmDelete: React.FC<ConfirmDeleteProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50"
       onClick={handleBackdropClick}
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirmDelete-title"
       aria-describedby="confirmDelete-message"
     >
-      <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full mx-4">
-        <h2 id="confirmDelete-title" className="text-lg font-bold text-gray-900 mb-2">
+      <div className="mx-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
+        <h2
+          id="confirmDelete-title"
+          className="mb-2 text-lg font-bold text-gray-900"
+        >
           {title}
         </h2>
-        <p id="confirmDelete-message" className="text-gray-600 mb-6">
+        <p id="confirmDelete-message" className="mb-6 text-gray-600">
           {message}
         </p>
 
-        <div className="flex gap-3 justify-end">
+        <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}
             disabled={isLoading}
             aria-label="Cancel delete operation"
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
@@ -82,7 +85,7 @@ export const ConfirmDelete: React.FC<ConfirmDeleteProps> = ({
             onClick={onConfirm}
             disabled={isLoading}
             aria-label="Confirm delete operation"
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? 'Deleting...' : 'Delete'}
           </button>

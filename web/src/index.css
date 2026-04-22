@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mantine-color-blue-filled: #228be6;
+  --mantine-color-blue-filled-hover: #1c7ed6;
+}
+
+body {
+  @apply antialiased text-gray-900 bg-gray-50;
+}

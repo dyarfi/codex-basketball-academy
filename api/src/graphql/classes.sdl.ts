@@ -1,5 +1,5 @@
 export const schema = gql`
-  type ClassType {
+  type Class {
     id: String!
     programId: String!
     program: Program!
@@ -22,11 +22,12 @@ export const schema = gql`
   }
 
   type Query {
-    classes: [ClassType!]! @requireAuth
-    classType(id: String!): ClassType @requireAuth
+    classroom(id: String!): Class @requireAuth
+    classes: [Class!]! @requireAuth
+    classType(id: String!): Class @requireAuth
   }
 
-  input CreateClassTypeInput {
+  input CreateClassInput {
     programId: String!
     name: String!
     description: String
@@ -40,7 +41,7 @@ export const schema = gql`
     isActive: Boolean!
   }
 
-  input UpdateClassTypeInput {
+  input UpdateClassInput {
     programId: String
     name: String
     description: String
@@ -55,9 +56,8 @@ export const schema = gql`
   }
 
   type Mutation {
-    createClassType(input: CreateClassTypeInput!): ClassType! @requireAuth
-    updateClassType(id: String!, input: UpdateClassTypeInput!): ClassType!
-      @requireAuth
-    deleteClassType(id: String!): ClassType! @requireAuth
+    createClass(input: CreateClassInput!): Class! @requireAuth
+    updateClass(id: String!, input: UpdateClassInput!): Class! @requireAuth
+    deleteClass(id: String!): Class! @requireAuth
   }
 `

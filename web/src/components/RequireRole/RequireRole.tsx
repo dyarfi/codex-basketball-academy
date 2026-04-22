@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
-import { useNavigate } from '@redwoodjs/router'
+
+import { navigate } from '@redwoodjs/router'
+
 import { useAuth } from 'src/auth'
 
 interface RequireRoleProps {
@@ -8,36 +10,35 @@ interface RequireRoleProps {
 }
 
 const RequireRole = ({ children, roles }: RequireRoleProps) => {
-  const { user, isLoading } = useAuth()
-  const navigate = useNavigate()
+  const { currentUser, loading: isLoading } = useAuth()
 
   useEffect(() => {
     if (!isLoading) {
-      if (!user) {
+      if (!currentUser) {
         navigate('/login')
       } else {
         const allowedRoles = Array.isArray(roles) ? roles : [roles]
-        if (!allowedRoles.includes(user.role)) {
+        if (!allowedRoles.includes(currentUser.role)) {
           navigate('/dashboard')
         }
       }
     }
-  }, [user, isLoading, roles, navigate])
+  }, [currentUser, isLoading, roles, navigate])
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-600">Loading...</div>
       </div>
     )
   }
 
-  if (!user) {
+  if (!currentUser) {
     return null
   }
 
   const allowedRoles = Array.isArray(roles) ? roles : [roles]
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(currentUser.role)) {
     return null
   }
 

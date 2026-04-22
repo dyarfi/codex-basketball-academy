@@ -40,6 +40,25 @@ export const GET_PROGRAM = gql`
       isActive
       createdAt
       updatedAt
+      classes {
+        id
+        name
+        description
+        scheduleDay
+        scheduleTime
+        capacity
+        currentEnrollment
+        coachName
+        startDate
+        endDate
+        coach {
+          id
+          profile {
+            firstName
+            lastName
+          }
+        }
+      }
     }
   }
 `

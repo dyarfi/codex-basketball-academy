@@ -1,7 +1,9 @@
 // web/src/components/RoleRoute.tsx
-import { useAuth } from 'src/providers/AuthProvider'
-import { navigate } from '@redwoodjs/router'
 import { useEffect } from 'react'
+
+import { navigate, routes } from '@redwoodjs/router'
+
+import { useAuth } from '../auth'
 
 interface RoleRouteProps {
   requiredRoles: string | string[]
@@ -12,17 +14,17 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({
   requiredRoles,
   children,
 }) => {
-  const { hasRole, isLoading, isAuthenticated } = useAuth()
+  const { hasRole, loading, isAuthenticated } = useAuth()
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && !hasRole(requiredRoles)) {
-      navigate('/dashboard')
+    if (!loading && isAuthenticated && !hasRole(requiredRoles)) {
+      navigate(routes.dashboard())
     }
-  }, [isLoading, isAuthenticated, requiredRoles, hasRole])
+  }, [loading, isAuthenticated, requiredRoles, hasRole])
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-600">Loading...</div>
       </div>
     )

@@ -1,26 +1,29 @@
-import type { ReactNode } from 'react'
+// Import styles of packages that you've installed.
+// All packages except `@mantine/hooks` require styles imports
+import '@mantine/core/styles.css'
+import { ColorSchemeScript, MantineProvider } from '@mantine/core'
 
 import { FatalErrorBoundary, RedwoodProvider } from '@redwoodjs/web'
 import { RedwoodApolloProvider } from '@redwoodjs/web/apollo'
 
-import { AuthProvider } from 'src/providers/AuthProvider'
-import Routes from 'src/Routes'
 import FatalErrorPage from 'src/pages/FatalErrorPage'
+import { ToastProvider } from 'src/providers/ToastProvider'
+import Routes from 'src/Routes'
 
 import './index.css'
 
-interface AppProps {
-  children?: ReactNode
-}
-
-const App = ({ children }: AppProps) => (
-  <FatalErrorBoundary page={FatalErrorPage}>
+// const App = ({ children }: AppProps) => (
+const App = () => (
+  <FatalErrorBoundary page={FatalErrorPage as any}>
     <RedwoodProvider titleTemplate="%PageTitle | %AppTitle">
-      <RedwoodApolloProvider>
-        <AuthProvider>
-          {children || <Routes />}
-        </AuthProvider>
-      </RedwoodApolloProvider>
+      <ColorSchemeScript />
+      <MantineProvider>
+        <RedwoodApolloProvider>
+          <ToastProvider>
+            <Routes />
+          </ToastProvider>
+        </RedwoodApolloProvider>
+      </MantineProvider>
     </RedwoodProvider>
   </FatalErrorBoundary>
 )

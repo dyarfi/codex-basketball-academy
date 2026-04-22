@@ -1,10 +1,16 @@
 import type {
   QueryResolvers,
   MutationResolvers,
-  ClassTypeRelationResolvers,
+  ClassRelationResolvers,
 } from 'types/graphql'
 
 import { db } from 'src/lib/db'
+
+export const classroom: QueryResolvers['classroom'] = ({ id }) => {
+  return db.class.findUnique({
+    where: { id },
+  })
+}
 
 export const classes: QueryResolvers['classes'] = () => {
   return db.class.findMany()
@@ -16,15 +22,13 @@ export const classType: QueryResolvers['classType'] = ({ id }) => {
   })
 }
 
-export const createClassType: MutationResolvers['createClassType'] = ({
-  input,
-}) => {
+export const createClass: MutationResolvers['createClass'] = ({ input }) => {
   return db.class.create({
     data: input,
   })
 }
 
-export const updateClassType: MutationResolvers['updateClassType'] = ({
+export const updateClass: MutationResolvers['updateClass'] = ({
   id,
   input,
 }) => {
@@ -34,15 +38,13 @@ export const updateClassType: MutationResolvers['updateClassType'] = ({
   })
 }
 
-export const deleteClassType: MutationResolvers['deleteClassType'] = ({
-  id,
-}) => {
+export const deleteClass: MutationResolvers['deleteClass'] = ({ id }) => {
   return db.class.delete({
     where: { id },
   })
 }
 
-export const ClassType: ClassTypeRelationResolvers = {
+export const Class: ClassRelationResolvers = {
   program: (_obj, { root }) => {
     return db.class.findUnique({ where: { id: root?.id } }).program()
   },
