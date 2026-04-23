@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import {
   Container,
   Table,
   Group,
-  Button,
   Badge,
   TextInput,
   Select,
@@ -17,64 +16,23 @@ import {
   Tooltip,
   ActionIcon,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconSearch,
-  IconEdit,
-  IconTrash,
   IconAlertCircle,
-  IconPlus,
   IconEye,
   IconCash,
   IconFileText,
 } from '@tabler/icons-react'
 
-import { useQuery, useMutation } from '@redwoodjs/web'
+import { useQuery } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
-
-const GET_PAYMENTS = gql`
-  query GetPayments {
-    payments {
-      id
-      userId
-      user {
-        email
-        profile {
-          firstName
-          lastName
-        }
-      }
-      amount
-      currency
-      status
-      description
-      createdAt
-    }
-  }
-`
-
-const GET_INVOICES = gql`
-  query GetInvoices {
-    invoices {
-      id
-      userId
-      user {
-        email
-        profile {
-          firstName
-          lastName
-        }
-      }
-      invoiceNumber
-      amount
-      dueDate
-      paidDate
-      status
-      description
-      createdAt
-    }
-  }
-`
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
+import {
+  GET_PAGINATED_INVOICES,
+  GET_PAGINATED_PAYMENTS,
+} from 'src/graphql/payments-queries'
 
 interface Payment {
   id: string
@@ -113,52 +71,61 @@ interface Invoice {
 }
 
 const PaymentsPage = () => {
+  const PAGE_SIZE = 10
   const [activeTab, setActiveTab] = useState<string | null>('invoices')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [invoicePage, setInvoicePage] = useState(1)
+  const [paymentPage, setPaymentPage] = useState(1)
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null)
   const [showViewModal, setShowViewModal] = useState(false)
 
-  const paymentsQuery = useQuery<{ payments: Payment[] }>(GET_PAYMENTS)
-  const invoicesQuery = useQuery<{ invoices: Invoice[] }>(GET_INVOICES)
+  const paymentsQuery = useQuery<{
+    paginatedPayments: { items: Payment[]; totalCount: number }
+  }>(GET_PAGINATED_PAYMENTS, {
+    variables: {
+      page: paymentPage,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearchQuery || undefined,
+      status: statusFilter || undefined,
+    },
+  })
+  const invoicesQuery = useQuery<{
+    paginatedInvoices: { items: Invoice[]; totalCount: number }
+  }>(GET_PAGINATED_INVOICES, {
+    variables: {
+      page: invoicePage,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearchQuery || undefined,
+      status: statusFilter || undefined,
+    },
+  })
 
-  const payments = paymentsQuery.data?.payments || []
-  const invoices = invoicesQuery.data?.invoices || []
+  const payments = paymentsQuery.data?.paginatedPayments.items || []
+  const totalPayments = paymentsQuery.data?.paginatedPayments.totalCount || 0
+  const invoices = invoicesQuery.data?.paginatedInvoices.items || []
+  const totalInvoices = invoicesQuery.data?.paginatedInvoices.totalCount || 0
 
-  // Filter and search invoices
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchesSearch =
-        invoice.invoiceNumber
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        invoice.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (invoice.user.profile?.firstName
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ??
-          false)
+  const totalInvoicePages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE))
+  const totalPaymentPages = Math.max(1, Math.ceil(totalPayments / PAGE_SIZE))
 
-      const matchesStatus = !statusFilter || invoice.status === statusFilter
+  useEffect(() => {
+    setInvoicePage(1)
+    setPaymentPage(1)
+  }, [searchQuery, statusFilter])
 
-      return matchesSearch && matchesStatus
-    })
-  }, [invoices, searchQuery, statusFilter])
+  useEffect(() => {
+    if (invoicePage > totalInvoicePages) {
+      setInvoicePage(totalInvoicePages)
+    }
+  }, [invoicePage, totalInvoicePages])
 
-  // Filter and search payments
-  const filteredPayments = useMemo(() => {
-    return payments.filter((payment) => {
-      const matchesSearch =
-        payment.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (payment.user.profile?.firstName
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ??
-          false)
-
-      const matchesStatus = !statusFilter || payment.status === statusFilter
-
-      return matchesSearch && matchesStatus
-    })
-  }, [payments, searchQuery, statusFilter])
+  useEffect(() => {
+    if (paymentPage > totalPaymentPages) {
+      setPaymentPage(totalPaymentPages)
+    }
+  }, [paymentPage, totalPaymentPages])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -181,7 +148,7 @@ const PaymentsPage = () => {
     return new Date(dueDate) < new Date()
   }
 
-  if (paymentsQuery.loading || invoicesQuery.loading) {
+  if ((paymentsQuery.loading && !paymentsQuery.data) || (invoicesQuery.loading && !invoicesQuery.data)) {
     return (
       <AdminLayout>
         <Container size="xl" py="xl">
@@ -200,7 +167,7 @@ const PaymentsPage = () => {
           Payments & Invoices
         </Text>
 
-        <Tabs value={activeTab} onTabChange={setActiveTab}>
+        <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List>
             <Tabs.Tab leftSection={<IconFileText size={14} />} value="invoices">
               Invoices
@@ -240,7 +207,7 @@ const PaymentsPage = () => {
             </Group>
 
             <Text size="sm" className="mb-4 text-gray-600">
-              Showing {filteredInvoices.length} of {invoices.length} invoices
+              Showing {invoices.length} of {totalInvoices} invoices
             </Text>
 
             {/* Invoices Table */}
@@ -257,7 +224,7 @@ const PaymentsPage = () => {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {filteredInvoices.map((invoice) => {
+                  {invoices.map((invoice) => {
                     const overdue =
                       isOverdue(invoice.dueDate) && invoice.status === 'PENDING'
                     return (
@@ -312,6 +279,14 @@ const PaymentsPage = () => {
                 </Table.Tbody>
               </Table>
             </div>
+
+            <AdminPagination
+              label="invoices"
+              totalItems={totalInvoices}
+              page={invoicePage}
+              onPageChange={setInvoicePage}
+              pageSize={PAGE_SIZE}
+            />
           </Tabs.Panel>
 
           <Tabs.Panel value="payments">
@@ -344,7 +319,7 @@ const PaymentsPage = () => {
             </Group>
 
             <Text size="sm" className="mb-4 text-gray-600">
-              Showing {filteredPayments.length} of {payments.length} payments
+              Showing {payments.length} of {totalPayments} payments
             </Text>
 
             {/* Payments Table */}
@@ -361,7 +336,7 @@ const PaymentsPage = () => {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {filteredPayments.map((payment) => (
+                  {payments.map((payment) => (
                     <Table.Tr key={payment.id}>
                       <Table.Td fw={500} className="font-mono text-xs">
                         {payment.id.substring(0, 8)}...
@@ -392,6 +367,14 @@ const PaymentsPage = () => {
                 </Table.Tbody>
               </Table>
             </div>
+
+            <AdminPagination
+              label="payments"
+              totalItems={totalPayments}
+              page={paymentPage}
+              onPageChange={setPaymentPage}
+              pageSize={PAGE_SIZE}
+            />
           </Tabs.Panel>
         </Tabs>
 

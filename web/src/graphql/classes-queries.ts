@@ -34,6 +34,54 @@ export const GET_CLASSES = gql`
   }
 `
 
+export const GET_PAGINATED_CLASSES = gql`
+  query GetPaginatedClasses(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $programId: String
+    $coachId: String
+    $isActive: Boolean
+  ) {
+    paginatedClasses(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      programId: $programId
+      coachId: $coachId
+      isActive: $isActive
+    ) {
+      items {
+        id
+        name
+        description
+        scheduleDay
+        scheduleTime
+        capacity
+        currentEnrollment
+        isActive
+        startDate
+        endDate
+        program {
+          id
+          name
+        }
+        coach {
+          id
+          email
+          profile {
+            firstName
+            lastName
+          }
+        }
+        createdAt
+        updatedAt
+      }
+      totalCount
+    }
+  }
+`
+
 /**
  * Fetch a single class by ID
  */

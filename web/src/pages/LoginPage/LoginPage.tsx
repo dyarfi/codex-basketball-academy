@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { Link, navigate, routes } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
+import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const LoginPage = () => {
   const {
@@ -11,6 +13,7 @@ const LoginPage = () => {
     loading: authLoading,
     currentUser,
   } = useAuth()
+  const { isDark } = useAppTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -47,24 +50,51 @@ const LoginPage = () => {
   const isLoading = authLoading || submitting
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div
+      className={`flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 ${
+        isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="w-full max-w-md space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-4xl font-extrabold tracking-tight text-gray-900">
+          <div className="mb-4 flex justify-end">
+            <ThemeToggle />
+          </div>
+          <h2
+            className={`mt-6 text-center text-4xl font-extrabold tracking-tight ${
+              isDark ? 'text-slate-50' : 'text-gray-900'
+            }`}
+          >
             James Basketball Academy
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p
+            className={`mt-2 text-center text-sm ${
+              isDark ? 'text-slate-400' : 'text-gray-600'
+            }`}
+          >
             Admin Portal Access
           </p>
         </div>
 
         <form
-          className="mt-8 space-y-6 rounded-xl border border-gray-100 bg-white p-8 shadow-lg"
+          className={`mt-8 space-y-6 rounded-xl p-8 shadow-lg ${
+            isDark ? 'border border-slate-800 bg-slate-900' : 'border border-gray-100 bg-white'
+          }`}
           onSubmit={handleSubmit}
         >
           {error && (
-            <div className="rounded-md border border-red-100 bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">{error}</p>
+            <div
+              className={`rounded-md border p-4 ${
+                isDark ? 'border-red-900 bg-red-950/40' : 'border-red-100 bg-red-50'
+              }`}
+            >
+              <p
+                className={`text-sm font-medium ${
+                  isDark ? 'text-red-300' : 'text-red-800'
+                }`}
+              >
+                {error}
+              </p>
             </div>
           )}
 
@@ -72,7 +102,9 @@ const LoginPage = () => {
             <div>
               <label
                 htmlFor="email"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className={`mb-1 block text-sm font-medium ${
+                  isDark ? 'text-slate-300' : 'text-gray-700'
+                }`}
               >
                 Email address
               </label>
@@ -83,14 +115,20 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
-                className="relative block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 transition-all focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                className={`relative block w-full appearance-none rounded-lg border px-3 py-2 placeholder-gray-500 transition-all focus:z-10 focus:outline-none focus:ring-blue-500 sm:text-sm ${
+                  isDark
+                    ? 'border-slate-700 bg-slate-950 text-slate-100'
+                    : 'border-gray-300 text-gray-900'
+                }`}
                 placeholder="admin@example.com"
               />
             </div>
             <div>
               <label
                 htmlFor="password"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className={`mb-1 block text-sm font-medium ${
+                  isDark ? 'text-slate-300' : 'text-gray-700'
+                }`}
               >
                 Password
               </label>
@@ -101,7 +139,11 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                className="relative block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 transition-all focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                className={`relative block w-full appearance-none rounded-lg border px-3 py-2 placeholder-gray-500 transition-all focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm ${
+                  isDark
+                    ? 'border-slate-700 bg-slate-950 text-slate-100'
+                    : 'border-gray-300 text-gray-900'
+                }`}
                 placeholder="••••••••"
               />
             </div>
@@ -116,7 +158,9 @@ const LoginPage = () => {
               />
               <label
                 htmlFor="remember-me"
-                className="ml-2 block cursor-pointer text-sm text-gray-900"
+                className={`ml-2 block cursor-pointer text-sm ${
+                  isDark ? 'text-slate-100' : 'text-gray-900'
+                }`}
               >
                 Remember me
               </label>

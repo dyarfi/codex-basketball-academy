@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import {
   Container,
@@ -11,32 +11,44 @@ import {
   Loader,
   Alert,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import ProgramModal from 'src/components/Modals/ProgramModal'
 import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
-  GET_PROGRAMS,
+  GET_PAGINATED_PROGRAMS,
   CREATE_PROGRAM,
   UPDATE_PROGRAM,
   DELETE_PROGRAM,
 } from 'src/graphql/programs-queries'
 
 const ProgramsPage = () => {
+  const PAGE_SIZE = 10
   const { toasts, success, error: toastError, removeToast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedProgram, setSelectedProgram] = useState<any>(null)
 
-  const { data, loading, error, refetch } = useQuery(GET_PROGRAMS)
+  const { data, loading, error, refetch } = useQuery(GET_PAGINATED_PROGRAMS, {
+    variables: {
+      page,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearchQuery || undefined,
+      level: levelFilter || undefined,
+    },
+  })
 
   const [createProgram, { loading: isCreating }] = useMutation(CREATE_PROGRAM, {
     onCompleted: () => {
@@ -73,17 +85,19 @@ const ProgramsPage = () => {
     },
   })
 
-  const programs = data?.programs || []
+  const programs = data?.paginatedPrograms.items || []
+  const totalPrograms = data?.paginatedPrograms.totalCount || 0
+  const totalPages = Math.max(1, Math.ceil(totalPrograms / PAGE_SIZE))
 
-  const filteredPrograms = useMemo(() => {
-    return programs.filter((program: any) => {
-      const matchesSearch = program.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-      const matchesLevel = !levelFilter || program.level === levelFilter
-      return matchesSearch && matchesLevel
-    })
-  }, [programs, searchQuery, levelFilter])
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, levelFilter])
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   const handleCreate = () => {
     setSelectedProgram(null)
@@ -236,11 +250,19 @@ const ProgramsPage = () => {
         </Group>
 
         <CrudTable
-          data={filteredPrograms}
+          data={programs}
           columns={columns as any}
-          isLoading={loading}
+          isLoading={loading && !data}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+        />
+
+        <AdminPagination
+          label="programs"
+          totalItems={totalPrograms}
+          page={page}
+          onPageChange={setPage}
+          pageSize={PAGE_SIZE}
         />
 
         <ProgramModal

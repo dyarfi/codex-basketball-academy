@@ -15,6 +15,11 @@ export const schema = gql`
     updatedAt: DateTime!
   }
 
+  type PaginatedPayments {
+    items: [Payment!]!
+    totalCount: Int!
+  }
+
   enum PaymentStatus {
     PENDING
     COMPLETED
@@ -25,6 +30,12 @@ export const schema = gql`
   type Query {
     payments: [Payment!]! @requireAuth
     payment(id: String!): Payment @requireAuth
+    paginatedPayments(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      status: PaymentStatus
+    ): PaginatedPayments! @requireAuth
   }
 
   input CreatePaymentInput {

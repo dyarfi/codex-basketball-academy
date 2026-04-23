@@ -3,6 +3,7 @@ import type {
   MutationResolvers,
   ClassRelationResolvers,
 } from 'types/graphql'
+import { Prisma } from '@prisma/client'
 
 import { db } from 'src/lib/db'
 
@@ -14,6 +15,86 @@ export const classroom: QueryResolvers['classroom'] = ({ id }) => {
 
 export const classes: QueryResolvers['classes'] = () => {
   return db.class.findMany()
+}
+
+export const paginatedClasses: QueryResolvers['paginatedClasses'] = async ({
+  page = 1,
+  pageSize = 10,
+  search,
+  programId,
+  coachId,
+  isActive,
+}) => {
+  const conditions: Prisma.ClassWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          name: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          coachName: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          program: {
+            is: {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  if (programId) {
+    conditions.push({ programId })
+  }
+
+  if (coachId) {
+    conditions.push({ coachId })
+  }
+
+  if (typeof isActive === 'boolean') {
+    conditions.push({ isActive })
+  }
+
+  const where: Prisma.ClassWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+  const safePage = Math.max(1, page)
+  const safePageSize = Math.max(1, pageSize)
+  const skip = (safePage - 1) * safePageSize
+
+  const [items, totalCount] = await Promise.all([
+    db.class.findMany({
+      where,
+      orderBy: { startDate: 'desc' },
+      skip,
+      take: safePageSize,
+    }),
+    db.class.count({ where }),
+  ])
+
+  return {
+    items,
+    totalCount,
+  }
 }
 
 export const classType: QueryResolvers['classType'] = ({ id }) => {

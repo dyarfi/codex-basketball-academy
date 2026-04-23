@@ -3,11 +3,85 @@ import type {
   MutationResolvers,
   UserRelationResolvers,
 } from 'types/graphql'
+import { Prisma } from '@prisma/client'
 
 import { db } from 'src/lib/db'
 
 export const users: QueryResolvers['users'] = () => {
   return db.user.findMany()
+}
+
+export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
+  page = 1,
+  pageSize = 10,
+  search,
+  role,
+  isActive,
+}) => {
+  const conditions: Prisma.UserWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          email: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          profile: {
+            is: {
+              firstName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          profile: {
+            is: {
+              lastName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  if (role) {
+    conditions.push({ role })
+  }
+
+  if (typeof isActive === 'boolean') {
+    conditions.push({ isActive })
+  }
+
+  const where: Prisma.UserWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+  const safePage = Math.max(1, page)
+  const safePageSize = Math.max(1, pageSize)
+  const skip = (safePage - 1) * safePageSize
+
+  const [items, totalCount] = await Promise.all([
+    db.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: safePageSize,
+    }),
+    db.user.count({ where }),
+  ])
+
+  return {
+    items,
+    totalCount,
+  }
 }
 
 export const user: QueryResolvers['user'] = ({ id }) => {

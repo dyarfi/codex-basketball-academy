@@ -21,10 +21,23 @@ export const schema = gql`
     attendances: [Attendance]!
   }
 
+  type PaginatedClasses {
+    items: [Class!]!
+    totalCount: Int!
+  }
+
   type Query {
     classroom(id: String!): Class @requireAuth
     classes: [Class!]! @requireAuth
     classType(id: String!): Class @requireAuth
+    paginatedClasses(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      programId: String
+      coachId: String
+      isActive: Boolean
+    ): PaginatedClasses! @requireAuth
   }
 
   input CreateClassInput {

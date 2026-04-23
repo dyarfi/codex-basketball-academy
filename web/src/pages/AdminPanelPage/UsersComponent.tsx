@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import {
   Container,
@@ -11,27 +11,43 @@ import {
   Loader,
   Alert,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import UserModal from 'src/components/Modals/UserModal'
 import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
-import { GET_USERS, UPDATE_USER, DELETE_USER } from 'src/graphql/users-queries'
+import {
+  GET_PAGINATED_USERS,
+  UPDATE_USER,
+  DELETE_USER,
+} from 'src/graphql/users-queries'
 
 const UsersPage = () => {
+  const PAGE_SIZE = 10
   const { toasts, success, error: toastError, removeToast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
 
-  const { data, loading, error, refetch } = useQuery(GET_USERS)
+  const { data, loading, error, refetch } = useQuery(GET_PAGINATED_USERS, {
+    variables: {
+      page,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearchQuery || undefined,
+      role: roleFilter || undefined,
+    },
+  })
 
   const [updateUser, { loading: isUpdating }] = useMutation(UPDATE_USER, {
     onCompleted: () => {
@@ -57,21 +73,19 @@ const UsersPage = () => {
     },
   })
 
-  const users = data?.users || []
+  const users = data?.paginatedUsers.items || []
+  const totalUsers = data?.paginatedUsers.totalCount || 0
+  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE))
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user: any) => {
-      const fullName = `${user.profile?.firstName || ''} ${
-        user.profile?.lastName || ''
-      }`.toLowerCase()
-      const matchesSearch =
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fullName.includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, roleFilter])
 
-      const matchesRole = !roleFilter || user.role === roleFilter
-      return matchesSearch && matchesRole
-    })
-  }, [users, searchQuery, roleFilter])
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   const handleCreate = () => {
     setSelectedUser(null)
@@ -238,11 +252,19 @@ const UsersPage = () => {
         </Group>
 
         <CrudTable
-          data={filteredUsers}
+          data={users}
           columns={columns as any}
-          isLoading={loading}
+          isLoading={loading && !data}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+        />
+
+        <AdminPagination
+          label="users"
+          totalItems={totalUsers}
+          page={page}
+          onPageChange={setPage}
+          pageSize={PAGE_SIZE}
         />
 
         <UserModal

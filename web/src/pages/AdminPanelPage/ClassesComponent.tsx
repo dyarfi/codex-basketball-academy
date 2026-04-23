@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import {
   Container,
@@ -11,18 +11,20 @@ import {
   Loader,
   Alert,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import ClassModal from 'src/components/Modals/ClassModal'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
-  GET_CLASSES,
+  GET_PAGINATED_CLASSES,
   CREATE_CLASS,
   UPDATE_CLASS,
   DELETE_CLASS,
@@ -31,14 +33,24 @@ import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import { GET_COACHES } from 'src/graphql/users-queries'
 
 const ClassesPage = () => {
+  const PAGE_SIZE = 10
   const { toasts, success, error: toastError, removeToast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
   const [programFilter, setProgramFilter] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedClass, setSelectedClass] = useState<any>(null)
 
-  const { data, loading, error, refetch } = useQuery(GET_CLASSES)
+  const { data, loading, error, refetch } = useQuery(GET_PAGINATED_CLASSES, {
+    variables: {
+      page,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearchQuery || undefined,
+      programId: programFilter || undefined,
+    },
+  })
 
   // Fetch programs and coaches for the modal
   const { data: programsData, loading: programsLoading } =
@@ -80,21 +92,23 @@ const ClassesPage = () => {
     },
   })
 
-  const classes = data?.classes || []
+  const classes = data?.paginatedClasses.items || []
+  const totalClasses = data?.paginatedClasses.totalCount || 0
   const programs = programsData?.programs || []
   const coaches = useMemo(() => {
     return (coachesData?.users || []).filter((u: any) => u.role === 'COACH')
   }, [coachesData])
+  const totalPages = Math.max(1, Math.ceil(totalClasses / PAGE_SIZE))
 
-  const filteredClasses = useMemo(() => {
-    return classes.filter((cls: any) => {
-      const matchesSearch = cls.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-      const matchesProgram = !programFilter || cls.program.id === programFilter
-      return matchesSearch && matchesProgram
-    })
-  }, [classes, searchQuery, programFilter])
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, programFilter])
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   const programOptions = useMemo(() => {
     return programs.map((p: any) => ({ value: p.id, label: p.name }))
@@ -267,11 +281,19 @@ const ClassesPage = () => {
         </Group>
 
         <CrudTable
-          data={filteredClasses}
+          data={classes}
           columns={columns as any}
-          isLoading={loading}
+          isLoading={loading && !data}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+        />
+
+        <AdminPagination
+          label="classes"
+          totalItems={totalClasses}
+          page={page}
+          onPageChange={setPage}
+          pageSize={PAGE_SIZE}
         />
 
         <ClassModal

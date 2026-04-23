@@ -20,6 +20,38 @@ export const GET_USERS = gql`
   }
 `
 
+export const GET_PAGINATED_USERS = gql`
+  query GetPaginatedUsers(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $role: Role
+    $isActive: Boolean
+  ) {
+    paginatedUsers(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      role: $role
+      isActive: $isActive
+    ) {
+      items {
+        id
+        email
+        role
+        isActive
+        createdAt
+        updatedAt
+        profile {
+          firstName
+          lastName
+        }
+      }
+      totalCount
+    }
+  }
+`
+
 /**
  * Fetch a single user by ID
  */

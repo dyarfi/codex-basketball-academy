@@ -2,8 +2,12 @@ import { useState } from 'react'
 
 import { Link } from '@redwoodjs/router'
 
+import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useAppTheme } from 'src/providers/ThemeProvider'
+
 const HomePage = () => {
   const [testimonialIndex, setTestimonialIndex] = useState(0)
+  const { isDark } = useAppTheme()
 
   const testimonials = [
     {
@@ -33,25 +37,42 @@ const HomePage = () => {
     { level: 'Elite', description: 'Professional prep', icon: '⭐' },
   ]
 
+  const pageClass = isDark ? 'bg-slate-950 text-slate-100' : 'bg-white text-gray-900'
+  const navClass = isDark
+    ? 'sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 shadow-sm backdrop-blur'
+    : 'sticky top-0 z-50 bg-white shadow-sm'
+  const mutedTextClass = isDark ? 'text-slate-300' : 'text-gray-600'
+  const headingClass = isDark ? 'text-slate-50' : 'text-gray-900'
+  const cardClass = isDark
+    ? 'border border-slate-800 bg-slate-900 shadow-lg'
+    : 'bg-white shadow hover:shadow-lg'
+  const sectionAltClass = isDark ? 'bg-slate-900' : 'bg-gray-50'
+  const softAltClass = isDark ? 'bg-slate-900/60' : 'bg-blue-50'
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen ${pageClass}`}>
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white shadow-sm">
+      <nav className={navClass}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <Link to="/" className="text-2xl font-bold text-blue-600">
               🏀 Basketball Academy
             </Link>
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <Link
                 to="/programs"
-                className="text-gray-700 hover:text-blue-600 font-medium"
+                className={`font-medium hover:text-blue-600 ${
+                  isDark ? 'text-slate-200' : 'text-gray-700'
+                }`}
               >
                 Programs
               </Link>
               <Link
                 to="/login"
-                className="text-gray-700 hover:text-blue-600 font-medium"
+                className={`font-medium hover:text-blue-600 ${
+                  isDark ? 'text-slate-200' : 'text-gray-700'
+                }`}
               >
                 Login
               </Link>
@@ -95,22 +116,22 @@ const HomePage = () => {
         </section>
 
         {/* Programs Overview */}
-        <section className="py-16 px-4 bg-gray-50">
+        <section className={`py-16 px-4 ${sectionAltClass}`}>
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">
+            <h2 className={`text-4xl font-bold text-center mb-12 ${headingClass}`}>
               Our Programs
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {programs.map((program) => (
                 <div
                   key={program.level}
-                  className="bg-white rounded-lg shadow hover:shadow-lg transition p-6 text-center"
+                  className={`rounded-lg transition p-6 text-center ${cardClass}`}
                 >
                   <div className="text-4xl mb-4">{program.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className={`text-xl font-bold mb-2 ${headingClass}`}>
                     {program.level}
                   </h3>
-                  <p className="text-gray-600">{program.description}</p>
+                  <p className={mutedTextClass}>{program.description}</p>
                 </div>
               ))}
             </div>
@@ -128,16 +149,16 @@ const HomePage = () => {
         {/* Features Highlights */}
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">
+            <h2 className={`text-4xl font-bold text-center mb-12 ${headingClass}`}>
               Why Choose Us
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="text-5xl mb-4">👨‍🏫</div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
+                <h3 className={`text-xl font-bold mb-3 ${headingClass}`}>
                   Expert Coaches
                 </h3>
-                <p className="text-gray-600">
+                <p className={mutedTextClass}>
                   Learn from experienced basketball professionals with certified
                   coaching credentials and years of playing and teaching
                   experience.
@@ -145,20 +166,20 @@ const HomePage = () => {
               </div>
               <div className="text-center">
                 <div className="text-5xl mb-4">📊</div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
+                <h3 className={`text-xl font-bold mb-3 ${headingClass}`}>
                   Skill Tracking
                 </h3>
-                <p className="text-gray-600">
+                <p className={mutedTextClass}>
                   Monitor your progress with detailed skill assessments, player
                   statistics, and personalized feedback from your coaches.
                 </p>
               </div>
               <div className="text-center">
                 <div className="text-5xl mb-4">🤝</div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
+                <h3 className={`text-xl font-bold mb-3 ${headingClass}`}>
                   Community
                 </h3>
-                <p className="text-gray-600">
+                <p className={mutedTextClass}>
                   Join a vibrant community of athletes at all levels, make
                   friends, and grow together as basketball enthusiasts.
                 </p>
@@ -168,9 +189,9 @@ const HomePage = () => {
         </section>
 
         {/* How It Works */}
-        <section className="py-16 px-4 bg-blue-50">
+        <section className={`py-16 px-4 ${softAltClass}`}>
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">
+            <h2 className={`text-4xl font-bold text-center mb-12 ${headingClass}`}>
               How It Works
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -200,10 +221,10 @@ const HomePage = () => {
                   <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                     {step.number}
                   </div>
-                  <h3 className="font-bold text-lg mb-2 text-gray-900">
+                  <h3 className={`font-bold text-lg mb-2 ${headingClass}`}>
                     {step.title}
                   </h3>
-                  <p className="text-gray-600 text-sm">{step.description}</p>
+                  <p className={`text-sm ${mutedTextClass}`}>{step.description}</p>
                 </div>
               ))}
             </div>
@@ -213,21 +234,21 @@ const HomePage = () => {
         {/* Testimonials */}
         <section className="py-16 px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">
+            <h2 className={`text-4xl font-bold text-center mb-12 ${headingClass}`}>
               What Our Members Say
             </h2>
-            <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className={`rounded-lg p-8 ${cardClass}`}>
               <div className="text-center">
                 <div className="text-5xl mb-4">
                   {testimonials[testimonialIndex].image}
                 </div>
-                <blockquote className="text-xl text-gray-700 mb-4 italic">
+                <blockquote className={`mb-4 italic text-xl ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                   "{testimonials[testimonialIndex].text}"
                 </blockquote>
-                <p className="font-bold text-gray-900">
+                <p className={`font-bold ${headingClass}`}>
                   {testimonials[testimonialIndex].name}
                 </p>
-                <p className="text-gray-600 text-sm">
+                <p className={`text-sm ${mutedTextClass}`}>
                   {testimonials[testimonialIndex].role}
                 </p>
               </div>

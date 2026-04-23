@@ -12,7 +12,7 @@ import {
   Button,
   Badge,
 } from '@mantine/core'
-import { IconDownload, IconAlertCircle } from '@tabler/icons-react'
+import { DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import {
   LineChart,
   Line,
@@ -27,12 +27,13 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ComposedChart,
 } from 'recharts'
+import gql from 'graphql-tag'
 
 import { useQuery } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const GET_REPORT_DATA = gql`
   query GetReportData {
@@ -102,6 +103,15 @@ const ReportsPage = () => {
   const { data, loading, error } = useQuery<{ GetReportData: ReportData }>(
     GET_REPORT_DATA
   )
+  const { isDark } = useAppTheme()
+  const cardClass = isDark
+    ? 'border border-slate-800 bg-slate-900 text-slate-100'
+    : 'border border-gray-200 bg-white text-gray-900'
+  const mutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
+  const mutedSoftClass = isDark ? 'text-slate-500' : 'text-gray-500'
+  const chartGridColor = isDark ? '#334155' : '#d1d5db'
+  const chartAxisColor = isDark ? '#cbd5e1' : '#475569'
+  const chartPrimary = isDark ? '#60a5fa' : '#0088FE'
 
   const reportData = data?.GetReportData
 
@@ -227,7 +237,7 @@ const ReportsPage = () => {
       <AdminLayout>
         <Container size="xl" py="xl">
           <Alert
-            icon={<IconAlertCircle size={16} />}
+            icon={<WarningCircle size={16} weight="bold" />}
             title="Error"
             color="red"
             className="mb-6"
@@ -247,7 +257,7 @@ const ReportsPage = () => {
             Reports & Analytics
           </Text>
           <Button
-            leftSection={<IconDownload size={16} />}
+            leftSection={<DownloadSimple size={16} weight="bold" />}
             onClick={handleExportData}
             variant="light"
           >
@@ -262,10 +272,10 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Total Revenue
                 </Text>
                 <Text size="xl" fw={700}>
@@ -283,10 +293,10 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Completed Payments
                 </Text>
                 <Text size="xl" fw={700}>
@@ -304,10 +314,10 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Pending Payments
                 </Text>
                 <Text size="xl" fw={700}>
@@ -327,10 +337,10 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Total Users
                 </Text>
                 <Text size="xl" fw={700}>
@@ -352,7 +362,7 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Text fw={600} mb="md">
                 Enrollment Trends
@@ -360,20 +370,20 @@ const ReportsPage = () => {
               {enrollmentTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={enrollmentTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
+                    <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
+                    <XAxis dataKey="month" stroke={chartAxisColor} />
+                    <YAxis stroke={chartAxisColor} />
                     <Tooltip />
                     <Line
                       type="monotone"
                       dataKey="enrollments"
-                      stroke="#0088FE"
+                      stroke={chartPrimary}
                       strokeWidth={2}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   No enrollment data available
                 </Text>
               )}
@@ -386,7 +396,7 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Text fw={600} mb="md">
                 Revenue Breakdown
@@ -415,7 +425,7 @@ const ReportsPage = () => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   No payment data available
                 </Text>
               )}
@@ -430,7 +440,7 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Text fw={600} mb="md">
                 Top Performing Programs
@@ -438,9 +448,9 @@ const ReportsPage = () => {
               {topPrograms.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={topPrograms}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
+                    <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke={chartAxisColor} />
+                    <YAxis stroke={chartAxisColor} />
                     <Tooltip />
                     <Legend />
                     <Bar
@@ -451,7 +461,7 @@ const ReportsPage = () => {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   No program data available
                 </Text>
               )}
@@ -464,7 +474,7 @@ const ReportsPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className="border border-gray-200"
+              className={cardClass}
             >
               <Text fw={600} mb="md">
                 User Distribution by Role
@@ -491,7 +501,7 @@ const ReportsPage = () => {
           shadow="sm"
           padding="lg"
           radius="md"
-          className="border border-gray-200"
+          className={cardClass}
         >
           <Text fw={600} mb="md">
             Summary Statistics
@@ -499,13 +509,13 @@ const ReportsPage = () => {
           <Grid gutter="md">
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Total Programs
                 </Text>
                 <Text size="lg" fw={700}>
                   {reportData?.programs?.length || 0}
                 </Text>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" className={mutedSoftClass}>
                   {reportData?.programs?.filter((p) => p.isActive).length || 0}{' '}
                   active
                 </Text>
@@ -513,33 +523,33 @@ const ReportsPage = () => {
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Total Enrollments
                 </Text>
                 <Text size="lg" fw={700}>
                   {reportData?.enrollments?.length || 0}
                 </Text>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" className={mutedSoftClass}>
                   Across all programs
                 </Text>
               </Stack>
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Total Classes
                 </Text>
                 <Text size="lg" fw={700}>
                   {reportData?.classes?.length || 0}
                 </Text>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" className={mutedSoftClass}>
                   Active classes
                 </Text>
               </Stack>
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
               <Stack gap="xs">
-                <Text size="sm" className="text-gray-600">
+                <Text size="sm" className={mutedClass}>
                   Payment Success Rate
                 </Text>
                 <Text size="lg" fw={700}>
@@ -554,7 +564,7 @@ const ReportsPage = () => {
                     : 0}
                   %
                 </Text>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" className={mutedSoftClass}>
                   Completed transactions
                 </Text>
               </Stack>

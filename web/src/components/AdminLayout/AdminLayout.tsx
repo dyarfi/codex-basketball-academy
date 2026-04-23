@@ -1,4 +1,4 @@
-import React, { Profiler, ReactNode } from 'react'
+import React, { ReactNode } from 'react'
 
 import {
   AppShell,
@@ -10,18 +10,20 @@ import {
   Loader,
 } from '@mantine/core'
 import {
-  IconDashboard,
-  IconUsers,
-  IconPackage,
-  IconNotebook,
-  IconCash,
-  IconFileText,
-  IconLogout,
-} from '@tabler/icons-react'
+  Books,
+  ChartLineUp,
+  CalendarDots,
+  House,
+  Receipt,
+  SignOut,
+  Users,
+} from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
+import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -31,6 +33,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // const navigate = navigate();
   const location = useLocation()
   const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
+  const { isDark } = useAppTheme()
+  const user = currentUser as
+    | {
+        email?: string
+        role?: string
+        profile?: {
+          firstName?: string
+          lastName?: string
+        }
+      }
+    | null
+
+  const surfaceClass = isDark
+    ? 'border-slate-800 bg-slate-950 text-slate-100'
+    : 'border-slate-200 bg-white text-slate-900'
+  const panelClass = isDark
+    ? 'border-slate-800 bg-slate-900'
+    : 'border-slate-200 bg-slate-50'
+  const textMutedClass = isDark ? 'text-slate-400' : 'text-slate-500'
 
   if (isLoading) {
     return (
@@ -40,14 +61,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     )
   }
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (user?.role !== 'ADMIN') {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold text-red-600">
             Access Denied
           </h1>
-          <p className="mb-4 text-gray-600">
+          <p className={`mb-4 ${textMutedClass}`}>
             You don't have permission to access this page.
           </p>
           <button
@@ -71,32 +92,32 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navItems = [
     {
       label: 'Dashboard',
-      icon: <IconDashboard size={16} />,
+      icon: <House size={16} weight="bold" />,
       href: '/admin-panel',
     },
     {
       label: 'Users Management',
-      icon: <IconUsers size={16} />,
+      icon: <Users size={16} weight="bold" />,
       href: '/admin-panel/users',
     },
     {
       label: 'Programs Management',
-      icon: <IconPackage size={16} />,
+      icon: <Books size={16} weight="bold" />,
       href: '/admin-panel/programs',
     },
     {
       label: 'Classes Management',
-      icon: <IconNotebook size={16} />,
+      icon: <CalendarDots size={16} weight="bold" />,
       href: '/admin-panel/classes',
     },
     {
       label: 'Payments & Invoices',
-      icon: <IconCash size={16} />,
+      icon: <Receipt size={16} weight="bold" />,
       href: '/admin-panel/payments',
     },
     {
       label: 'Reports',
-      icon: <IconFileText size={16} />,
+      icon: <ChartLineUp size={16} weight="bold" />,
       href: '/admin-panel/reports',
     },
   ]
@@ -114,15 +135,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       }}
       header={{ height: 60 }}
     >
-      <AppShell.Navbar
-        p="md"
-        className="bg-gradient-to-b from-slate-900 to-slate-800"
-      >
+      <AppShell.Navbar p="md" className={`${surfaceClass} border-r`}>
         <div className="mb-4">
-          <Text size="lg" fw={700} className="mb-1 text-white">
+          <Text size="lg" fw={700} className="mb-1">
             Basketball Academy
           </Text>
-          <Text size="xs" className="text-slate-400">
+          <Text size="xs" className={textMutedClass}>
             Admin Dashboard
           </Text>
         </div>
@@ -133,25 +151,31 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <NavLink
                 key={item.href}
                 label={item.label}
-                icon={item.icon}
+                leftSection={item.icon}
                 active={isActive(item.href)}
                 onClick={() => navigate(item.href)}
-                className={`cursor-pointer ${
-                  isActive(item.href)
-                    ? 'bg-blue-500/20 text-blue-300'
-                    : 'text-slate-300 hover:bg-slate-700/50'
-                }`}
+                style={{
+                  borderRadius: '0.5rem',
+                  color: isActive(item.href)
+                    ? isDark
+                      ? '#93c5fd'
+                      : '#1d4ed8'
+                    : isDark
+                      ? '#cbd5e1'
+                      : '#475569',
+                  backgroundColor: isActive(item.href)
+                    ? isDark
+                      ? 'rgba(59, 130, 246, 0.2)'
+                      : '#eff6ff'
+                    : 'transparent',
+                }}
               />
             ))}
           </div>
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Header
-        p="xs"
-        pl={'lg'}
-        className="border-b border-gray-200 bg-white"
-      >
+      <AppShell.Header p="xs" pl={'lg'} className={`${surfaceClass} border-b`}>
         <Group justify="space-between" h="100%">
           <div className="flex items-center gap-3">
             <Text fw={600} size="lg">
@@ -160,14 +184,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
 
           <Group gap="lg">
-            <Text size="sm" className="text-gray-600">
-              {currentUser?.profile.firstName}
+            <ThemeToggle />
+            <Text size="sm" className={textMutedClass}>
+              {user?.profile?.firstName}
             </Text>
             <Menu position="bottom-end" shadow="md">
               <Menu.Target>
                 <Avatar
-                  name={currentUser?.email || 'Admin'}
-                  color="blue"
+                  name={user?.email || 'Admin'}
+                  color={isDark ? 'cyan' : 'blue'}
                   radius="xl"
                   className="cursor-pointer"
                 />
@@ -177,13 +202,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Menu.Item>
                   <Link to="/profile">
                     <Text size="sm" fw={500}>
-                      {currentUser?.email}
+                      {user?.email}
                     </Text>
                   </Link>
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
-                  leftSection={<IconLogout size={14} />}
+                  leftSection={<SignOut size={14} weight="bold" />}
                   onClick={handleLogout}
                   color="red"
                 >
@@ -195,7 +220,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Main className="bg-gray-50">{children}</AppShell.Main>
+      <AppShell.Main className={panelClass}>{children}</AppShell.Main>
     </AppShell>
   )
 }

@@ -20,6 +20,11 @@ export const schema = gql`
     classesAsTutor: [Class]!
   }
 
+  type PaginatedUsers {
+    items: [User!]!
+    totalCount: Int!
+  }
+
   enum Role {
     ADMIN
     COACH
@@ -31,6 +36,13 @@ export const schema = gql`
   type Query {
     users: [User!]! @requireAuth
     user(id: String!): User @requireAuth
+    paginatedUsers(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      role: Role
+      isActive: Boolean
+    ): PaginatedUsers! @requireAuth
   }
 
   input CreateUserInput {
