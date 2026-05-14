@@ -1,13 +1,9 @@
 import React from 'react'
-import { AdminLayout } from 'src/components/AdminLayout'
-import { AttendanceComponent } from 'src/components/AdminLayout/AttendanceComponent'
+
+import { AttendanceComponent } from 'src/pages/AdminPanelPage/AttendanceComponent'
 
 const AdminAttendancePage = () => {
-  return (
-    <AdminLayout>
-      <AttendanceComponent />
-    </AdminLayout>
-  )
+  return <AttendanceComponent />
 }
 
 export default AdminAttendancePage

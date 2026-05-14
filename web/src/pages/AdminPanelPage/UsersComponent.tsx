@@ -156,35 +156,37 @@ const UsersPage = () => {
     {
       key: 'profile',
       header: 'Name',
-      render: (val: any) => (
+      render: (val: any, user: any) => (
         <Group>
           <Text size="sm">
             {val?.firstName} {val?.lastName}
           </Text>
-          <ActionIcon
-            size="sm"
-            onClick={() => {
-              setSelectedUser(val)
-            }}
-          >
-            <PDFDownloadLink
-              document={
-                <Document>
-                  <Page>
-                    <TextPdf>First Name: {val?.firstName}</TextPdf>
-                    <TextPdf>Last Name: {val?.lastName}</TextPdf>
-                    <TextPdf>Birthdate: {val?.dateOfBirth}</TextPdf>
-                    <TextPdf>Position: {val?.position}</TextPdf>
-                    <TextPdf>Number:{val?.jerseyNumber}</TextPdf>
-                    <TextPdf>JSON:{JSON.stringify(val)}</TextPdf>
-                  </Page>
-                </Document>
-              }
-              fileName={`${val?.firstName}-${val?.dateOfBirth}.pdf`}
+          {user.role === 'PLAYER' && (
+            <ActionIcon
+              size="sm"
+              onClick={() => {
+                setSelectedUser(val)
+              }}
             >
-              <IconCloudDownload size="14" />
-            </PDFDownloadLink>
-          </ActionIcon>
+              <PDFDownloadLink
+                document={
+                  <Document>
+                    <Page>
+                      <TextPdf>First Name: {val?.firstName}</TextPdf>
+                      <TextPdf>Last Name: {val?.lastName}</TextPdf>
+                      <TextPdf>Birthdate: {val?.dateOfBirth}</TextPdf>
+                      <TextPdf>Position: {val?.position}</TextPdf>
+                      <TextPdf>Number:{val?.jerseyNumber}</TextPdf>
+                      <TextPdf>JSON:{JSON.stringify(val)}</TextPdf>
+                    </Page>
+                  </Document>
+                }
+                fileName={`${val?.firstName}-${val?.dateOfBirth}.pdf`}
+              >
+                <IconCloudDownload size="14" />
+              </PDFDownloadLink>
+            </ActionIcon>
+          )}
         </Group>
       ),
     },

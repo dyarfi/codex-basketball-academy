@@ -11,7 +11,13 @@ import {
   Loader,
   Alert,
 } from '@mantine/core'
-import { Books, CalendarDots, Receipt, Users, WarningCircle } from '@phosphor-icons/react'
+import {
+  Books,
+  CalendarDots,
+  Receipt,
+  Users,
+  WarningCircle,
+} from '@phosphor-icons/react'
 import gql from 'graphql-tag'
 
 import { useQuery } from '@redwoodjs/web'
@@ -57,7 +63,7 @@ const GET_DASHBOARD_STATS = gql`
   }
 `
 
-interface DashboardStats {
+type DashboardStats = {
   users: Array<{ id: string; role: string; isActive: boolean }>
   programs: Array<{ id: string; isActive: boolean }>
   classes: Array<{ id: string; isActive: boolean }>
@@ -83,7 +89,6 @@ const AdminDashboardPage = () => {
   const statIconClass = (color: string) =>
     isDark ? `${color} opacity-90` : color
 
-  console.log({ data, loading, error })
   if (loading) {
     return (
       <AdminLayout>
@@ -113,7 +118,7 @@ const AdminDashboardPage = () => {
     )
   }
 
-  const stats: DashboardStats | undefined = data?.GetDashboardStats
+  const stats: DashboardStats | undefined = data
 
   if (!stats) {
     return (
@@ -182,17 +187,16 @@ const AdminDashboardPage = () => {
         <Grid gutter="md" mb="xl">
           {/* Users Card */}
           <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Total Users
                 </Text>
-                <Users size={24} weight="bold" className={statIconClass('text-blue-500')} />
+                <Users
+                  size={24}
+                  weight="bold"
+                  className={statIconClass('text-blue-500')}
+                />
               </Group>
               <Text size="xl" fw={700}>
                 {totalUsers}
@@ -205,17 +209,16 @@ const AdminDashboardPage = () => {
 
           {/* Programs Card */}
           <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Programs
                 </Text>
-                <Books size={24} weight="bold" className={statIconClass('text-green-500')} />
+                <Books
+                  size={24}
+                  weight="bold"
+                  className={statIconClass('text-green-500')}
+                />
               </Group>
               <Text size="xl" fw={700}>
                 {activePrograms}
@@ -228,17 +231,16 @@ const AdminDashboardPage = () => {
 
           {/* Classes Card */}
           <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Classes
                 </Text>
-                <CalendarDots size={24} weight="bold" className={statIconClass('text-purple-500')} />
+                <CalendarDots
+                  size={24}
+                  weight="bold"
+                  className={statIconClass('text-purple-500')}
+                />
               </Group>
               <Text size="xl" fw={700}>
                 {activeClasses}
@@ -251,17 +253,16 @@ const AdminDashboardPage = () => {
 
           {/* Revenue Card */}
           <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Revenue
                 </Text>
-                <Receipt size={24} weight="bold" className={statIconClass('text-yellow-500')} />
+                <Receipt
+                  size={24}
+                  weight="bold"
+                  className={statIconClass('text-yellow-500')}
+                />
               </Group>
               <Text size="xl" fw={700}>
                 ${totalPaymentsAmount.toFixed(2)}
@@ -278,7 +279,11 @@ const AdminDashboardPage = () => {
               shadow="sm"
               padding="lg"
               radius="md"
-              className={isDark ? 'border border-orange-900 bg-slate-900 text-slate-100' : 'border border-orange-200 bg-white'}
+              className={
+                isDark
+                  ? 'border border-orange-900 bg-slate-900 text-slate-100'
+                  : 'border border-orange-200 bg-white'
+              }
             >
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -299,12 +304,7 @@ const AdminDashboardPage = () => {
 
           {/* Total Revenue Card */}
           <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Total Due
@@ -321,12 +321,7 @@ const AdminDashboardPage = () => {
         {/* User Breakdown */}
         <Grid gutter="md" mb="xl">
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 User Breakdown
               </Text>
@@ -353,12 +348,7 @@ const AdminDashboardPage = () => {
 
           {/* Recent Enrollments */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 Recent Enrollments
               </Text>

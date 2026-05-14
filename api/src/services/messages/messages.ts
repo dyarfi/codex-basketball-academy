@@ -19,6 +19,9 @@ export const message: QueryResolvers['message'] = ({ id }) => {
 export const createMessage: MutationResolvers['createMessage'] = ({
   input,
 }) => {
+  input.recipientId = input.recipientId || '0'
+  input.senderId = input.senderId || '0'
+  input.isRead = input.isRead || false
   return db.message.create({
     data: input,
   })

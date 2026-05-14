@@ -1,12 +1,7 @@
-import { AdminLayout } from 'src/components/AdminLayout/AdminLayout'
-import SettingsComponent from 'src/components/AdminLayout/SettingsComponent'
+import SettingsComponent from 'src/pages/AdminPanelPage/SettingsComponent'
 
 const AdminSettingsPage = () => {
-  return (
-    <AdminLayout>
-      <SettingsComponent />
-    </AdminLayout>
-  )
+  return <SettingsComponent />
 }
 
 export default AdminSettingsPage

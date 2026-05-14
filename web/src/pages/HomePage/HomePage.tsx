@@ -1,8 +1,11 @@
 import { useState } from 'react'
 
+import { Container } from '@mantine/core'
+
 import { Link } from '@redwoodjs/router'
 
 import Footer from 'src/components/Footer/Footer'
+import { ContactForm } from 'src/components/Forms/ContactForm'
 import Navigation from 'src/components/Navigation/Navigation'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
@@ -262,6 +265,13 @@ const HomePage = () => {
               Sign Up Now
             </Link>
           </div>
+        </section>
+
+        {/* Contact Section */}
+        <section className="bg-blue-600 px-4 py-16 text-white">
+          <Container>
+            <ContactForm />
+          </Container>
         </section>
 
         {/* Footer */}

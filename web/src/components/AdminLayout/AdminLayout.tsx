@@ -19,6 +19,8 @@ import {
   Users,
   IdentificationCard,
   GearSix,
+  SpeakerHifiIcon,
+  ChatCircleIcon,
 } from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
@@ -128,6 +130,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       label: 'Payments & Invoices',
       icon: <Receipt size={16} weight="bold" />,
       href: '/admin-panel/payments',
+    },
+    {
+      label: 'Announcements',
+      icon: <SpeakerHifiIcon size={16} weight="bold" />,
+      href: '/admin-panel/announcements',
+    },
+    {
+      label: 'Messages',
+      icon: <ChatCircleIcon size={16} weight="bold" />,
+      href: '/admin-panel/messages',
     },
     {
       label: 'Attendance',
