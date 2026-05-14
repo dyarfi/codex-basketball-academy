@@ -52,6 +52,11 @@ export const GET_PAGINATED_PROGRAMS = gql`
         updatedAt
       }
       totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `

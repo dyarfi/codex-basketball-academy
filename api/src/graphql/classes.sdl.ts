@@ -24,6 +24,11 @@ export const schema = gql`
   type PaginatedClasses {
     items: [Class!]!
     totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
   }
 
   type Query {

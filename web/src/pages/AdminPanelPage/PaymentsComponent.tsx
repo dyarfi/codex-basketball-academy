@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import {
   Container,
@@ -25,6 +25,7 @@ import {
   IconFileText,
 } from '@tabler/icons-react'
 
+import { routes, useParams } from '@redwoodjs/router'
 import { useQuery } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
@@ -70,62 +71,72 @@ interface Invoice {
   createdAt: string
 }
 
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
 const PaymentsPage = () => {
   const PAGE_SIZE = 10
+  const { page = 1, search, status } = useParams()
+  const initialPage = getPageFromParam(page)
   const [activeTab, setActiveTab] = useState<string | null>('invoices')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
-  const [statusFilter, setStatusFilter] = useState<string | null>(null)
-  const [invoicePage, setInvoicePage] = useState(1)
-  const [paymentPage, setPaymentPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState<string | null>(
+    typeof status === 'string' ? status : null
+  )
+  const [invoicePage, setInvoicePage] = useState(initialPage)
+  const [paymentPage, setPaymentPage] = useState(initialPage)
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null)
   const [showViewModal, setShowViewModal] = useState(false)
-
+  const variablesPayment = {
+    page: paymentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter || undefined,
+  }
   const paymentsQuery = useQuery<{
-    paginatedPayments: { items: Payment[]; totalCount: number }
+    paginatedPayments: {
+      items: Payment[]
+      totalCount: number
+      totalPages: number
+    }
   }>(GET_PAGINATED_PAYMENTS, {
-    variables: {
-      page: paymentPage,
-      pageSize: PAGE_SIZE,
-      search: debouncedSearchQuery || undefined,
-      status: statusFilter || undefined,
-    },
+    variables: variablesPayment,
+    refetchQueries: [{ query: GET_PAGINATED_PAYMENTS }],
+    awaitRefetchQueries: true,
   })
+  const variablesInvoice = {
+    page: invoicePage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter || undefined,
+  }
   const invoicesQuery = useQuery<{
-    paginatedInvoices: { items: Invoice[]; totalCount: number }
+    paginatedInvoices: {
+      items: Invoice[]
+      totalCount: number
+      totalPages: number
+    }
   }>(GET_PAGINATED_INVOICES, {
-    variables: {
-      page: invoicePage,
-      pageSize: PAGE_SIZE,
-      search: debouncedSearchQuery || undefined,
-      status: statusFilter || undefined,
-    },
+    variables: variablesInvoice,
   })
 
-  const payments = paymentsQuery.data?.paginatedPayments.items || []
-  const totalPayments = paymentsQuery.data?.paginatedPayments.totalCount || 0
-  const invoices = invoicesQuery.data?.paginatedInvoices.items || []
-  const totalInvoices = invoicesQuery.data?.paginatedInvoices.totalCount || 0
+  const payments = paymentsQuery.data?.paginatedPayments?.items || []
+  const totalPayments = paymentsQuery.data?.paginatedPayments?.totalCount || 0
+  const invoices = invoicesQuery.data?.paginatedInvoices?.items || []
+  const totalInvoices = invoicesQuery.data?.paginatedInvoices?.totalCount || 0
 
-  const totalInvoicePages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE))
-  const totalPaymentPages = Math.max(1, Math.ceil(totalPayments / PAGE_SIZE))
-
-  useEffect(() => {
-    setInvoicePage(1)
-    setPaymentPage(1)
-  }, [searchQuery, statusFilter])
-
-  useEffect(() => {
-    if (invoicePage > totalInvoicePages) {
-      setInvoicePage(totalInvoicePages)
-    }
-  }, [invoicePage, totalInvoicePages])
-
-  useEffect(() => {
-    if (paymentPage > totalPaymentPages) {
-      setPaymentPage(totalPaymentPages)
-    }
-  }, [paymentPage, totalPaymentPages])
+  const totalInvoicePages =
+    invoicesQuery.data?.paginatedInvoices?.totalPages ??
+    Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE))
+  const totalPaymentPages =
+    paymentsQuery.data?.paginatedPayments?.totalPages ??
+    Math.max(1, Math.ceil(totalPayments / PAGE_SIZE))
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -148,7 +159,10 @@ const PaymentsPage = () => {
     return new Date(dueDate) < new Date()
   }
 
-  if ((paymentsQuery.loading && !paymentsQuery.data) || (invoicesQuery.loading && !invoicesQuery.data)) {
+  if (
+    (paymentsQuery.loading && !paymentsQuery.data) ||
+    (invoicesQuery.loading && !invoicesQuery.data)
+  ) {
     return (
       <AdminLayout>
         <Container size="xl" py="xl">
@@ -284,6 +298,12 @@ const PaymentsPage = () => {
               label="invoices"
               totalItems={totalInvoices}
               page={invoicePage}
+              totalPages={totalInvoicePages}
+              route={routes.adminPayments}
+              query={{
+                search: debouncedSearchQuery || undefined,
+                status: statusFilter || undefined,
+              }}
               onPageChange={setInvoicePage}
               pageSize={PAGE_SIZE}
             />
@@ -372,6 +392,12 @@ const PaymentsPage = () => {
               label="payments"
               totalItems={totalPayments}
               page={paymentPage}
+              totalPages={totalPaymentPages}
+              route={routes.adminPayments}
+              query={{
+                search: debouncedSearchQuery || undefined,
+                status: statusFilter || undefined,
+              }}
               onPageChange={setPaymentPage}
               pageSize={PAGE_SIZE}
             />

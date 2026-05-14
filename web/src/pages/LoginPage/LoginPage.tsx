@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const LoginPage = () => {
@@ -11,19 +12,22 @@ const LoginPage = () => {
     isAuthenticated,
     logIn,
     loading: authLoading,
-    currentUser,
+    // currentUser,
   } = useAuth()
   const { isDark } = useAppTheme()
+  const { getSetting, loading } = useSettings()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const siteName = getSetting('site_name', 'Basketball Academy')
+  const siteLogo = getSetting('site_logo', '🏀')
 
-  useEffect(() => {
-    if (currentUser && isAuthenticated) {
-      navigate(routes.dashboard(), { replace: true })
-    }
-  }, [currentUser, isAuthenticated])
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     navigate(routes.dashboard(), { replace: true })
+  //   }
+  // }, [isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,13 +64,15 @@ const LoginPage = () => {
           <div className="mb-4 flex justify-end">
             <ThemeToggle />
           </div>
-          <h2
-            className={`mt-6 text-center text-4xl font-extrabold tracking-tight ${
-              isDark ? 'text-slate-50' : 'text-gray-900'
-            }`}
-          >
-            James Basketball Academy
-          </h2>
+          {!loading && (
+            <h3
+              className={`mt-6 text-center text-4xl font-extrabold tracking-tight ${
+                isDark ? 'text-slate-50' : 'text-gray-700'
+              }`}
+            >
+              {siteLogo} {siteName}
+            </h3>
+          )}
           <p
             className={`mt-2 text-center text-sm ${
               isDark ? 'text-slate-400' : 'text-gray-600'
@@ -78,14 +84,18 @@ const LoginPage = () => {
 
         <form
           className={`mt-8 space-y-6 rounded-xl p-8 shadow-lg ${
-            isDark ? 'border border-slate-800 bg-slate-900' : 'border border-gray-100 bg-white'
+            isDark
+              ? 'border border-slate-800 bg-slate-900'
+              : 'border border-gray-100 bg-white'
           }`}
           onSubmit={handleSubmit}
         >
           {error && (
             <div
               className={`rounded-md border p-4 ${
-                isDark ? 'border-red-900 bg-red-950/40' : 'border-red-100 bg-red-50'
+                isDark
+                  ? 'border-red-900 bg-red-950/40'
+                  : 'border-red-100 bg-red-50'
               }`}
             >
               <p

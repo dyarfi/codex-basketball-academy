@@ -683,6 +683,217 @@ export async function seed() {
       },
     })
 
+    // Create Site Settings
+    console.log('Creating site settings...')
+    await db.siteSetting.deleteMany({})
+    
+    // Site Identity Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'site_name',
+        label: 'Site Name',
+        group: 'site_identity',
+        value: 'Basketball Academy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'site_logo',
+        label: 'Site Logo URL',
+        group: 'site_identity',
+        value: '🏀',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'site_tagline',
+        label: 'Site Tagline',
+        group: 'site_identity',
+        value: 'Excellence in Basketball Training',
+        valueType: 'text',
+      },
+    })
+
+    // Header Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'header_title',
+        label: 'Header Title',
+        group: 'header',
+        value: 'Basketball Academy Admin',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'header_subtitle',
+        label: 'Header Subtitle',
+        group: 'header',
+        value: 'Admin Dashboard',
+        valueType: 'text',
+      },
+    })
+
+    // Footer Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_text',
+        label: 'Footer Text',
+        group: 'footer',
+        value: '© 2026 Basketball Academy. All rights reserved.',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_address',
+        label: 'Footer Address',
+        group: 'footer',
+        value: '123 Academy Way, Springfield, IL 62701',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_phone',
+        label: 'Footer Phone',
+        group: 'footer',
+        value: '+1 (555) 123-4567',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_email',
+        label: 'Footer Email',
+        group: 'footer',
+        value: 'info@basketballacademy.com',
+        valueType: 'text',
+      },
+    })
+
+    // Content Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'homepage_welcome_title',
+        label: 'Homepage Welcome Title',
+        group: 'content',
+        value: 'Welcome to Basketball Academy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'homepage_welcome_text',
+        label: 'Homepage Welcome Text',
+        group: 'content',
+        value: 'Develop your basketball skills with our expert coaches and state-of-the-art facilities.',
+        valueType: 'text',
+      },
+    })
+
+    // Contact Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_phone',
+        label: 'Contact Phone Number',
+        group: 'contact',
+        value: '+1 (555) 123-4567',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_email',
+        label: 'Contact Email',
+        group: 'contact',
+        value: 'info@basketballacademy.com',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_address',
+        label: 'Contact Address',
+        group: 'contact',
+        value: '123 Academy Way, Springfield, IL 62701, USA',
+        valueType: 'text',
+      },
+    })
+
+    // Social Media Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'facebook_url',
+        label: 'Facebook URL',
+        group: 'social_media',
+        value: 'https://facebook.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'twitter_url',
+        label: 'Twitter URL',
+        group: 'social_media',
+        value: 'https://twitter.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'instagram_url',
+        label: 'Instagram URL',
+        group: 'social_media',
+        value: 'https://instagram.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    // Feature Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_enrollment',
+        label: 'Enable Enrollment',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_payments',
+        label: 'Enable Payments',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_announcements',
+        label: 'Enable Announcements',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
     console.log('✅ Database seeded successfully!')
     console.log(`Created:`)
     console.log(`  - 1 Admin user`)
@@ -701,6 +912,7 @@ export async function seed() {
     console.log(`  - 5 Player Stats`)
     console.log(`  - 2 Announcements`)
     console.log(`  - 2 Messages`)
+    console.log(`  - 23 Site Settings`)
   } catch (error) {
     console.error('🔥 Error seeding database:', error)
     throw error

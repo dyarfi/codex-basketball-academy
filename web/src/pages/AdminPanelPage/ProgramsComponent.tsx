@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import {
   Container,
@@ -14,6 +14,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
+import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
@@ -30,24 +31,37 @@ import {
   DELETE_PROGRAM,
 } from 'src/graphql/programs-queries'
 
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
 const ProgramsPage = () => {
   const PAGE_SIZE = 10
+  const { page = 1, search, level } = useParams()
   const { toasts, success, error: toastError, removeToast } = useToast()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
-  const [levelFilter, setLevelFilter] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [levelFilter, setLevelFilter] = useState<string | null>(
+    typeof level === 'string' ? level : null
+  )
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedProgram, setSelectedProgram] = useState<any>(null)
 
+  const variables = {
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    level: levelFilter || undefined,
+  }
+
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_PROGRAMS, {
-    variables: {
-      page,
-      pageSize: PAGE_SIZE,
-      search: debouncedSearchQuery || undefined,
-      level: levelFilter || undefined,
-    },
+    variables,
   })
 
   const [createProgram, { loading: isCreating }] = useMutation(CREATE_PROGRAM, {
@@ -59,6 +73,8 @@ const ProgramsPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to create program')
     },
+    refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
+    awaitRefetchQueries: true,
   })
 
   const [updateProgram, { loading: isUpdating }] = useMutation(UPDATE_PROGRAM, {
@@ -71,6 +87,8 @@ const ProgramsPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to update program')
     },
+    refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
+    awaitRefetchQueries: true,
   })
 
   const [deleteProgram, { loading: isDeleting }] = useMutation(DELETE_PROGRAM, {
@@ -83,21 +101,15 @@ const ProgramsPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to delete program')
     },
+    refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
+    awaitRefetchQueries: true,
   })
 
-  const programs = data?.paginatedPrograms.items || []
-  const totalPrograms = data?.paginatedPrograms.totalCount || 0
-  const totalPages = Math.max(1, Math.ceil(totalPrograms / PAGE_SIZE))
-
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, levelFilter])
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
+  const programs = data?.paginatedPrograms?.items || []
+  const totalPrograms = data?.paginatedPrograms?.totalCount || 0
+  const totalPages =
+    data?.paginatedPrograms?.totalPages ??
+    Math.max(1, Math.ceil(totalPrograms / PAGE_SIZE))
 
   const handleCreate = () => {
     setSelectedProgram(null)
@@ -260,8 +272,14 @@ const ProgramsPage = () => {
         <AdminPagination
           label="programs"
           totalItems={totalPrograms}
-          page={page}
-          onPageChange={setPage}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.programs}
+          query={{
+            search: debouncedSearchQuery || undefined,
+            level: levelFilter || undefined,
+          }}
+          onPageChange={setCurrentPage}
           pageSize={PAGE_SIZE}
         />
 

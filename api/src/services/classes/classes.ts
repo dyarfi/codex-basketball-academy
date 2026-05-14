@@ -77,23 +77,27 @@ export const paginatedClasses: QueryResolvers['paginatedClasses'] = async ({
 
   const where: Prisma.ClassWhereInput | undefined =
     conditions.length > 0 ? { AND: conditions } : undefined
-  const safePage = Math.max(1, page)
   const safePageSize = Math.max(1, pageSize)
-  const skip = (safePage - 1) * safePageSize
+  const totalCount = await db.class.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
 
-  const [items, totalCount] = await Promise.all([
-    db.class.findMany({
-      where,
-      orderBy: { startDate: 'desc' },
-      skip,
-      take: safePageSize,
-    }),
-    db.class.count({ where }),
-  ])
+  const items = await db.class.findMany({
+    where,
+    orderBy: [{ startDate: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
 
   return {
     items,
     totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
   }
 }
 

@@ -2,46 +2,47 @@ import { useEffect } from 'react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
 
+import Footer from 'src/components/Footer/Footer'
 import { useAuth } from 'src/auth'
 import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
 import { useAppTheme } from 'src/providers/ThemeProvider'
+import { useSettings } from 'src/providers/SettingsProvider'
 
 const DashboardPage = () => {
-  const {
-    currentUser,
-    loading: isLoading,
-    logOut,
-    isAuthenticated,
-  } = useAuth()
+  const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
   const { isDark } = useAppTheme()
+  const { getSetting, loading: settingsLoading } = useSettings()
+
+  const siteName = getSetting('site_name', 'Basketball Academy')
+
   const headingClass = isDark ? 'text-slate-50' : 'text-gray-900'
   const mutedClass = isDark ? 'text-slate-400' : 'text-gray-600'
-  const user = currentUser as
-    | {
-        email?: string
-        role?: string
-        profile?: {
-          firstName?: string
-          lastName?: string
-        }
-      }
-    | null
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate(routes.dashboard(), { replace: true })
+  const user = currentUser as {
+    email?: string
+    role?: string
+    profile?: {
+      firstName?: string
+      lastName?: string
     }
-  }, [isAuthenticated])
+  } | null
 
-  const handleLogout = () => {
-    logOut()
-    return navigate(routes.login(), { replace: true })
-  }
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     navigate(routes.login(), { replace: true })
+  //   }
+  // }, [isAuthenticated])
+
+  // const handleLogout = () => {
+  //   logOut()
+  //   return navigate(routes.login(), { replace: true })
+  // }
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className={`text-xl ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+        <div
+          className={`text-xl ${isDark ? 'text-slate-300' : 'text-gray-600'}`}
+        >
           Loading...
         </div>
       </div>
@@ -62,16 +63,18 @@ const DashboardPage = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <h1 className={`text-2xl font-bold ${headingClass}`}>
-              Basketball Academy
+              {siteName}
             </h1>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <button
-                onClick={handleLogout}
-                className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-              >
-                Logout
-              </button>
+              <Link to="/auth/logout">
+                <button
+                  // onClick={handleLogout}
+                  className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -93,7 +96,9 @@ const DashboardPage = () => {
                 isDark ? 'bg-slate-800' : 'bg-gray-50'
               }`}
             >
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+              <p
+                className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}
+              >
                 Email
               </p>
               <p className={`text-lg font-semibold ${headingClass}`}>
@@ -105,7 +110,9 @@ const DashboardPage = () => {
                 isDark ? 'bg-slate-800' : 'bg-gray-50'
               }`}
             >
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+              <p
+                className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}
+              >
                 Role
               </p>
               <p className={`text-lg font-semibold capitalize ${headingClass}`}>
@@ -117,7 +124,9 @@ const DashboardPage = () => {
                 isDark ? 'bg-slate-800' : 'bg-gray-50'
               }`}
             >
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+              <p
+                className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}
+              >
                 Full Name
               </p>
               <p className={`text-lg font-semibold ${headingClass}`}>
@@ -160,6 +169,8 @@ const DashboardPage = () => {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

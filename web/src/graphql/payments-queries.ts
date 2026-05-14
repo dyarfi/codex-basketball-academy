@@ -30,6 +30,11 @@ export const GET_PAGINATED_PAYMENTS = gql`
         createdAt
       }
       totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `
@@ -66,6 +71,11 @@ export const GET_PAGINATED_INVOICES = gql`
         createdAt
       }
       totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import {
   Container,
@@ -10,10 +10,23 @@ import {
   Text,
   Loader,
   Alert,
+  ActionIcon,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text as TextPdf,
+} from '@react-pdf/renderer'
+import {
+  IconSearch,
+  IconPlus,
+  IconAlertCircle,
+  IconCloudDownload,
+} from '@tabler/icons-react'
 
+import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
@@ -29,24 +42,38 @@ import {
   DELETE_USER,
 } from 'src/graphql/users-queries'
 
+type RouteQuery = Record<string, boolean | number | string | null | undefined>
+type RouteBuilder = (params?: RouteQuery) => string
+
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
 const UsersPage = () => {
   const PAGE_SIZE = 10
+  const { page = 1, search, role } = useParams()
   const { toasts, success, error: toastError, removeToast } = useToast()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
-  const [roleFilter, setRoleFilter] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [roleFilter, setRoleFilter] = useState<string | null>(
+    typeof role === 'string' ? role : null
+  )
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
-
+  const variables = {
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    role: roleFilter || undefined,
+  }
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_USERS, {
-    variables: {
-      page,
-      pageSize: PAGE_SIZE,
-      search: debouncedSearchQuery || undefined,
-      role: roleFilter || undefined,
-    },
+    variables,
   })
 
   const [updateUser, { loading: isUpdating }] = useMutation(UPDATE_USER, {
@@ -59,6 +86,8 @@ const UsersPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to update user')
     },
+    refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
+    awaitRefetchQueries: true,
   })
 
   const [deleteUser, { loading: isDeleting }] = useMutation(DELETE_USER, {
@@ -71,21 +100,15 @@ const UsersPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to delete user')
     },
+    refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
+    awaitRefetchQueries: true,
   })
 
-  const users = data?.paginatedUsers.items || []
-  const totalUsers = data?.paginatedUsers.totalCount || 0
-  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE))
-
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, roleFilter])
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
+  const users = data?.paginatedUsers?.items || []
+  const totalUsers = data?.paginatedUsers?.totalCount || 0
+  const totalPages =
+    data?.paginatedUsers?.totalPages ??
+    Math.max(1, Math.ceil(totalUsers / PAGE_SIZE))
 
   const handleCreate = () => {
     setSelectedUser(null)
@@ -134,9 +157,35 @@ const UsersPage = () => {
       key: 'profile',
       header: 'Name',
       render: (val: any) => (
-        <Text size="sm">
-          {val?.firstName} {val?.lastName}
-        </Text>
+        <Group>
+          <Text size="sm">
+            {val?.firstName} {val?.lastName}
+          </Text>
+          <ActionIcon
+            size="sm"
+            onClick={() => {
+              setSelectedUser(val)
+            }}
+          >
+            <PDFDownloadLink
+              document={
+                <Document>
+                  <Page>
+                    <TextPdf>First Name: {val?.firstName}</TextPdf>
+                    <TextPdf>Last Name: {val?.lastName}</TextPdf>
+                    <TextPdf>Birthdate: {val?.dateOfBirth}</TextPdf>
+                    <TextPdf>Position: {val?.position}</TextPdf>
+                    <TextPdf>Number:{val?.jerseyNumber}</TextPdf>
+                    <TextPdf>JSON:{JSON.stringify(val)}</TextPdf>
+                  </Page>
+                </Document>
+              }
+              fileName={`${val?.firstName}-${val?.dateOfBirth}.pdf`}
+            >
+              <IconCloudDownload size="14" />
+            </PDFDownloadLink>
+          </ActionIcon>
+        </Group>
       ),
     },
     { key: 'email', header: 'Email' },
@@ -262,8 +311,14 @@ const UsersPage = () => {
         <AdminPagination
           label="users"
           totalItems={totalUsers}
-          page={page}
-          onPageChange={setPage}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.adminUsers as RouteBuilder}
+          query={{
+            search: debouncedSearchQuery || undefined,
+            role: roleFilter || undefined,
+          }}
+          onPageChange={setCurrentPage}
           pageSize={PAGE_SIZE}
         />
 

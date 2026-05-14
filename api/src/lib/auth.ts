@@ -67,12 +67,9 @@ export const requireAuth = ({ roles }: { roles?: string | string[] } = {}) => {
  * This is called by the `currentUser()` query in GraphQL.
  */
 export const getCurrentUser = async (session: Decoded) => {
-  // if (!session || typeof session.id !== 'number') {
-  if (!session || typeof session.id !== 'string') {
-    throw new Error('Invalid session')
+  if (!session || (!session.id && typeof session?.id !== 'string')) {
+    return null
   }
-
-  // console.log({ session })
 
   return await db.user.findUnique({
     where: { id: session.id },

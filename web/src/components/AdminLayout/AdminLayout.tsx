@@ -17,12 +17,16 @@ import {
   Receipt,
   SignOut,
   Users,
+  IdentificationCard,
+  GearSix,
 } from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
+import { useRoutePath } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 interface AdminLayoutProps {
@@ -31,19 +35,24 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // const navigate = navigate();
+  const routePath = useRoutePath()
+
   const location = useLocation()
   const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
   const { isDark } = useAppTheme()
-  const user = currentUser as
-    | {
-        email?: string
-        role?: string
-        profile?: {
-          firstName?: string
-          lastName?: string
-        }
-      }
-    | null
+  const { getSetting, loading: settingsLoading } = useSettings()
+
+  const siteName = getSetting('site_name', 'Basketball Academy')
+  const headerSubtitle = getSetting('header_subtitle', 'Admin Dashboard')
+
+  const user = currentUser as {
+    email?: string
+    role?: string
+    profile?: {
+      firstName?: string
+      lastName?: string
+    }
+  } | null
 
   const surfaceClass = isDark
     ? 'border-slate-800 bg-slate-950 text-slate-100'
@@ -82,12 +91,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     )
   }
 
-  const handleLogout = () => {
-    if (isAuthenticated) {
-      logOut()
-    }
-    return navigate(routes.login(), { replace: true })
-  }
+  // const handleLogout = () => {
+  //   if (isAuthenticated) {
+  //     logOut()
+  //   }
+  //   return navigate(routes.login(), { replace: true })
+  // }
 
   const navItems = [
     {
@@ -111,19 +120,34 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       href: '/admin-panel/classes',
     },
     {
+      label: 'Enrollments Management',
+      icon: <IdentificationCard size={16} weight="bold" />,
+      href: '/admin-panel/enrollments',
+    },
+    {
       label: 'Payments & Invoices',
       icon: <Receipt size={16} weight="bold" />,
       href: '/admin-panel/payments',
+    },
+    {
+      label: 'Attendance',
+      icon: <CalendarDots size={16} weight="bold" />,
+      href: '/admin-panel/attendances',
     },
     {
       label: 'Reports',
       icon: <ChartLineUp size={16} weight="bold" />,
       href: '/admin-panel/reports',
     },
+    {
+      label: 'Settings',
+      icon: <GearSix size={16} weight="bold" />,
+      href: '/admin-panel/settings',
+    },
   ]
 
   const isActive = (href: string) =>
-    location.pathname === href || location.pathname.startsWith(href + '/')
+    href !== '/admin-panel' && routePath?.startsWith(href)
 
   return (
     <AppShell
@@ -138,10 +162,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <AppShell.Navbar p="md" className={`${surfaceClass} border-r`}>
         <div className="mb-4">
           <Text size="lg" fw={700} className="mb-1">
-            Basketball Academy
+            {siteName}
           </Text>
           <Text size="xs" className={textMutedClass}>
-            Admin Dashboard
+            {headerSubtitle}
           </Text>
         </div>
 
@@ -179,7 +203,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <Group justify="space-between" h="100%">
           <div className="flex items-center gap-3">
             <Text fw={600} size="lg">
-              Basketball Academy Admin
+              {siteName} Admin
             </Text>
           </div>
 
@@ -209,10 +233,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Menu.Divider />
                 <Menu.Item
                   leftSection={<SignOut size={14} weight="bold" />}
-                  onClick={handleLogout}
                   color="red"
                 >
-                  Logout
+                  <Link to="/auth/logout">Logout</Link>
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>

@@ -23,6 +23,11 @@ export const schema = gql`
   type PaginatedUsers {
     items: [User!]!
     totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
   }
 
   enum Role {

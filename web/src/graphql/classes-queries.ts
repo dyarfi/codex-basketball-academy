@@ -78,6 +78,11 @@ export const GET_PAGINATED_CLASSES = gql`
         updatedAt
       }
       totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `
@@ -140,6 +145,37 @@ export const DELETE_CLASS = gql`
     deleteClass(id: $id) {
       id
       name
+    }
+  }
+`
+
+export const CLASSES_QUERY = gql`
+  query GetClasses {
+    classes {
+      id
+      name
+      description
+      scheduleDay
+      scheduleTime
+      capacity
+      currentEnrollment
+      isActive
+      startDate
+      endDate
+      program {
+        id
+        name
+      }
+      coach {
+        id
+        email
+        profile {
+          firstName
+          lastName
+        }
+      }
+      createdAt
+      updatedAt
     }
   }
 `

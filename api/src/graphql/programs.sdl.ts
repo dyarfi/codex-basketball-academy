@@ -21,6 +21,11 @@ export const schema = gql`
   type PaginatedPrograms {
     items: [Program!]!
     totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
   }
 
   enum ProgramLevel {

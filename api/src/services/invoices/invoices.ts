@@ -83,23 +83,27 @@ export const paginatedInvoices: QueryResolvers['paginatedInvoices'] = async ({
 
   const where: Prisma.InvoiceWhereInput | undefined =
     conditions.length > 0 ? { AND: conditions } : undefined
-  const safePage = Math.max(1, page)
   const safePageSize = Math.max(1, pageSize)
-  const skip = (safePage - 1) * safePageSize
+  const totalCount = await db.invoice.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
 
-  const [items, totalCount] = await Promise.all([
-    db.invoice.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: safePageSize,
-    }),
-    db.invoice.count({ where }),
-  ])
+  const items = await db.invoice.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
 
   return {
     items,
     totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
   }
 }
 

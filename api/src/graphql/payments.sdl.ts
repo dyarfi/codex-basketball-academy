@@ -18,6 +18,11 @@ export const schema = gql`
   type PaginatedPayments {
     items: [Payment!]!
     totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
   }
 
   enum PaymentStatus {

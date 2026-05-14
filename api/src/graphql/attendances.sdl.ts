@@ -22,6 +22,9 @@ export const schema = gql`
   type Query {
     attendances: [Attendance!]! @requireAuth
     attendance(id: String!): Attendance @requireAuth
+    attendancesByClass(classId: String!): [Attendance!]! @requireAuth
+    attendancesByUser(userId: String!): [Attendance!]! @requireAuth
+    attendancesByDate(date: DateTime!): [Attendance!]! @requireAuth
   }
 
   input CreateAttendanceInput {
@@ -45,5 +48,7 @@ export const schema = gql`
     updateAttendance(id: String!, input: UpdateAttendanceInput!): Attendance!
       @requireAuth
     deleteAttendance(id: String!): Attendance! @requireAuth
+    bulkCreateAttendance(input: [CreateAttendanceInput!]!): [Attendance!]!
+      @requireAuth
   }
 `

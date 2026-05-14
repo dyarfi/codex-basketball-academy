@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import {
   Container,
@@ -14,6 +14,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
+import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminLayout from 'src/components/AdminLayout/AdminLayout'
@@ -32,24 +33,35 @@ import {
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import { GET_COACHES } from 'src/graphql/users-queries'
 
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
 const ClassesPage = () => {
   const PAGE_SIZE = 10
+  const { page = 1, search, programId } = useParams()
   const { toasts, success, error: toastError, removeToast } = useToast()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
-  const [programFilter, setProgramFilter] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [programFilter, setProgramFilter] = useState<string | null>(
+    typeof programId === 'string' ? programId : null
+  )
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedClass, setSelectedClass] = useState<any>(null)
-
+  const variables = {
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    programId: programFilter || undefined,
+  }
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_CLASSES, {
-    variables: {
-      page,
-      pageSize: PAGE_SIZE,
-      search: debouncedSearchQuery || undefined,
-      programId: programFilter || undefined,
-    },
+    variables,
   })
 
   // Fetch programs and coaches for the modal
@@ -66,6 +78,8 @@ const ClassesPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to create class')
     },
+    refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
+    awaitRefetchQueries: true,
   })
 
   const [updateClass, { loading: isUpdating }] = useMutation(UPDATE_CLASS, {
@@ -78,6 +92,8 @@ const ClassesPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to update class')
     },
+    refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
+    awaitRefetchQueries: true,
   })
 
   const [deleteClass, { loading: isDeleting }] = useMutation(DELETE_CLASS, {
@@ -90,25 +106,19 @@ const ClassesPage = () => {
     onError: (err) => {
       toastError(err.message || 'Failed to delete class')
     },
+    refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
+    awaitRefetchQueries: true,
   })
 
-  const classes = data?.paginatedClasses.items || []
-  const totalClasses = data?.paginatedClasses.totalCount || 0
+  const classes = data?.paginatedClasses?.items || []
+  const totalClasses = data?.paginatedClasses?.totalCount || 0
   const programs = programsData?.programs || []
   const coaches = useMemo(() => {
     return (coachesData?.users || []).filter((u: any) => u.role === 'COACH')
   }, [coachesData])
-  const totalPages = Math.max(1, Math.ceil(totalClasses / PAGE_SIZE))
-
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, programFilter])
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
+  const totalPages =
+    data?.paginatedClasses?.totalPages ??
+    Math.max(1, Math.ceil(totalClasses / PAGE_SIZE))
 
   const programOptions = useMemo(() => {
     return programs.map((p: any) => ({ value: p.id, label: p.name }))
@@ -291,8 +301,14 @@ const ClassesPage = () => {
         <AdminPagination
           label="classes"
           totalItems={totalClasses}
-          page={page}
-          onPageChange={setPage}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.adminClasses}
+          query={{
+            search: debouncedSearchQuery || undefined,
+            programId: programFilter || undefined,
+          }}
+          onPageChange={setCurrentPage}
           pageSize={PAGE_SIZE}
         />
 

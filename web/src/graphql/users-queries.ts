@@ -45,9 +45,18 @@ export const GET_PAGINATED_USERS = gql`
         profile {
           firstName
           lastName
+          dateOfBirth
+          jerseyNumber
+          position
+          profilePhoto
         }
       }
       totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `
@@ -65,6 +74,10 @@ export const GET_USER = gql`
       profile {
         firstName
         lastName
+        dateOfBirth
+        jerseyNumber
+        position
+        profilePhoto
       }
     }
   }
@@ -119,6 +132,27 @@ export const GET_COACHES = gql`
       id
       email
       role
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        jerseyNumber
+        position
+        profilePhoto
+      }
+    }
+  }
+`
+
+export const USERS_QUERY = gql`
+  query GetUsers {
+    users {
+      id
+      email
+      role
+      isActive
+      createdAt
+      updatedAt
       profile {
         firstName
         lastName

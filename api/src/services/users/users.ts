@@ -1,9 +1,9 @@
+import { Prisma } from '@prisma/client'
 import type {
   QueryResolvers,
   MutationResolvers,
   UserRelationResolvers,
 } from 'types/graphql'
-import { Prisma } from '@prisma/client'
 
 import { db } from 'src/lib/db'
 
@@ -64,23 +64,27 @@ export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
 
   const where: Prisma.UserWhereInput | undefined =
     conditions.length > 0 ? { AND: conditions } : undefined
-  const safePage = Math.max(1, page)
   const safePageSize = Math.max(1, pageSize)
-  const skip = (safePage - 1) * safePageSize
+  const totalCount = await db.user.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
 
-  const [items, totalCount] = await Promise.all([
-    db.user.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: safePageSize,
-    }),
-    db.user.count({ where }),
-  ])
+  const items = await db.user.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
 
   return {
     items,
     totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
   }
 }
 
