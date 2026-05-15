@@ -21,6 +21,7 @@ import {
   GearSix,
   SpeakerHifiIcon,
   ChatCircleIcon,
+  Medal,
 } from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
@@ -145,6 +146,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       label: 'Attendance',
       icon: <CalendarDots size={16} weight="bold" />,
       href: '/admin-panel/attendances',
+    },
+    {
+      label: 'Certificates',
+      icon: <Medal size={16} weight="bold" />,
+      href: '/admin-panel/certificates',
     },
     {
       label: 'Reports',

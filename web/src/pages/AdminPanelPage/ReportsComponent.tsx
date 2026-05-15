@@ -13,6 +13,7 @@ import {
   Badge,
 } from '@mantine/core'
 import { DownloadSimple, WarningCircle } from '@phosphor-icons/react'
+import gql from 'graphql-tag'
 import {
   LineChart,
   Line,
@@ -28,7 +29,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import gql from 'graphql-tag'
+import { GetReportData } from 'types/graphql'
 
 import { useQuery } from '@redwoodjs/web'
 
@@ -113,7 +114,8 @@ const ReportsPage = () => {
   const chartAxisColor = isDark ? '#cbd5e1' : '#475569'
   const chartPrimary = isDark ? '#60a5fa' : '#0088FE'
 
-  const reportData = data?.GetReportData
+  // const reportData = data?.GetReportData
+  const reportData = data
 
   // Process enrollment trends data
   const enrollmentTrends = useMemo(() => {
@@ -249,6 +251,8 @@ const ReportsPage = () => {
     )
   }
 
+  console.log({ data, reportData })
+
   return (
     <AdminLayout>
       <Container size="xl" py="xl">
@@ -268,12 +272,7 @@ const ReportsPage = () => {
         {/* Key Metrics */}
         <Grid gutter="md" mb="xl">
           <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
                   Total Revenue
@@ -289,12 +288,7 @@ const ReportsPage = () => {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
                   Completed Payments
@@ -310,12 +304,7 @@ const ReportsPage = () => {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
                   Pending Payments
@@ -333,12 +322,7 @@ const ReportsPage = () => {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
                   Total Users
@@ -358,19 +342,17 @@ const ReportsPage = () => {
         <Grid gutter="md" mb="xl">
           {/* Enrollment Trends */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 Enrollment Trends
               </Text>
               {enrollmentTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={enrollmentTrends}>
-                    <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
+                    <CartesianGrid
+                      stroke={chartGridColor}
+                      strokeDasharray="3 3"
+                    />
                     <XAxis dataKey="month" stroke={chartAxisColor} />
                     <YAxis stroke={chartAxisColor} />
                     <Tooltip />
@@ -392,12 +374,7 @@ const ReportsPage = () => {
 
           {/* Revenue by Status */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 Revenue Breakdown
               </Text>
@@ -436,19 +413,17 @@ const ReportsPage = () => {
         <Grid gutter="md" mb="xl">
           {/* Top Performing Programs */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 Top Performing Programs
               </Text>
               {topPrograms.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={topPrograms}>
-                    <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
+                    <CartesianGrid
+                      stroke={chartGridColor}
+                      strokeDasharray="3 3"
+                    />
                     <XAxis dataKey="name" stroke={chartAxisColor} />
                     <YAxis stroke={chartAxisColor} />
                     <Tooltip />
@@ -470,12 +445,7 @@ const ReportsPage = () => {
 
           {/* User Distribution */}
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card
-              shadow="sm"
-              padding="lg"
-              radius="md"
-              className={cardClass}
-            >
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
                 User Distribution by Role
               </Text>
@@ -497,12 +467,7 @@ const ReportsPage = () => {
         </Grid>
 
         {/* Summary Stats */}
-        <Card
-          shadow="sm"
-          padding="lg"
-          radius="md"
-          className={cardClass}
-        >
+        <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
           <Text fw={600} mb="md">
             Summary Statistics
           </Text>

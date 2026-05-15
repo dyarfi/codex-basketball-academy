@@ -5,6 +5,7 @@ import { Router, Route, PrivateSet, Set } from '@redwoodjs/router'
 import RequireRole from 'src/components/RequireRole/RequireRole'
 import AdminAnnouncementPage from 'src/pages/AdminAnnouncementPage/AdminAnnouncementPage'
 import AdminAttendancePage from 'src/pages/AdminAttendancePage/AdminAttendancePage'
+import AdminCertificatesPage from 'src/pages/AdminCertificatesPage/AdminCertificatesPage'
 import AdminClassesPage from 'src/pages/AdminClassesPage/AdminClassesPage'
 import AdminDashboardPage from 'src/pages/AdminDashboardPage/AdminDashboardPage'
 import AdminEnrollmentsPage from 'src/pages/AdminEnrollmentsPage/AdminEnrollmentsPage'
@@ -66,8 +67,9 @@ const Routes = () => {
             <Route path="/admin-panel/enrollments" page={AdminEnrollmentsPage} name="adminEnrollments" />
             <Route path="/admin-panel/payments" page={AdminPaymentsPage} name="adminPayments" />
             <Route path="/admin-panel/announcements" page={AdminAnnouncementPage} name="adminAnnouncements" />
-            <Route path="/admin-panel/messages" page={AdminMessagesPage} name="adminMessages" />
             <Route path="/admin-panel/attendances" page={AdminAttendancePage} name="adminAttendances" />
+            <Route path="/admin-panel/certificates" page={AdminCertificatesPage} name="adminCertificates" />
+            <Route path="/admin-panel/messages" page={AdminMessagesPage} name="adminMessages" />
             <Route path="/admin-panel/reports" page={AdminReportsPage} name="adminReports" />
             <Route path="/admin-panel/settings" page={AdminSettingsPage} name="adminSettings" />
           </Set>

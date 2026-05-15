@@ -579,19 +579,73 @@ export async function seed() {
 
     // Create Certificates
     console.log('Creating certificates...')
+    const now = new Date()
     await db.certificate.create({
-      data: {
-        userId: players[0].id,
-        programId: beginnerProgram.id,
-        title: 'Basketball Fundamentals Completion',
-        description:
-          'Successfully completed the Beginner Basketball Fundamentals program.',
-        graduationClass: 'Spring 2026',
-        ageGroupTeam: 'U-12',
-        achievementDate: new Date('2026-06-01'),
-        certificateNumber: `CERT-${Date.now()}-001`,
-        issuedBy: 'Basketball Academy Administration',
-      },
+      data: [
+        {
+          userId: players[0].id,
+          programId: beginnerProgram.id,
+          title: 'Basketball Fundamentals Completion',
+          description:
+            'Successfully completed the Beginner Basketball Fundamentals program.',
+          graduationClass: 'Spring 2026',
+          ageGroupTeam: 'U-12',
+          achievementDate: new Date('2026-06-01'),
+          certificateNumber: `CERT-${Date.now()}-001`,
+          issuedBy: 'Basketball Academy Administration',
+          templateId: 'beginner_certificate_template',
+          signatureUrl: 'https://example.com/signature.png',
+          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
+          status: 'ISSUED',
+          expiryDate: now.toISOString(),
+          verifiedAt: now.toISOString(),
+          revokedAt: now.toISOString(),
+          revokedReason:
+            'Graduation certificate issued for successful completion of the program.',
+        },
+        {
+          userId: players[1].id,
+          programId: beginnerProgram.id,
+          title: 'Basketball Fundamentals Completion',
+          description:
+            'Successfully completed the Beginner Basketball Fundamentals program.',
+          graduationClass: 'Spring 2026',
+          ageGroupTeam: 'U-12',
+          achievementDate: new Date('2026-06-01'),
+          certificateNumber: `CERT-${Date.now()}-001`,
+          issuedBy: 'Basketball Academy Administration',
+          templateId: 'beginner_certificate_template',
+          signatureUrl: 'https://example.com/signature.png',
+          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
+          status: 'ISSUED',
+          expiryDate: now.toISOString(),
+          verifiedAt: now.toISOString(),
+          revokedAt: now.toISOString(),
+          revokedReason:
+            'Graduation certificate issued for successful completion of the program.',
+        },
+        {
+          userId: players[2].id,
+          programId: beginnerProgram.id,
+          title: 'Basketball Fundamentals Completion',
+          description:
+            'Successfully completed the Beginner Basketball Fundamentals program.',
+          graduationClass: 'Spring 2026',
+          ageGroupTeam: 'U-12',
+          achievementDate: new Date('2026-06-01'),
+          certificateNumber: `CERT-${Date.now()}-001`,
+          issuedBy: 'Basketball Academy Administration',
+          templateId: 'beginner_certificate_template',
+          signatureUrl: 'https://example.com/signature.png',
+          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
+          status: 'ISSUED',
+          expiryDate: now.toISOString(),
+          verifiedAt: now.toISOString(),
+          revokedAt: now.toISOString(),
+          revokedReason:
+            'Graduation certificate issued for successful completion of the program.',
+        },
+      ],
     })
 
     // Create Skill Assessments
@@ -686,7 +740,7 @@ export async function seed() {
     // Create Site Settings
     console.log('Creating site settings...')
     await db.siteSetting.deleteMany({})
-    
+
     // Site Identity Settings
     await db.siteSetting.create({
       data: {
@@ -796,7 +850,8 @@ export async function seed() {
         key: 'homepage_welcome_text',
         label: 'Homepage Welcome Text',
         group: 'content',
-        value: 'Develop your basketball skills with our expert coaches and state-of-the-art facilities.',
+        value:
+          'Develop your basketball skills with our expert coaches and state-of-the-art facilities.',
         valueType: 'text',
       },
     })

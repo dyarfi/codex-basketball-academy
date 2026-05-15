@@ -58,6 +58,8 @@ export const schema = gql`
     createEnrollment(input: CreateEnrollmentInput!): Enrollment! @requireAuth
     updateEnrollment(id: String!, input: UpdateEnrollmentInput!): Enrollment!
       @requireAuth
+    completeEnrollment(id: String!): Enrollment!
+      @requireAuth
     deleteEnrollment(id: String!): Enrollment! @requireAuth
   }
 `
