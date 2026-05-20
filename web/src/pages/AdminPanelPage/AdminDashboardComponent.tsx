@@ -178,15 +178,15 @@ const AdminDashboardPage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
-        <Text size="xl" fw={700} mb="lg">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+        <Text size="lg" fw={700} mb="md">
           Dashboard Overview
         </Text>
 
         {/* Stats Grid */}
-        <Grid gutter="md" mb="xl">
+        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
           {/* Users Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -208,7 +208,7 @@ const AdminDashboardPage = () => {
           </Grid.Col>
 
           {/* Programs Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -230,7 +230,7 @@ const AdminDashboardPage = () => {
           </Grid.Col>
 
           {/* Classes Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -252,7 +252,7 @@ const AdminDashboardPage = () => {
           </Grid.Col>
 
           {/* Revenue Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -274,7 +274,7 @@ const AdminDashboardPage = () => {
           </Grid.Col>
 
           {/* Pending Invoices Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card
               shadow="sm"
               padding="lg"
@@ -303,7 +303,7 @@ const AdminDashboardPage = () => {
           </Grid.Col>
 
           {/* Total Revenue Card */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4, lg: 2 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
@@ -319,7 +319,7 @@ const AdminDashboardPage = () => {
         </Grid>
 
         {/* User Breakdown */}
-        <Grid gutter="md" mb="xl">
+        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">

@@ -12,6 +12,7 @@ import {
   Alert,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
+import { CheckCircleIcon, TrashIcon } from '@phosphor-icons/react'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { routes, useParams } from '@redwoodjs/router'
@@ -30,6 +31,7 @@ import {
   CREATE_ENROLLMENT,
   UPDATE_ENROLLMENT,
   DELETE_ENROLLMENT,
+  COMPLETE_ENROLLMENT,
 } from 'src/graphql/enrollments-queries'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
@@ -130,6 +132,24 @@ const EnrollmentsComponent = () => {
     }
   )
 
+  const [completeEnrollment, { loading: isCompleting }] = useMutation(
+    COMPLETE_ENROLLMENT,
+    {
+      onCompleted: (data) => {
+        const email = data?.completeEnrollment?.user?.email
+        success(
+          `Enrollment completed! Certificate auto-issued${email ? ` for ${email}` : ''}`
+        )
+        refetch()
+      },
+      onError: (err) => {
+        toastError(err.message || 'Failed to complete enrollment')
+      },
+      refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
+      awaitRefetchQueries: true,
+    }
+  )
+
   const enrollments = data?.paginatedEnrollments?.items || []
   const totalEnrollments = data?.paginatedEnrollments?.totalCount || 0
   const programs = programsData?.programs || []
@@ -198,6 +218,10 @@ const EnrollmentsComponent = () => {
     }
   }
 
+  const handleCompleteEnrollment = (enrollment: any) => {
+    completeEnrollment({ variables: { id: enrollment.id } })
+  }
+
   const columns = [
     {
       key: 'user',
@@ -221,8 +245,10 @@ const EnrollmentsComponent = () => {
     {
       key: 'status',
       header: 'Status',
+      thClassName: 'w-32',
       render: (val: string) => (
         <Badge
+          size="xs"
           color={
             val === 'ACTIVE' ? 'green' : val === 'COMPLETED' ? 'blue' : 'red'
           }
@@ -243,6 +269,35 @@ const EnrollmentsComponent = () => {
       header: 'Completion Date',
       render: (val: string) => (
         <Text size="sm">{val ? new Date(val).toLocaleDateString() : '-'}</Text>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (_: any, enrollment: any) => (
+        <Group gap="xs" wrap="nowrap">
+          {enrollment.status === 'ACTIVE' && !enrollment.completionDate && (
+            <Button
+              size="xs"
+              variant="light"
+              color="green"
+              leftSection={<CheckCircleIcon size={14} />}
+              onClick={() => handleCompleteEnrollment(enrollment)}
+              loading={isCompleting}
+            >
+              Complete
+            </Button>
+          )}
+          <Button
+            size="xs"
+            color="red"
+            variant="light"
+            leftSection={<TrashIcon size={14} />}
+            onClick={() => handleDeleteClick(enrollment)}
+          >
+            Delete
+          </Button>
+        </Group>
       ),
     },
   ]
@@ -278,8 +333,8 @@ const EnrollmentsComponent = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
-        <Group justify="space-between" mb="lg">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
           <div>
             <Text size="xl" fw={700}>
               Enrollments Management
@@ -333,6 +388,7 @@ const EnrollmentsComponent = () => {
           isLoading={loading && !data}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          showActions={false}
         />
 
         <AdminPagination

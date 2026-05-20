@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
 import {
@@ -18,19 +18,28 @@ import {
   Select,
   Textarea,
   Input,
-  rem,
+  Image,
+  Paper,
+  Divider,
 } from '@mantine/core'
 import {
-  Trash,
+  TrashIcon,
   Plus,
-  Pencil,
   Eye,
   Download,
-  NotEqualsIcon,
+  PencilIcon,
+  XIcon,
+  QrCode,
 } from '@phosphor-icons/react'
 import { format, parseISO } from 'date-fns'
 
 import { AdminLayout } from 'src/components/AdminLayout'
+import { CertificatePDFViewer } from 'src/components/CertificatePDF/CertificatePDFViewer'
+import {
+  generateCertificateQR,
+  generateVerificationCode,
+} from 'src/lib/qrCodeGenerator'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 import {
   CERTIFICATES_QUERY,
@@ -45,6 +54,7 @@ import { GET_PROGRAMS } from '../../graphql/programs-queries'
 import { GET_USERS } from '../../graphql/users-queries'
 
 const CertificateComponent = () => {
+  const { isDark } = useAppTheme()
   const [opened, setOpened] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [revokeModalOpened, setRevokeModalOpened] = useState(false)
@@ -52,6 +62,8 @@ const CertificateComponent = () => {
     null
   )
   const [revokeReason, setRevokeReason] = useState('')
+  const [qrCodeLoading, setQrCodeLoading] = useState(false)
+  const [qrCodePreview, setQrCodePreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     userId: '',
     programId: '',
@@ -69,6 +81,7 @@ const CertificateComponent = () => {
     signatureUrl: '',
     expiryDate: '',
     status: 'DRAFT',
+    verificationCode: '',
   })
 
   // Queries
@@ -77,6 +90,65 @@ const CertificateComponent = () => {
   const { data: programsData, loading: programsLoading } =
     useQuery(GET_PROGRAMS)
   const { data: classesData, loading: classesLoading } = useQuery(GET_CLASSES)
+
+  // Generate QR code when required fields change
+  const handleGenerateQRCode = async () => {
+    if (
+      !formData.certificateNumber ||
+      !formData.userId ||
+      !formData.programId
+    ) {
+      alert(
+        'Please fill in Certificate Number, Player, and Program first to generate QR code'
+      )
+      return
+    }
+
+    try {
+      setQrCodeLoading(true)
+
+      // Generate verification code if not already present
+      const verificationCode =
+        formData.verificationCode || generateVerificationCode()
+
+      // Generate QR code data URL
+      const qrDataUrl = await generateCertificateQR({
+        certificateNumber: formData.certificateNumber,
+        verificationCode: verificationCode,
+        userId: formData.userId,
+        programId: formData.programId,
+      })
+
+      // Update form data with QR code
+      setFormData((prev) => ({
+        ...prev,
+        qrCode: qrDataUrl,
+        verificationCode: verificationCode,
+      }))
+
+      // Show preview
+      setQrCodePreview(qrDataUrl)
+    } catch (error) {
+      console.error('Error generating QR code:', error)
+      alert('Failed to generate QR code. Please try again.')
+    } finally {
+      setQrCodeLoading(false)
+    }
+  }
+
+  // Auto-generate QR code preview when certificate number changes
+  useEffect(() => {
+    if (
+      formData.certificateNumber &&
+      formData.userId &&
+      formData.programId &&
+      formData.verificationCode
+    ) {
+      handleGenerateQRCode()
+    }
+  }, []) // Only run on mount
+
+  // Queries
 
   // Mutations
   const [createCertificate] = useMutation(CREATE_CERTIFICATE_MUTATION, {
@@ -162,9 +234,15 @@ const CertificateComponent = () => {
           ? format(parseISO(certificate.expiryDate), 'yyyy-MM-dd')
           : '',
         status: certificate.status || 'DRAFT',
+        verificationCode: certificate.verificationCode || '',
       })
+      // Set preview if QR code exists
+      if (certificate.qrCode) {
+        setQrCodePreview(certificate.qrCode)
+      }
     } else {
       setEditingId(null)
+      const newVerificationCode = generateVerificationCode()
       setFormData({
         userId: '',
         programId: '',
@@ -182,7 +260,9 @@ const CertificateComponent = () => {
         signatureUrl: '',
         expiryDate: '',
         status: 'DRAFT',
+        verificationCode: newVerificationCode,
       })
+      setQrCodePreview(null)
     }
     setOpened(true)
   }
@@ -190,6 +270,7 @@ const CertificateComponent = () => {
   const handleCloseModal = () => {
     setOpened(false)
     setEditingId(null)
+    setQrCodePreview(null)
   }
 
   const handleCloseRevokeModal = () => {
@@ -228,6 +309,7 @@ const CertificateComponent = () => {
         ? new Date(formData.expiryDate).toISOString()
         : null,
       status: formData.status,
+      verificationCode: formData.verificationCode || generateVerificationCode(),
     }
 
     if (editingId) {
@@ -309,7 +391,11 @@ const CertificateComponent = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
+      <Container
+        size="xl"
+        py={{ base: 'sm', sm: 'md', md: 'xl' }}
+        px={{ base: 'xs', sm: 'md' }}
+      >
         <Stack gap="lg">
           <Card withBorder p="lg">
             <Card.Section withBorder inheritPadding py="md">
@@ -335,8 +421,8 @@ const CertificateComponent = () => {
                     <Table.Th>User</Table.Th>
                     <Table.Th>Program</Table.Th>
                     <Table.Th>Achievement Date</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Actions</Table.Th>
+                    <Table.Th w="74">Status</Table.Th>
+                    <Table.Th w="388">Actions</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -361,21 +447,30 @@ const CertificateComponent = () => {
                           <Badge
                             color={getStatusBadgeColor(certificate.status)}
                             variant="light"
+                            size="xs"
                           >
                             {certificate.status}
                           </Badge>
                         </Table.Td>
                         <Table.Td>
-                          <Group gap={0}>
-                            <ActionIcon
-                              size="sm"
+                          <Group gap="xs" wrap="wrap">
+                            {certificate.status === 'ISSUED' && (
+                              <CertificatePDFViewer
+                                certificate={certificate}
+                                isDark={isDark}
+                                buttonText="View"
+                              />
+                            )}
+                            <Button
+                              size="xs"
                               color="blue"
-                              variant="subtle"
+                              variant="light"
+                              leftSection={<PencilIcon size={16} />}
                               onClick={() => handleOpenModal(certificate)}
                               title="Edit"
                             >
-                              <Pencil size={16} />
-                            </ActionIcon>
+                              Edit
+                            </Button>
                             {certificate.status === 'DRAFT' && (
                               <ActionIcon
                                 size="sm"
@@ -388,17 +483,18 @@ const CertificateComponent = () => {
                               </ActionIcon>
                             )}
                             {certificate.status === 'ISSUED' && (
-                              <ActionIcon
-                                size="sm"
+                              <Button
+                                size="xs"
                                 color="orange"
-                                variant="subtle"
+                                variant="light"
+                                leftSection={<XIcon size={16} />}
                                 onClick={() =>
                                   handleRevokeClick(certificate.id)
                                 }
                                 title="Revoke"
                               >
-                                <NotEqualsIcon size={16} />
-                              </ActionIcon>
+                                Revoke
+                              </Button>
                             )}
                             {certificate.pdfUrl && (
                               <ActionIcon
@@ -413,15 +509,16 @@ const CertificateComponent = () => {
                                 <Download size={16} />
                               </ActionIcon>
                             )}
-                            <ActionIcon
-                              size="sm"
+                            <Button
+                              size="xs"
                               color="red"
-                              variant="subtle"
+                              variant="light"
+                              leftSection={<TrashIcon size={16} />}
                               onClick={() => handleDelete(certificate.id)}
                               title="Delete"
                             >
-                              <Trash size={16} />
-                            </ActionIcon>
+                              Delete
+                            </Button>
                           </Group>
                         </Table.Td>
                       </Table.Tr>
@@ -543,7 +640,7 @@ const CertificateComponent = () => {
                 />
               </Group>
               <Group grow>
-                <Input
+                <TextInput
                   type="date"
                   label="Achievement Date"
                   value={formData.achievementDate}
@@ -555,7 +652,7 @@ const CertificateComponent = () => {
                   }
                   required
                 />
-                <Input
+                <TextInput
                   type="date"
                   label="Expiry Date (Optional)"
                   value={formData.expiryDate}
@@ -612,14 +709,59 @@ const CertificateComponent = () => {
                   }
                 />
               </Group>
-              <TextInput
-                label="QR Code"
-                placeholder="QR code data"
-                value={formData.qrCode}
-                onChange={(e) =>
-                  setFormData({ ...formData, qrCode: e.currentTarget.value })
-                }
-              />
+              <Divider my="sm" />
+              <Stack gap="sm">
+                <Group justify="space-between" align="center">
+                  <Text fw={500} size="sm">
+                    QR Code
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="light"
+                    leftSection={<QrCode size={16} />}
+                    onClick={handleGenerateQRCode}
+                    loading={qrCodeLoading}
+                    disabled={
+                      !formData.certificateNumber ||
+                      !formData.userId ||
+                      !formData.programId
+                    }
+                  >
+                    {formData.qrCode ? 'Regenerate' : 'Generate'} QR Code
+                  </Button>
+                </Group>
+                {qrCodePreview && (
+                  <Paper p="md" withBorder>
+                    <Stack align="center">
+                      <Image
+                        src={qrCodePreview}
+                        alt="QR Code Preview"
+                        width={200}
+                        height={200}
+                        fit="contain"
+                      />
+                      <Text size="xs" c="dimmed">
+                        Certificate #: {formData.certificateNumber}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        Verification:{' '}
+                        {formData.verificationCode?.substring(0, 8)}
+                        ...
+                      </Text>
+                    </Stack>
+                  </Paper>
+                )}
+                {!qrCodePreview && (
+                  <Paper p="md" withBorder bg={isDark ? 'dark.7' : 'gray.0'}>
+                    <Center p="xl">
+                      <Text size="sm" c="dimmed">
+                        QR code will be generated when you fill in Certificate
+                        Number, Player, and Program
+                      </Text>
+                    </Center>
+                  </Paper>
+                )}
+              </Stack>
               <Select
                 label="Status"
                 placeholder="Select status"

@@ -6582,6 +6582,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/qrcode@npm:^1.5.6":
+  version: 1.5.6
+  resolution: "@types/qrcode@npm:1.5.6"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/84844ca63e5f32bc47d44dda0f8a6f7cdcc7ce44e7b24f10f19d50796f31d12c058f702a8f7d352c9e82a023a9abc36fa1ad01ddf0a209dd8ed4562ea76481fc
+  languageName: node
+  linkType: hard
+
 "@types/react-dom@npm:^18.0.0, @types/react-dom@npm:^18.2.19":
   version: 18.3.7
   resolution: "@types/react-dom@npm:18.3.7"
@@ -17368,6 +17377,7 @@ __metadata:
     "@sendgrid/mail": "npm:^8.1.6"
     "@stripe/react-stripe-js": "npm:^6.1.0"
     "@stripe/stripe-js": "npm:^9.0.1"
+    "@types/qrcode": "npm:^1.5.6"
     prettier-plugin-tailwindcss: "npm:^0.5.12"
     qrcode: "npm:^1.5.4"
     stripe: "npm:^21.0.1"

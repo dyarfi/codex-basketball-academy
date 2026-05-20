@@ -5,22 +5,11 @@ import type {
 } from 'types/graphql'
 
 import { db } from 'src/lib/db'
+import {
+  generateCertificateNumber,
+  generateVerificationCode,
+} from 'src/lib/helper'
 import { logger } from 'src/lib/logger'
-
-// Helper function to generate unique certificate number
-function generateCertificateNumber(): string {
-  const timestamp = Date.now()
-  const random = Math.floor(Math.random() * 10000)
-  return `CERT-${timestamp}-${random}`
-}
-
-// Helper function to generate unique verification code
-function generateVerificationCode(): string {
-  return (
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
-  )
-}
 
 // Auto-issue certificate for completed enrollment
 export async function issueCertificateForCompletedEnrollment(enrollment: any) {
@@ -67,7 +56,11 @@ export async function issueCertificateForCompletedEnrollment(enrollment: any) {
 }
 
 export const certificates: QueryResolvers['certificates'] = () => {
-  return db.certificate.findMany()
+  return db.certificate.findMany({
+    orderBy: {
+      id: 'desc',
+    },
+  })
 }
 
 export const certificate: QueryResolvers['certificate'] = ({ id }) => {
@@ -75,6 +68,19 @@ export const certificate: QueryResolvers['certificate'] = ({ id }) => {
     where: { id },
   })
 }
+
+export const verifyCertificateByCode: QueryResolvers['verifyCertificateByCode'] =
+  async ({ verificationCode }) => {
+    return await db.certificate.findUnique({
+      where: { verificationCode },
+      include: {
+        user: {
+          include: { profile: true },
+        },
+        program: true,
+      },
+    })
+  }
 
 export const createCertificate: MutationResolvers['createCertificate'] = ({
   input,

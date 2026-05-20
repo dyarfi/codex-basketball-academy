@@ -214,10 +214,10 @@ const ProgramsPage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
-        <Group justify="space-between" mb="lg">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
           <div>
-            <Text size="xl" fw={700}>
+            <Text size="lg" fw={700}>
               Programs Management
             </Text>
             <Text size="sm" color="dimmed">
@@ -236,7 +236,8 @@ const ProgramsPage = () => {
         <Group
           gap="md"
           mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-4"
+          className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+          grow={true}
         >
           <TextInput
             placeholder="Search by program name..."

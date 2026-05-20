@@ -95,15 +95,104 @@ export const user: QueryResolvers['user'] = ({ id }) => {
 }
 
 export const createUser: MutationResolvers['createUser'] = ({ input }) => {
+  const { email, role, isActive, profile } = input
+
   return db.user.create({
-    data: input,
+    data: {
+      email,
+      role,
+      isActive,
+      hashedPassword: '', // Placeholder - should be set via password reset or invitation email
+      salt: '', // Placeholder - should be set via password reset or invitation email
+      profile: {
+        create: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          dateOfBirth: profile.dateOfBirth
+            ? new Date(profile.dateOfBirth)
+            : null,
+          phoneNumber: profile.phoneNumber || null,
+          address: profile.address || null,
+          city: profile.city || null,
+          state: profile.state || null,
+          zipCode: profile.zipCode || null,
+          country: profile.country || null,
+          position: profile.position || null,
+          jerseyNumber: profile.jerseyNumber || null,
+          heightCm: profile.heightCm || null,
+          weightKg: profile.weightKg || null,
+          medicalInfo: profile.medicalInfo || null,
+          emergencyContactName: profile.emergencyContactName || null,
+          emergencyContactPhone: profile.emergencyContactPhone || null,
+          relationshipToPlayer: profile.relationshipToPlayer || null,
+          profilePhoto: profile.profilePhoto || null,
+        },
+      },
+    },
+    include: {
+      profile: true,
+    },
   })
 }
 
 export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
+  const { profile, ...userInput } = input
+
+  const updateData: Record<string, any> = { ...userInput }
+
+  if (profile) {
+    // Handle profile update
+    const {
+      firstName,
+      lastName,
+      dateOfBirth,
+      phoneNumber,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      position,
+      jerseyNumber,
+      heightCm,
+      weightKg,
+      medicalInfo,
+      emergencyContactName,
+      emergencyContactPhone,
+      relationshipToPlayer,
+      playerUserId,
+      profilePhoto,
+    } = profile
+
+    updateData.profile = {
+      update: {
+        firstName,
+        lastName,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        phoneNumber,
+        address,
+        city,
+        state,
+        zipCode,
+        country,
+        position,
+        jerseyNumber,
+        heightCm,
+        weightKg,
+        medicalInfo,
+        emergencyContactName,
+        emergencyContactPhone,
+        relationshipToPlayer,
+        playerUserId,
+        profilePhoto,
+      },
+    }
+  }
+
   return db.user.update({
-    data: input,
+    data: updateData,
     where: { id },
+    include: { profile: true },
   })
 }
 

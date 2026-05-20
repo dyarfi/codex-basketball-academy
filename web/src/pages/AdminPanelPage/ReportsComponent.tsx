@@ -255,9 +255,9 @@ const ReportsPage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
-        <Group justify="space-between" mb="lg">
-          <Text size="xl" fw={700}>
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+          <Text size="lg" fw={700}>
             Reports & Analytics
           </Text>
           <Button
@@ -270,8 +270,8 @@ const ReportsPage = () => {
         </Group>
 
         {/* Key Metrics */}
-        <Grid gutter="md" mb="xl">
-          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
+          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
@@ -287,7 +287,7 @@ const ReportsPage = () => {
             </Card>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>
@@ -303,7 +303,7 @@ const ReportsPage = () => {
             </Card>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Stack gap="xs">
                 <Text size="sm" className={mutedClass}>

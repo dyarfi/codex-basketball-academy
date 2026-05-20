@@ -190,7 +190,7 @@ const SettingsComponent = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
         <Box className="space-y-4" pb="xl">
           {successMessage && (
             <Alert icon={<CheckCircle />} title="Success" color="green">

@@ -179,3 +179,21 @@ export const DELETE_ENROLLMENT = gql`
     }
   }
 `
+
+/**
+ * Complete an enrollment and trigger certificate issuance
+ */
+export const COMPLETE_ENROLLMENT = gql`
+  mutation CompleteEnrollment($id: String!) {
+    completeEnrollment(id: $id) {
+      id
+      status
+      completionDate
+      updatedAt
+      user {
+        id
+        email
+      }
+    }
+  }
+`

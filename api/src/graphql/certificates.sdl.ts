@@ -13,6 +13,7 @@ export const schema = gql`
     programId: String!
     program: Program!
     classId: String
+    class: Class
     title: String!
     description: String
     graduationClass: String
@@ -37,6 +38,7 @@ export const schema = gql`
   type Query {
     certificates: [Certificate!]! @requireAuth
     certificate(id: String!): Certificate @requireAuth
+    verifyCertificateByCode(verificationCode: String!): Certificate @skipAuth
   }
 
   input CreateCertificateInput {
@@ -49,6 +51,7 @@ export const schema = gql`
     ageGroupTeam: String
     achievementDate: DateTime!
     certificateNumber: String!
+    verificationCode: String!
     pdfUrl: String
     qrCode: String
     issuedBy: String
@@ -68,6 +71,7 @@ export const schema = gql`
     ageGroupTeam: String
     achievementDate: DateTime
     certificateNumber: String
+    verificationCode: String!
     pdfUrl: String
     qrCode: String
     issuedBy: String

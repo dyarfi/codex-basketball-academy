@@ -28,6 +28,7 @@ import ProgramsListPage from 'src/pages/ProgramsListPage/ProgramsListPage'
 import ResetPasswordPage from 'src/pages/ResetPasswordPage/ResetPasswordPage'
 import SignupPage from 'src/pages/SignupPage/SignupPage'
 import UserProfilePage from 'src/pages/UserProfilePage/UserProfilePage'
+import VerifyCertificatePage from 'src/pages/VerifyCertificatePage/VerifyCertificatePage'
 
 import { AuthProvider, useAuth } from './auth'
 
@@ -52,6 +53,7 @@ const Routes = () => {
         <Route path="/enrollment" page={EnrollmentPage} name="EnrollmentPage" />
         <Route path="/programs" page={ProgramsListPage} name="ProgramsListPage" />
         <Route path="/programs/{id}" page={ProgramDetailsPage} name="ProgramsDetailPage" />
+        <Route path="/verify-certificate/{code}" page={VerifyCertificatePage} name="verifyCertificate" />
         <Route path="/" page={HomePage} name="home" />
 
         <PrivateSet unauthenticated="login">

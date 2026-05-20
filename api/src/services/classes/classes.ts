@@ -1,9 +1,9 @@
+import { Prisma } from '@prisma/client'
 import type {
   QueryResolvers,
   MutationResolvers,
   ClassRelationResolvers,
 } from 'types/graphql'
-import { Prisma } from '@prisma/client'
 
 import { db } from 'src/lib/db'
 
@@ -85,7 +85,13 @@ export const paginatedClasses: QueryResolvers['paginatedClasses'] = async ({
 
   const items = await db.class.findMany({
     where,
-    orderBy: [{ startDate: 'desc' }, { id: 'desc' }],
+    orderBy: [
+      { startDate: 'desc' },
+      { id: 'desc' },
+      {
+        createdAt: 'desc',
+      },
+    ],
     skip,
     take: safePageSize,
   })

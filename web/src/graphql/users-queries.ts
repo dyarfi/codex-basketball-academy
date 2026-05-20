@@ -46,8 +46,20 @@ export const GET_PAGINATED_USERS = gql`
           firstName
           lastName
           dateOfBirth
-          jerseyNumber
+          phoneNumber
+          address
+          city
+          state
+          zipCode
+          country
           position
+          jerseyNumber
+          heightCm
+          weightKg
+          medicalInfo
+          emergencyContactName
+          emergencyContactPhone
+          relationshipToPlayer
           profilePhoto
         }
       }
@@ -75,8 +87,20 @@ export const GET_USER = gql`
         firstName
         lastName
         dateOfBirth
-        jerseyNumber
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
         position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
         profilePhoto
       }
     }
@@ -107,6 +131,26 @@ export const CREATE_USER = gql`
       email
       role
       isActive
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
+        position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
+        profilePhoto
+      }
     }
   }
 `

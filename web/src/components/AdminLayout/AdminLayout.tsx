@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useState } from 'react'
 
 import {
   AppShell,
@@ -8,20 +8,23 @@ import {
   Text,
   NavLink,
   Loader,
+  Burger,
+  Box,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import {
-  Books,
-  ChartLineUp,
-  CalendarDots,
-  House,
-  Receipt,
-  SignOut,
-  Users,
-  IdentificationCard,
-  GearSix,
   SpeakerHifiIcon,
   ChatCircleIcon,
-  Medal,
+  BooksIcon,
+  CalendarDotsIcon,
+  ChartLineUpIcon,
+  GearSixIcon,
+  HouseIcon,
+  IdentificationCardIcon,
+  MedalIcon,
+  ReceiptIcon,
+  SignOutIcon,
+  UsersIcon,
 } from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
@@ -39,6 +42,7 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // const navigate = navigate();
   const routePath = useRoutePath()
+  const [opened, { toggle }] = useDisclosure()
 
   const location = useLocation()
   const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
@@ -104,32 +108,32 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navItems = [
     {
       label: 'Dashboard',
-      icon: <House size={16} weight="bold" />,
+      icon: <HouseIcon size={16} weight="bold" />,
       href: '/admin-panel',
     },
     {
       label: 'Users Management',
-      icon: <Users size={16} weight="bold" />,
+      icon: <UsersIcon size={16} weight="bold" />,
       href: '/admin-panel/users',
     },
     {
       label: 'Programs Management',
-      icon: <Books size={16} weight="bold" />,
+      icon: <BooksIcon size={16} weight="bold" />,
       href: '/admin-panel/programs',
     },
     {
       label: 'Classes Management',
-      icon: <CalendarDots size={16} weight="bold" />,
+      icon: <CalendarDotsIcon size={16} weight="bold" />,
       href: '/admin-panel/classes',
     },
     {
       label: 'Enrollments Management',
-      icon: <IdentificationCard size={16} weight="bold" />,
+      icon: <IdentificationCardIcon size={16} weight="bold" />,
       href: '/admin-panel/enrollments',
     },
     {
       label: 'Payments & Invoices',
-      icon: <Receipt size={16} weight="bold" />,
+      icon: <ReceiptIcon size={16} weight="bold" />,
       href: '/admin-panel/payments',
     },
     {
@@ -144,22 +148,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     },
     {
       label: 'Attendance',
-      icon: <CalendarDots size={16} weight="bold" />,
+      icon: <CalendarDotsIcon size={16} weight="bold" />,
       href: '/admin-panel/attendances',
     },
     {
       label: 'Certificates',
-      icon: <Medal size={16} weight="bold" />,
+      icon: <MedalIcon size={16} weight="bold" />,
       href: '/admin-panel/certificates',
     },
     {
       label: 'Reports',
-      icon: <ChartLineUp size={16} weight="bold" />,
+      icon: <ChartLineUpIcon size={16} weight="bold" />,
       href: '/admin-panel/reports',
     },
     {
       label: 'Settings',
-      icon: <GearSix size={16} weight="bold" />,
+      icon: <GearSixIcon size={16} weight="bold" />,
       href: '/admin-panel/settings',
     },
   ]
@@ -171,22 +175,36 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     <AppShell
       layout="alt"
       navbar={{
-        width: 250,
+        width: { base: 250, sm: 250 },
         breakpoint: 'sm',
-        collapsed: { mobile: false },
+        collapsed: { mobile: !opened, desktop: false },
       }}
       header={{ height: 60 }}
+      transitionTimingFunction="ease-in-out"
     >
-      <AppShell.Navbar p="md" className={`${surfaceClass} border-r`}>
+      <AppShell.Navbar
+        p="md"
+        className={`${surfaceClass} overflow-y-auto border-r`}
+      >
         <div className="mb-4">
-          <Text size="lg" fw={700} className="mb-1">
-            {siteName}
-          </Text>
-          <Text size="xs" className={textMutedClass}>
-            {headerSubtitle}
-          </Text>
+          <Group justify="space-between" align="start">
+            <Box>
+              <Text size="md" fw={700} className="mb-1">
+                {siteName}
+              </Text>
+              <Text size="xs" className={`${textMutedClass}`}>
+                {headerSubtitle}
+              </Text>
+            </Box>
+            <Burger
+              hidden={!opened}
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="md"
+              size="sm"
+            />
+          </Group>
         </div>
-
         <AppShell.Section grow>
           <div className="space-y-1">
             {navItems.map((item) => (
@@ -210,6 +228,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       ? 'rgba(59, 130, 246, 0.2)'
                       : '#eff6ff'
                     : 'transparent',
+                  fontSize: '0.875rem',
                 }}
               />
             ))}
@@ -219,15 +238,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       <AppShell.Header p="xs" pl={'lg'} className={`${surfaceClass} border-b`}>
         <Group justify="space-between" h="100%">
-          <div className="flex items-center gap-3">
-            <Text fw={600} size="lg">
-              {siteName} Admin
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="md"
+              size="sm"
+            />
+            <Text fw={600} size="md" sm={{ size: 'lg' }} truncate>
+              {siteName}
             </Text>
           </div>
-
-          <Group gap="lg">
+          <Group gap="xs" sm={{ gap: 'lg' }}>
             <ThemeToggle />
-            <Text size="sm" className={textMutedClass}>
+            <Text size="xs" className={`${textMutedClass} hidden sm:block`}>
               {user?.profile?.firstName}
             </Text>
             <Menu position="bottom-end" shadow="md">
@@ -236,6 +260,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   name={user?.email || 'Admin'}
                   color={isDark ? 'cyan' : 'blue'}
                   radius="xl"
+                  size="sm"
                   className="cursor-pointer"
                 />
               </Menu.Target>
@@ -250,7 +275,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
-                  leftSection={<SignOut size={14} weight="bold" />}
+                  leftSection={<SignOutIcon size={14} weight="bold" />}
                   color="red"
                 >
                   <Link to="/auth/logout">Logout</Link>

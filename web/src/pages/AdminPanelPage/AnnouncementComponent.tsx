@@ -24,6 +24,7 @@ import {
 import { Trash, Plus, Pencil, Calendar } from '@phosphor-icons/react'
 import { format, parseISO } from 'date-fns'
 
+import { useAuth } from 'src/auth'
 import { AdminLayout } from 'src/components/AdminLayout'
 
 import {
@@ -34,6 +35,7 @@ import {
 } from '../../graphql/announcements-queries'
 
 const AnnouncementComponent = () => {
+  const { currentUser } = useAuth()
   const [opened, setOpened] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -128,7 +130,7 @@ const AnnouncementComponent = () => {
     } else {
       await createAnnouncement({
         variables: {
-          input,
+          input: { ...input, createdById: currentUser?.id },
         },
       })
     }
@@ -156,7 +158,7 @@ const AnnouncementComponent = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
         <Stack gap="lg">
           <Card withBorder p="lg">
             <Card.Section withBorder inheritPadding py="md">

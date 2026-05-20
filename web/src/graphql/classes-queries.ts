@@ -62,10 +62,12 @@ export const GET_PAGINATED_CLASSES = gql`
         isActive
         startDate
         endDate
+        programId
         program {
           id
           name
         }
+        coachId
         coach {
           id
           email
@@ -117,6 +119,8 @@ export const CREATE_CLASS = gql`
     createClass(input: $input) {
       id
       name
+      coachId
+      programId
       isActive
       createdAt
     }
@@ -131,6 +135,8 @@ export const UPDATE_CLASS = gql`
     updateClass(id: $id, input: $input) {
       id
       name
+      coachId
+      programId
       isActive
       updatedAt
     }

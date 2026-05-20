@@ -176,7 +176,7 @@ const PaymentsPage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
         <Text size="xl" fw={700} mb="lg">
           Payments & Invoices
         </Text>
@@ -196,7 +196,7 @@ const PaymentsPage = () => {
             <Group
               gap="md"
               mb="lg"
-              className="mt-lg rounded-lg border border-gray-200 bg-white p-4"
+              className="mt-4 rounded-lg border border-gray-200 bg-white p-4"
             >
               <TextInput
                 placeholder="Search by invoice number or email"
@@ -314,7 +314,7 @@ const PaymentsPage = () => {
             <Group
               gap="md"
               mb="lg"
-              className="mt-lg rounded-lg border border-gray-200 bg-white p-4"
+              className="mt-4 rounded-lg border border-gray-200 bg-white p-4"
             >
               <TextInput
                 placeholder="Search by user email"
@@ -378,7 +378,7 @@ const PaymentsPage = () => {
                         </Badge>
                       </Table.Td>
                       <Table.Td>
-                        <Badge color={getStatusColor(payment.status)}>
+                        <Badge color={getStatusColor(payment.status)} size="sm">
                           {payment.status}
                         </Badge>
                       </Table.Td>
@@ -458,7 +458,7 @@ const PaymentsPage = () => {
                 <Text size="sm" fw={500} className="text-gray-600">
                   Status
                 </Text>
-                <Badge color={getStatusColor(viewingInvoice.status)}>
+                <Badge color={getStatusColor(viewingInvoice.status)} size="sm">
                   {viewingInvoice.status}
                 </Badge>
               </div>

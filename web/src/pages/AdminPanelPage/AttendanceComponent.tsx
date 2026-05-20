@@ -204,7 +204,7 @@ export const AttendanceComponent = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
         <Stack gap="lg">
           <Card withBorder p="lg">
             <Card.Section withBorder inheritPadding py="md">
@@ -314,6 +314,7 @@ export const AttendanceComponent = () => {
                           <Badge
                             color={ATTENDANCE_STATUS_COLORS[attendance.status]}
                             variant="light"
+                            size="sm"
                           >
                             {attendance.status}
                           </Badge>

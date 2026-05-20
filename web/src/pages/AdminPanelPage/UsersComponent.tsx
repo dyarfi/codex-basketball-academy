@@ -40,6 +40,7 @@ import {
   GET_PAGINATED_USERS,
   UPDATE_USER,
   DELETE_USER,
+  CREATE_USER,
 } from 'src/graphql/users-queries'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
@@ -85,6 +86,20 @@ const UsersPage = () => {
     },
     onError: (err) => {
       toastError(err.message || 'Failed to update user')
+    },
+    refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
+    awaitRefetchQueries: true,
+  })
+
+  const [createUser, { loading: isCreating }] = useMutation(CREATE_USER, {
+    onCompleted: () => {
+      success('User created successfully')
+      setIsModalOpen(false)
+      setSelectedUser(null)
+      refetch()
+    },
+    onError: (err) => {
+      toastError(err.message || 'Failed to create user')
     },
     refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
     awaitRefetchQueries: true,
@@ -138,9 +153,38 @@ const UsersPage = () => {
         },
       })
     } else {
-      toastError(
-        'User creation needs an invitation/password setup flow and is not enabled yet.'
-      )
+      createUser({
+        variables: {
+          input: {
+            email: values.email,
+            role: values.role,
+            isActive: values.isActive,
+            profile: {
+              firstName: values.profile.firstName,
+              lastName: values.profile.lastName,
+              dateOfBirth: values.profile.dateOfBirth
+                ? new Date(values.profile.dateOfBirth).toISOString()
+                : null,
+              phoneNumber: values.profile.phoneNumber || null,
+              address: values.profile.address || null,
+              city: values.profile.city || null,
+              state: values.profile.state || null,
+              zipCode: values.profile.zipCode || null,
+              country: values.profile.country || null,
+              position: values.profile.position || null,
+              jerseyNumber: values.profile.jerseyNumber || null,
+              heightCm: values.profile.heightCm || null,
+              weightKg: values.profile.weightKg || null,
+              medicalInfo: values.profile.medicalInfo || null,
+              emergencyContactName: values.profile.emergencyContactName || null,
+              emergencyContactPhone:
+                values.profile.emergencyContactPhone || null,
+              relationshipToPlayer: values.profile.relationshipToPlayer || null,
+              profilePhoto: values.profile.profilePhoto || null,
+            },
+          },
+        },
+      })
     }
   }
 
@@ -254,10 +298,10 @@ const UsersPage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="xl">
-        <Group justify="space-between" mb="lg">
+      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
           <div>
-            <Text size="xl" fw={700}>
+            <Text size="lg" fw={700}>
               Users Management
             </Text>
             <Text size="sm" color="dimmed">
@@ -276,7 +320,8 @@ const UsersPage = () => {
         <Group
           gap="md"
           mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-4"
+          className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+          grow={true}
         >
           <TextInput
             placeholder="Search by name or email..."
@@ -329,7 +374,7 @@ const UsersPage = () => {
           onClose={() => setIsModalOpen(false)}
           onSave={handleSave}
           userData={selectedUser}
-          isLoading={isUpdating}
+          isLoading={selectedUser ? isUpdating : isCreating}
         />
 
         <ConfirmDelete
