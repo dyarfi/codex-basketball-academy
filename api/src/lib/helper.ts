@@ -8,10 +8,14 @@ function generateCertificateNumber(): string {
 }
 
 // Helper function to generate unique verification code
-function generateVerificationCode(): string {
+function generateVerificationCode(count: number): string {
   return (
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
+    Math.random()
+      .toString(count || 36)
+      .substring(2, 15) +
+    Math.random()
+      .toString(count || 36)
+      .substring(2, 15)
   )
 }
 

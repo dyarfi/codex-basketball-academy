@@ -580,73 +580,38 @@ export async function seed() {
     // Create Certificates
     console.log('Creating certificates...')
     const now = new Date()
-    await db.certificate.create({
-      data: [
-        {
-          userId: players[0].id,
+    let r = 0
+    for (const playerCert of players) {
+      await db.certificate.create({
+        data: {
+          userId: playerCert.id,
           programId: beginnerProgram.id,
+          classId: beginnerClass1.id,
           title: 'Basketball Fundamentals Completion',
           description:
             'Successfully completed the Beginner Basketball Fundamentals program.',
           graduationClass: 'Spring 2026',
           ageGroupTeam: 'U-12',
-          achievementDate: new Date('2026-06-01'),
-          certificateNumber: `CERT-${Date.now()}-001`,
+          achievementDate: now.toISOString(),
+          certificateNumber: `CERT-${Date.now()}-00${r}`,
+          pdfUrl: `https://example.com/certificates/beginner-cert-00${r}.pdf`,
+          qrCode: `https://example.com/certificates/beginner-cert-00${r}-qr.png`,
           issuedBy: 'Basketball Academy Administration',
           templateId: 'beginner_certificate_template',
           signatureUrl: 'https://example.com/signature.png',
-          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
+          verificationCode: `CERT-${Date.now()}-00${r}-VERIFY`,
           status: 'ISSUED',
           expiryDate: now.toISOString(),
           verifiedAt: now.toISOString(),
           revokedAt: now.toISOString(),
           revokedReason:
             'Graduation certificate issued for successful completion of the program.',
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
         },
-        {
-          userId: players[1].id,
-          programId: beginnerProgram.id,
-          title: 'Basketball Fundamentals Completion',
-          description:
-            'Successfully completed the Beginner Basketball Fundamentals program.',
-          graduationClass: 'Spring 2026',
-          ageGroupTeam: 'U-12',
-          achievementDate: new Date('2026-06-01'),
-          certificateNumber: `CERT-${Date.now()}-001`,
-          issuedBy: 'Basketball Academy Administration',
-          templateId: 'beginner_certificate_template',
-          signatureUrl: 'https://example.com/signature.png',
-          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
-          status: 'ISSUED',
-          expiryDate: now.toISOString(),
-          verifiedAt: now.toISOString(),
-          revokedAt: now.toISOString(),
-          revokedReason:
-            'Graduation certificate issued for successful completion of the program.',
-        },
-        {
-          userId: players[2].id,
-          programId: beginnerProgram.id,
-          title: 'Basketball Fundamentals Completion',
-          description:
-            'Successfully completed the Beginner Basketball Fundamentals program.',
-          graduationClass: 'Spring 2026',
-          ageGroupTeam: 'U-12',
-          achievementDate: new Date('2026-06-01'),
-          certificateNumber: `CERT-${Date.now()}-001`,
-          issuedBy: 'Basketball Academy Administration',
-          templateId: 'beginner_certificate_template',
-          signatureUrl: 'https://example.com/signature.png',
-          verificationCode: `CERT-${Date.now()}-001-VERIFY`,
-          status: 'ISSUED',
-          expiryDate: now.toISOString(),
-          verifiedAt: now.toISOString(),
-          revokedAt: now.toISOString(),
-          revokedReason:
-            'Graduation certificate issued for successful completion of the program.',
-        },
-      ],
-    })
+      })
+      r++
+    }
 
     // Create Skill Assessments
     console.log('Creating skill assessments...')
@@ -691,25 +656,46 @@ export async function seed() {
     console.log('Creating announcements...')
     await db.announcement.create({
       data: {
-        createdById: adminUser.id,
         title: 'Welcome to Basketball Academy!',
-        content:
+        message:
           'We are excited to have you join our basketball training program. This season promises to be filled with learning, growth, and fun!',
-        publishDate: new Date('2026-04-01'),
-        expiryDate: new Date('2026-05-31'),
+        type: 'INFO',
+        isDismissible: true,
+        priority: 1,
+        createdAt: new Date('2026-04-01'),
+        updatedAt: new Date('2026-05-31'),
         isActive: true,
+        createdById: adminUser.id,
       },
     })
 
     await db.announcement.create({
       data: {
-        createdById: coach1.id,
-        title: 'Upcoming Tournament',
-        content:
+        title: 'Upcoming Tournament Q1 2026',
+        message:
           'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
-        publishDate: new Date('2026-04-02'),
-        expiryDate: new Date('2026-05-15'),
+        type: 'INFO',
+        isDismissible: true,
+        priority: 2,
+        createdAt: new Date('2026-04-02'),
+        updatedAt: new Date('2026-05-15'),
         isActive: true,
+        createdById: adminUser.id,
+      },
+    })
+
+    await db.announcement.create({
+      data: {
+        title: 'Upcoming Tournament Q2 2026',
+        message:
+          'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
+        type: 'INFO',
+        isDismissible: true,
+        priority: 3,
+        createdAt: new Date('2026-04-02'),
+        updatedAt: new Date('2026-05-15'),
+        isActive: true,
+        createdById: adminUser.id,
       },
     })
 
@@ -965,7 +951,7 @@ export async function seed() {
     console.log(`  - 1 Certificate`)
     console.log(`  - 5 Skill Assessments`)
     console.log(`  - 5 Player Stats`)
-    console.log(`  - 2 Announcements`)
+    console.log(`  - 3 Announcements`)
     console.log(`  - 2 Messages`)
     console.log(`  - 23 Site Settings`)
   } catch (error) {

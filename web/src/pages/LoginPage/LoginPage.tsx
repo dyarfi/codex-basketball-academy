@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
 
@@ -12,7 +12,7 @@ const LoginPage = () => {
     isAuthenticated,
     logIn,
     loading: authLoading,
-    // currentUser,
+    currentUser,
   } = useAuth()
   const { isDark } = useAppTheme()
   const { getSetting, loading } = useSettings()
@@ -22,12 +22,14 @@ const LoginPage = () => {
   const [submitting, setSubmitting] = useState(false)
   const siteName = getSetting('site_name', 'Basketball Academy')
   const siteLogo = getSetting('site_logo', '🏀')
+  // console.log({ isAuthenticated })
+  // console.log({ currentUser })
 
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     navigate(routes.dashboard(), { replace: true })
-  //   }
-  // }, [isAuthenticated])
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(routes.dashboard(), { replace: true })
+    }
+  }, [isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

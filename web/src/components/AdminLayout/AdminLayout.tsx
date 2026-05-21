@@ -25,6 +25,9 @@ import {
   ReceiptIcon,
   SignOutIcon,
   UsersIcon,
+  ImageIcon,
+  ScalesIcon,
+  LinkIcon,
 } from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
@@ -155,6 +158,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       label: 'Certificates',
       icon: <MedalIcon size={16} weight="bold" />,
       href: '/admin-panel/certificates',
+    },
+    {
+      label: 'Skill Assessment',
+      icon: <ScalesIcon size={16} weight="bold" />,
+      href: '/admin-panel/skill-assessment',
+    },
+    {
+      label: 'Galleries',
+      icon: <ImageIcon size={16} weight="bold" />,
+      href: '/admin-panel/galleries',
+    },
+    {
+      label: 'Invitation Links',
+      icon: <LinkIcon size={16} weight="bold" />,
+      href: '/admin-panel/invitation-links',
     },
     {
       label: 'Reports',

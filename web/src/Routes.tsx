@@ -9,17 +9,21 @@ import AdminCertificatesPage from 'src/pages/AdminCertificatesPage/AdminCertific
 import AdminClassesPage from 'src/pages/AdminClassesPage/AdminClassesPage'
 import AdminDashboardPage from 'src/pages/AdminDashboardPage/AdminDashboardPage'
 import AdminEnrollmentsPage from 'src/pages/AdminEnrollmentsPage/AdminEnrollmentsPage'
+import AdminGalleriesPage from 'src/pages/AdminGalleriesPage/AdminGalleriesPage'
+import AdminInvitationLinksPage from 'src/pages/AdminInvitationLinksPage/AdminInvitationLinksPage'
 import AdminMessagesPage from 'src/pages/AdminMessagesPage/AdminMessagesPage'
 import AdminPaymentsPage from 'src/pages/AdminPaymentsPage/AdminPaymentsPage'
 import AdminProgramsPage from 'src/pages/AdminProgramsPage/AdminProgramsPage'
 import AdminReportsPage from 'src/pages/AdminReportsPage/AdminReportsPage'
 import AdminSettingsPage from 'src/pages/AdminSettingsPage/AdminSettingsPage'
+import AdminSkillAssessment from 'src/pages/AdminSkillAssessment/AdminSkillAssessment'
 import AdminUsersPage from 'src/pages/AdminUsersPage/AdminUsersPage'
 import CoachPage from 'src/pages/CoachPage/CoachPage'
 import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
 import EnrollmentPage from 'src/pages/EnrollmentPage/EnrollmentPage'
 import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
 import HomePage from 'src/pages/HomePage/HomePage'
+import InvitePage from 'src/pages/InvitePage/InvitePage'
 import LoginPage from 'src/pages/LoginPage/LoginPage'
 import LogoutPage from 'src/pages/LogoutPage'
 import NotFoundPage from 'src/pages/NotFoundPage/NotFoundPage'
@@ -53,6 +57,7 @@ const Routes = () => {
         <Route path="/enrollment" page={EnrollmentPage} name="EnrollmentPage" />
         <Route path="/programs" page={ProgramsListPage} name="ProgramsListPage" />
         <Route path="/programs/{id}" page={ProgramDetailsPage} name="ProgramsDetailPage" />
+        <Route path="/invite/{code}" page={InvitePage} name="InvitePage" />
         <Route path="/verify-certificate/{code}" page={VerifyCertificatePage} name="verifyCertificate" />
         <Route path="/" page={HomePage} name="home" />
 
@@ -71,6 +76,9 @@ const Routes = () => {
             <Route path="/admin-panel/announcements" page={AdminAnnouncementPage} name="adminAnnouncements" />
             <Route path="/admin-panel/attendances" page={AdminAttendancePage} name="adminAttendances" />
             <Route path="/admin-panel/certificates" page={AdminCertificatesPage} name="adminCertificates" />
+            <Route path="/admin-panel/galleries" page={AdminGalleriesPage} name="adminGalleries" />
+            <Route path="/admin-panel/invitation-links" page={AdminInvitationLinksPage} name="adminInvitationLinks" />
+            <Route path="/admin-panel/skill-assessment" page={AdminSkillAssessment} name="adminSkillAssessment" />
             <Route path="/admin-panel/messages" page={AdminMessagesPage} name="adminMessages" />
             <Route path="/admin-panel/reports" page={AdminReportsPage} name="adminReports" />
             <Route path="/admin-panel/settings" page={AdminSettingsPage} name="adminSettings" />

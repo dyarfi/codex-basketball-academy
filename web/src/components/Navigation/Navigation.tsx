@@ -9,7 +9,7 @@ const Navigation = () => {
   const { getSetting, loading } = useSettings()
 
   const siteName = getSetting('site_name', '🏀 Basketball Academy')
-  const siteLogo = getSetting('site_logo', '🏀')
+  const siteLogo = getSetting('site_logo', '')
 
   const navClass = isDark
     ? 'sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 shadow-sm backdrop-blur'

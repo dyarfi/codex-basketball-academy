@@ -29,7 +29,6 @@ import {
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
@@ -269,126 +268,124 @@ const UsersPage = () => {
 
   if (loading && !data) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
-            color="red"
-            variant="filled"
-          >
-            Failed to load users: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load users: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
-          <div>
-            <Text size="lg" fw={700}>
-              Users Management
-            </Text>
-            <Text size="sm" color="dimmed">
-              Manage system users, roles, and access permissions
-            </Text>
-          </div>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={handleCreate}
-            color="blue"
-          >
-            Add New User
-          </Button>
-        </Group>
-
-        <Group
-          gap="md"
-          mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
-          grow={true}
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <div>
+          <Text size="lg" fw={700}>
+            Users Management
+          </Text>
+          <Text size="sm" color="dimmed">
+            Manage system users, roles, and access permissions
+          </Text>
+        </div>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={handleCreate}
+          color="blue"
         >
-          <TextInput
-            placeholder="Search by name or email..."
-            leftSection={<IconSearch size={16} />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-            className="flex-1"
-          />
+          Add New User
+        </Button>
+      </Group>
 
-          <Select
-            placeholder="Filter by role"
-            data={[
-              { value: '', label: 'All Roles' },
-              { value: 'ADMIN', label: 'Admin' },
-              { value: 'COACH', label: 'Coach' },
-              { value: 'PLAYER', label: 'Player' },
-              { value: 'PARENT', label: 'Parent' },
-              { value: 'PROSPECT', label: 'Prospect' },
-            ]}
-            value={roleFilter || ''}
-            onChange={(value) => setRoleFilter(value || null)}
-            clearable
-          />
-        </Group>
-
-        <CrudTable
-          data={users}
-          columns={columns as any}
-          isLoading={loading && !data}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
+      <Group
+        gap="md"
+        mb="lg"
+        className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+        grow={true}
+      >
+        <TextInput
+          placeholder="Search by name or email..."
+          leftSection={<IconSearch size={16} />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          className="flex-1"
         />
 
-        <AdminPagination
-          label="users"
-          totalItems={totalUsers}
-          page={currentPage}
-          totalPages={totalPages}
-          route={routes.adminUsers as RouteBuilder}
-          query={{
-            search: debouncedSearchQuery || undefined,
-            role: roleFilter || undefined,
-          }}
-          onPageChange={setCurrentPage}
-          pageSize={PAGE_SIZE}
+        <Select
+          placeholder="Filter by role"
+          data={[
+            { value: '', label: 'All Roles' },
+            { value: 'ADMIN', label: 'Admin' },
+            { value: 'COACH', label: 'Coach' },
+            { value: 'PLAYER', label: 'Player' },
+            { value: 'PARENT', label: 'Parent' },
+            { value: 'PROSPECT', label: 'Prospect' },
+          ]}
+          value={roleFilter || ''}
+          onChange={(value) => setRoleFilter(value || null)}
+          clearable
         />
+      </Group>
 
-        <UserModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          userData={selectedUser}
-          isLoading={selectedUser ? isUpdating : isCreating}
-        />
+      <CrudTable
+        data={users}
+        columns={columns as any}
+        isLoading={loading && !data}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-        <ConfirmDelete
-          isOpen={isDeleteModalOpen}
-          title="Delete User"
-          message={`Are you sure you want to delete user "${selectedUser?.email}"? This action will permanently remove their access.`}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          isLoading={isDeleting}
-        />
+      <AdminPagination
+        label="users"
+        totalItems={totalUsers}
+        page={currentPage}
+        totalPages={totalPages}
+        route={routes.adminUsers as RouteBuilder}
+        query={{
+          search: debouncedSearchQuery || undefined,
+          role: roleFilter || undefined,
+        }}
+        onPageChange={setCurrentPage}
+        pageSize={PAGE_SIZE}
+      />
 
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </Container>
-    </AdminLayout>
+      <UserModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        userData={selectedUser}
+        isLoading={selectedUser ? isUpdating : isCreating}
+      />
+
+      <ConfirmDelete
+        isOpen={isDeleteModalOpen}
+        title="Delete User"
+        message={`Are you sure you want to delete user "${selectedUser?.email}"? This action will permanently remove their access.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={isDeleting}
+      />
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+    </Container>
   )
 }
 

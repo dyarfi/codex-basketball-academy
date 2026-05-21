@@ -116,7 +116,12 @@ export function CrudTable<T extends { id: string }>({
       )}
     >
       <Table.ScrollContainer minWidth={500}>
-        <Table verticalSpacing="xs" sm={{ verticalSpacing: 'md' }} horizontalSpacing="xs" sm={{ horizontalSpacing: 'md' }} {...tableProps}>
+        <Table
+          verticalSpacing="xs"
+          sm={{ verticalSpacing: 'md', horizontalSpacing: 'md' }}
+          horizontalSpacing="xs"
+          {...tableProps}
+        >
           <Table.Thead className={isDark ? 'bg-slate-700' : 'bg-gray-50'}>
             <Table.Tr>
               {columns.map((col) => (

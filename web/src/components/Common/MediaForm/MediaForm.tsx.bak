@@ -1,0 +1,207 @@
+import type { EditMediaById, UpdateMediaInput } from 'types/graphql'
+
+import type { RWGqlError } from '@redwoodjs/forms'
+import {
+  Form,
+  FormError,
+  FieldError,
+  Label,
+  TextField,
+  NumberField,
+  CheckboxField,
+  Submit,
+} from '@redwoodjs/forms'
+
+type FormMedia = NonNullable<EditMediaById['media']>
+
+interface MediaFormProps {
+  media?: EditMediaById['media']
+  onSave: (data: UpdateMediaInput, id?: FormMedia['id']) => void
+  error: RWGqlError
+  loading: boolean
+}
+
+const MediaForm = (props: MediaFormProps) => {
+  const onSubmit = (data: FormMedia) => {
+    props.onSave(data, props?.media?.id)
+  }
+
+  return (
+    <div className="rw-form-wrapper">
+      <Form<FormMedia> onSubmit={onSubmit} error={props.error}>
+        <FormError
+          error={props.error}
+          wrapperClassName="rw-form-error-wrapper"
+          titleClassName="rw-form-error-title"
+          listClassName="rw-form-error-list"
+        />
+
+        <Label
+          name="name"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Name
+        </Label>
+
+        <TextField
+          name="name"
+          defaultValue={props.media?.name}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        />
+
+        <FieldError name="name" className="rw-field-error" />
+
+        <Label
+          name="url"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Url
+        </Label>
+
+        <TextField
+          name="url"
+          defaultValue={props.media?.url}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        />
+
+        <FieldError name="url" className="rw-field-error" />
+
+        <Label
+          name="pathName"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Path name
+        </Label>
+
+        <TextField
+          name="pathName"
+          defaultValue={props.media?.pathName}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+        />
+
+        <FieldError name="pathName" className="rw-field-error" />
+
+        <Label
+          name="mimeType"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Mime type
+        </Label>
+
+        <TextField
+          name="mimeType"
+          defaultValue={props.media?.mimeType}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        />
+
+        <FieldError name="mimeType" className="rw-field-error" />
+
+        <Label
+          name="size"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Size
+        </Label>
+
+        <NumberField
+          name="size"
+          defaultValue={props.media?.size}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        />
+
+        <FieldError name="size" className="rw-field-error" />
+
+        <Label
+          name="publicId"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Public id
+        </Label>
+
+        <TextField
+          name="publicId"
+          defaultValue={props.media?.publicId}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+        />
+
+        <FieldError name="publicId" className="rw-field-error" />
+
+        <Label
+          name="isPublic"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Is public
+        </Label>
+
+        <CheckboxField
+          name="isPublic"
+          defaultChecked={props.media?.isPublic}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+        />
+
+        <FieldError name="isPublic" className="rw-field-error" />
+
+        <Label
+          name="order"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Order
+        </Label>
+
+        <NumberField
+          name="order"
+          defaultValue={props.media?.order}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        />
+
+        <FieldError name="order" className="rw-field-error" />
+
+        <Label
+          name="folderId"
+          className="rw-label"
+          errorClassName="rw-label rw-label-error"
+        >
+          Folder id
+        </Label>
+
+        <TextField
+          name="folderId"
+          defaultValue={props.media?.folderId}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+        />
+
+        <FieldError name="folderId" className="rw-field-error" />
+
+        <div className="rw-button-group">
+          <Submit disabled={props.loading} className="rw-button rw-button-blue">
+            Save
+          </Submit>
+        </div>
+      </Form>
+    </div>
+  )
+}
+
+export default MediaForm

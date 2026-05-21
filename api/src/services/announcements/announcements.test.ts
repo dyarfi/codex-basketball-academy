@@ -1,4 +1,4 @@
-import type { Announcement } from '@prisma/client'
+import type { Announcement } from "@prisma/client";
 
 import {
   announcements,
@@ -6,8 +6,8 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-} from './announcements'
-import type { StandardScenario } from './announcements.scenarios'
+} from "./announcements";
+import type { StandardScenario } from "./announcements.scenarios";
 
 // Generated boilerplate tests do not account for all circumstances
 // and can fail without adjustments, e.g. Float.
@@ -15,56 +15,54 @@ import type { StandardScenario } from './announcements.scenarios'
 //       https://redwoodjs.com/docs/testing#testing-services
 // https://redwoodjs.com/docs/testing#jest-expect-type-considerations
 
-describe('announcements', () => {
-  scenario('returns all announcements', async (scenario: StandardScenario) => {
-    const result = await announcements()
+describe("announcements", () => {
+  scenario("returns all announcements", async (scenario: StandardScenario) => {
+    const result = await announcements();
 
-    expect(result.length).toEqual(Object.keys(scenario.announcement).length)
-  })
+    expect(result.length).toEqual(Object.keys(scenario.announcement).length);
+  });
 
   scenario(
-    'returns a single announcement',
+    "returns a single announcement",
     async (scenario: StandardScenario) => {
-      const result = await announcement({ id: scenario.announcement.one.id })
+      const result = await announcement({ id: scenario.announcement.one.id });
 
-      expect(result).toEqual(scenario.announcement.one)
-    }
-  )
+      expect(result).toEqual(scenario.announcement.one);
+    },
+  );
 
-  scenario('creates a announcement', async (scenario: StandardScenario) => {
+  scenario("creates a announcement", async () => {
     const result = await createAnnouncement({
       input: {
-        createdById: scenario.announcement.two.createdById,
-        title: 'String',
-        content: 'String',
-        updatedAt: '2026-04-02T19:07:10.362Z',
+        title: "String",
+        message: "String",
+        updatedAt: "2025-07-31T14:46:31.813Z",
       },
-    })
+    });
 
-    expect(result.createdById).toEqual(scenario.announcement.two.createdById)
-    expect(result.title).toEqual('String')
-    expect(result.content).toEqual('String')
-    expect(result.updatedAt).toEqual(new Date('2026-04-02T19:07:10.362Z'))
-  })
+    expect(result.title).toEqual("String");
+    expect(result.message).toEqual("String");
+    expect(result.updatedAt).toEqual(new Date("2025-07-31T14:46:31.813Z"));
+  });
 
-  scenario('updates a announcement', async (scenario: StandardScenario) => {
+  scenario("updates a announcement", async (scenario: StandardScenario) => {
     const original = (await announcement({
       id: scenario.announcement.one.id,
-    })) as Announcement
+    })) as Announcement;
     const result = await updateAnnouncement({
       id: original.id,
-      input: { title: 'String2' },
-    })
+      input: { title: "String2" },
+    });
 
-    expect(result.title).toEqual('String2')
-  })
+    expect(result.title).toEqual("String2");
+  });
 
-  scenario('deletes a announcement', async (scenario: StandardScenario) => {
+  scenario("deletes a announcement", async (scenario: StandardScenario) => {
     const original = (await deleteAnnouncement({
       id: scenario.announcement.one.id,
-    })) as Announcement
-    const result = await announcement({ id: original.id })
+    })) as Announcement;
+    const result = await announcement({ id: original.id });
 
-    expect(result).toEqual(null)
-  })
-})
+    expect(result).toEqual(null);
+  });
+});

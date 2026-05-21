@@ -59,6 +59,11 @@ export const schema = gql`
     signatureUrl: String
     expiryDate: DateTime
     status: CertificateStatus
+    verifiedAt: DateTime
+    revokedAt: DateTime
+    revokedReason: String
+    createdAt: DateTime
+    updatedAt: DateTime
   }
 
   input UpdateCertificateInput {
@@ -79,6 +84,9 @@ export const schema = gql`
     signatureUrl: String
     expiryDate: DateTime
     status: CertificateStatus
+    verifiedAt: DateTime
+    revokedAt: DateTime
+    revokedReason: String
   }
 
   type Mutation {

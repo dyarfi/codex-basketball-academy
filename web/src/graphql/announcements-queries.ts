@@ -4,48 +4,58 @@ export const ANNOUNCEMENTS_QUERY = gql`
   query GetAnnouncements {
     announcements {
       id
-      createdById
+      message
       title
-      content
-      imageUrl
-      publishDate
-      expiryDate
-      isActive
+      actionLabel
+      actionUrl
+      priority
+      showFrom
+      showUntil
+      meta
       createdAt
       updatedAt
-      createdBy {
-        id
-        email
-        profile {
-          firstName
-          lastName
-        }
-      }
+      isDismissible
+      isActive
+      type
+      # imageUrl
+      # content
+      # createdBy {
+      #   id
+      #   email
+      #   profile {
+      #     firstName
+      #     lastName
+      #   }
+      # }
     }
   }
 `
 
 export const ANNOUNCEMENT_QUERY = gql`
-  query GetAnnouncement($id: String!) {
+  query GetAnnouncement($id: Int!) {
     announcement(id: $id) {
       id
-      createdById
+      message
       title
-      content
-      imageUrl
-      publishDate
-      expiryDate
-      isActive
+      actionLabel
+      actionUrl
+      priority
+      showFrom
+      showUntil
+      meta
       createdAt
       updatedAt
-      createdBy {
-        id
-        email
-        profile {
-          firstName
-          lastName
-        }
-      }
+      isDismissible
+      isActive
+      type
+      # createdBy {
+      #   id
+      #   email
+      #   profile {
+      #     firstName
+      #     lastName
+      #   }
+      # }
     }
   }
 `
@@ -55,11 +65,16 @@ export const CREATE_ANNOUNCEMENT_MUTATION = gql`
     createAnnouncement(input: $input) {
       id
       title
-      content
-      imageUrl
-      publishDate
-      expiryDate
+      message
+      type
       isActive
+      isDismissible
+      actionLabel
+      actionUrl
+      priority
+      showFrom
+      showUntil
+      meta
       createdAt
       updatedAt
     }
@@ -67,15 +82,20 @@ export const CREATE_ANNOUNCEMENT_MUTATION = gql`
 `
 
 export const UPDATE_ANNOUNCEMENT_MUTATION = gql`
-  mutation UpdateAnnouncement($id: String!, $input: UpdateAnnouncementInput!) {
+  mutation UpdateAnnouncement($id: Int!, $input: UpdateAnnouncementInput!) {
     updateAnnouncement(id: $id, input: $input) {
       id
       title
-      content
-      imageUrl
-      publishDate
-      expiryDate
+      message
+      type
       isActive
+      isDismissible
+      actionLabel
+      actionUrl
+      priority
+      showFrom
+      showUntil
+      meta
       createdAt
       updatedAt
     }
@@ -83,7 +103,7 @@ export const UPDATE_ANNOUNCEMENT_MUTATION = gql`
 `
 
 export const DELETE_ANNOUNCEMENT_MUTATION = gql`
-  mutation DeleteAnnouncement($id: String!) {
+  mutation DeleteAnnouncement($id: Int!) {
     deleteAnnouncement(id: $id) {
       id
     }

@@ -25,7 +25,6 @@ import { Trash, Plus, Pencil, Calendar } from '@phosphor-icons/react'
 import { format, parseISO } from 'date-fns'
 
 import { useAuth } from 'src/auth'
-import { AdminLayout } from 'src/components/AdminLayout'
 
 import {
   ANNOUNCEMENTS_QUERY,
@@ -40,10 +39,10 @@ const AnnouncementComponent = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
+    message: '',
     imageUrl: '',
-    publishDate: format(new Date(), 'yyyy-MM-dd'),
-    expiryDate: '',
+    // publishDate: format(new Date(), 'yyyy-MM-dd'),
+    // expiryDate: '',
     isActive: true,
   })
 
@@ -76,22 +75,22 @@ const AnnouncementComponent = () => {
       setEditingId(announcement.id)
       setFormData({
         title: announcement.title,
-        content: announcement.content,
+        message: announcement.message,
         imageUrl: announcement.imageUrl || '',
-        publishDate: format(parseISO(announcement.publishDate), 'yyyy-MM-dd'),
-        expiryDate: announcement.expiryDate
-          ? format(parseISO(announcement.expiryDate), 'yyyy-MM-dd')
-          : '',
+        // publishDate: format(parseISO(announcement.publishDate), 'yyyy-MM-dd'),
+        // expiryDate: announcement.expiryDate
+        //   ? format(parseISO(announcement.expiryDate), 'yyyy-MM-dd')
+        //   : '',
         isActive: announcement.isActive,
       })
     } else {
       setEditingId(null)
       setFormData({
         title: '',
-        content: '',
+        message: '',
         imageUrl: '',
-        publishDate: format(new Date(), 'yyyy-MM-dd'),
-        expiryDate: '',
+        // publishDate: format(new Date(), 'yyyy-MM-dd'),
+        // expiryDate: '',
         isActive: true,
       })
     }
@@ -104,20 +103,24 @@ const AnnouncementComponent = () => {
   }
 
   const handleSave = async () => {
-    if (!formData.title || !formData.content) {
+    if (!formData.title || !formData.message) {
       alert('Please fill in all required fields')
       return
     }
 
     const input = {
       title: formData.title,
-      content: formData.content,
+      message: formData.message,
       imageUrl: formData.imageUrl || null,
-      publishDate: new Date(formData.publishDate).toISOString(),
-      expiryDate: formData.expiryDate
-        ? new Date(formData.expiryDate).toISOString()
-        : null,
+      // publishDate: new Date(formData.publishDate).toISOString(),
+      // expiryDate: formData.expiryDate
+      //   ? new Date(formData.expiryDate).toISOString()
+      //   : null,
+      isDismissible: true,
+      priority: 1,
+      type: 'INFO',
       isActive: formData.isActive,
+      createdById: 'cmpdxj0oo0000hspgmggso4jr',
     }
 
     if (editingId) {
@@ -146,143 +149,144 @@ const AnnouncementComponent = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Stack gap="lg">
-          <Card withBorder p="lg">
-            <Card.Section withBorder inheritPadding py="md">
-              <Group justify="space-between">
-                <Text fw={500} size="lg">
-                  Announcements
-                </Text>
-                <Button
-                  leftSection={<Plus size={16} />}
-                  onClick={() => handleOpenModal()}
-                >
-                  Add Announcement
-                </Button>
-              </Group>
-            </Card.Section>
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Stack gap="lg">
+        <Card withBorder p="lg">
+          <Card.Section withBorder inheritPadding py="md">
+            <Group justify="space-between">
+              <Text fw={500} size="lg">
+                Announcements
+              </Text>
+              <Button
+                leftSection={<Plus size={16} />}
+                onClick={() => handleOpenModal()}
+              >
+                Add Announcement
+              </Button>
+            </Group>
+          </Card.Section>
 
-            <Card.Section>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Title</Table.Th>
-                    <Table.Th>Publish Date</Table.Th>
-                    <Table.Th>Expiry Date</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {announcements.length > 0 ? (
-                    announcements.map((announcement) => (
-                      <Table.Tr key={announcement.id}>
-                        <Table.Td>{announcement.title}</Table.Td>
-                        <Table.Td>
-                          {format(
-                            parseISO(announcement.publishDate),
-                            'MMM dd, yyyy'
-                          )}
-                        </Table.Td>
-                        <Table.Td>
-                          {announcement.expiryDate
-                            ? format(
-                                parseISO(announcement.expiryDate),
-                                'MMM dd, yyyy'
-                              )
-                            : '-'}
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={announcement.isActive ? 'green' : 'red'}
-                            variant="light"
+          <Card.Section>
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Title</Table.Th>
+                  <Table.Th>Publish Date</Table.Th>
+                  <Table.Th>Expiry Date</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {announcements.length > 0 ? (
+                  announcements.map((announcement) => (
+                    <Table.Tr key={announcement.id}>
+                      <Table.Td>{announcement.title}</Table.Td>
+                      <Table.Td>
+                        {format(
+                          parseISO(announcement.createdAt),
+                          'MMM dd, yyyy'
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        {announcement.showForm
+                          ? format(
+                              parseISO(announcement.showForm),
+                              'MMM dd, yyyy'
+                            )
+                          : '-'}
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge
+                          color={announcement.isActive ? 'green' : 'red'}
+                          variant="light"
+                        >
+                          {announcement.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap={0}>
+                          <ActionIcon
+                            size="sm"
+                            color="blue"
+                            variant="subtle"
+                            onClick={() => handleOpenModal(announcement)}
                           >
-                            {announcement.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap={0}>
-                            <ActionIcon
-                              size="sm"
-                              color="blue"
-                              variant="subtle"
-                              onClick={() => handleOpenModal(announcement)}
-                            >
-                              <Pencil size={16} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              color="red"
-                              variant="subtle"
-                              onClick={() => handleDelete(announcement.id)}
-                            >
-                              <Trash size={16} />
-                            </ActionIcon>
-                          </Group>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))
-                  ) : (
-                    <Table.Tr>
-                      <Table.Td colSpan={5}>
-                        <Center py="xl">
-                          <Text c="dimmed">No announcements found</Text>
-                        </Center>
+                            <Pencil size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            size="sm"
+                            color="red"
+                            variant="subtle"
+                            onClick={() => handleDelete(announcement.id)}
+                          >
+                            <Trash size={16} />
+                          </ActionIcon>
+                        </Group>
                       </Table.Td>
                     </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </Card.Section>
-          </Card>
+                  ))
+                ) : (
+                  <Table.Tr>
+                    <Table.Td colSpan={5}>
+                      <Center py="xl">
+                        <Text c="dimmed">No announcements found</Text>
+                      </Center>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </Table>
+          </Card.Section>
+        </Card>
 
-          <Modal
-            opened={opened}
-            onClose={handleCloseModal}
-            title={editingId ? 'Edit Announcement' : 'Add Announcement'}
-            centered
-          >
-            <Stack gap="md">
-              <TextInput
-                label="Title"
-                placeholder="Announcement title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.currentTarget.value })
-                }
-                required
-              />
-              <Textarea
-                label="Content"
-                placeholder="Announcement content"
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData({ ...formData, content: e.currentTarget.value })
-                }
-                required
-              />
-              <TextInput
-                label="Image URL"
-                placeholder="https://..."
-                value={formData.imageUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, imageUrl: e.currentTarget.value })
-                }
-              />
-              <Input
+        <Modal
+          opened={opened}
+          onClose={handleCloseModal}
+          title={editingId ? 'Edit Announcement' : 'Add Announcement'}
+          centered
+        >
+          <Stack gap="md">
+            <TextInput
+              label="Title"
+              placeholder="Announcement title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.currentTarget.value })
+              }
+              required
+            />
+            <Textarea
+              label="Message"
+              placeholder="Announcement message"
+              value={formData.message}
+              onChange={(e) =>
+                setFormData({ ...formData, message: e.currentTarget.value })
+              }
+              required
+            />
+            <TextInput
+              label="Image URL"
+              placeholder="https://..."
+              value={formData.imageUrl}
+              onChange={(e) =>
+                setFormData({ ...formData, imageUrl: e.currentTarget.value })
+              }
+            />
+            {/* <Input
                 type="date"
                 label="Publish Date"
                 value={formData.publishDate}
@@ -304,30 +308,29 @@ const AnnouncementComponent = () => {
                     expiryDate: e.currentTarget.value,
                   })
                 }
-              />
-              <Switch
-                label="Active"
-                checked={formData.isActive}
-                onChange={(event) =>
-                  setFormData({
-                    ...formData,
-                    isActive: event.currentTarget.checked,
-                  })
-                }
-              />
-              <Group justify="flex-end">
-                <Button variant="default" onClick={handleCloseModal}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>
-                  {editingId ? 'Update' : 'Create'}
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
-        </Stack>
-      </Container>
-    </AdminLayout>
+              /> */}
+            <Switch
+              label="Active"
+              checked={formData.isActive}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  isActive: event.currentTarget.checked,
+                })
+              }
+            />
+            <Group justify="flex-end">
+              <Button variant="default" onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                {editingId ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+      </Stack>
+    </Container>
   )
 }
 
