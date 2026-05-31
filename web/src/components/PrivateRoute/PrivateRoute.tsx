@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useNavigate } from '@redwoodjs/router'
+import { navigate } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 
@@ -10,7 +10,6 @@ interface PrivateRouteProps {
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const { currentUser, loading } = useAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (!loading && !currentUser) {

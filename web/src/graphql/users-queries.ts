@@ -20,6 +20,59 @@ export const GET_USERS = gql`
   }
 `
 
+export const GET_PAGINATED_USERS = gql`
+  query GetPaginatedUsers(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $role: Role
+    $isActive: Boolean
+  ) {
+    paginatedUsers(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      role: $role
+      isActive: $isActive
+    ) {
+      items {
+        id
+        email
+        role
+        isActive
+        createdAt
+        updatedAt
+        profile {
+          firstName
+          lastName
+          dateOfBirth
+          phoneNumber
+          address
+          city
+          state
+          zipCode
+          country
+          position
+          jerseyNumber
+          heightCm
+          weightKg
+          medicalInfo
+          emergencyContactName
+          emergencyContactPhone
+          relationshipToPlayer
+          profilePhoto
+        }
+      }
+      totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+`
+
 /**
  * Fetch a single user by ID
  */
@@ -33,6 +86,22 @@ export const GET_USER = gql`
       profile {
         firstName
         lastName
+        dateOfBirth
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
+        position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
+        profilePhoto
       }
     }
   }
@@ -48,6 +117,26 @@ export const UPDATE_USER = gql`
       email
       role
       isActive
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
+        position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
+        profilePhoto
+      }
     }
   }
 `
@@ -62,6 +151,26 @@ export const CREATE_USER = gql`
       email
       role
       isActive
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
+        position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
+        profilePhoto
+      }
     }
   }
 `
@@ -87,6 +196,27 @@ export const GET_COACHES = gql`
       id
       email
       role
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        jerseyNumber
+        position
+        profilePhoto
+      }
+    }
+  }
+`
+
+export const USERS_QUERY = gql`
+  query GetUsers {
+    users {
+      id
+      email
+      role
+      isActive
+      createdAt
+      updatedAt
       profile {
         firstName
         lastName

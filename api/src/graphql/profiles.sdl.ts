@@ -32,7 +32,6 @@ export const schema = gql`
   }
 
   input CreateProfileInput {
-    userId: String!
     firstName: String!
     lastName: String!
     dateOfBirth: DateTime
@@ -55,7 +54,6 @@ export const schema = gql`
   }
 
   input UpdateProfileInput {
-    userId: String
     firstName: String
     lastName: String
     dateOfBirth: DateTime

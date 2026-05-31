@@ -19,9 +19,31 @@ export const schema = gql`
     EXCUSED
   }
 
+  type PaginatedAttendances {
+    items: [Attendance!]!
+    totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
   type Query {
     attendances: [Attendance!]! @requireAuth
     attendance(id: String!): Attendance @requireAuth
+    paginatedAttendances(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      classId: String
+      userId: String
+      date: DateTime
+      status: AttendanceStatus
+    ): PaginatedAttendances! @requireAuth
+    attendancesByClass(classId: String!): [Attendance!]! @requireAuth
+    attendancesByUser(userId: String!): [Attendance!]! @requireAuth
+    attendancesByDate(date: DateTime!): [Attendance!]! @requireAuth
   }
 
   input CreateAttendanceInput {
@@ -45,5 +67,7 @@ export const schema = gql`
     updateAttendance(id: String!, input: UpdateAttendanceInput!): Attendance!
       @requireAuth
     deleteAttendance(id: String!): Attendance! @requireAuth
+    bulkCreateAttendance(input: [CreateAttendanceInput!]!): [Attendance!]!
+      @requireAuth
   }
 `

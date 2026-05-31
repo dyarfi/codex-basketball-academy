@@ -579,20 +579,40 @@ export async function seed() {
 
     // Create Certificates
     console.log('Creating certificates...')
-    await db.certificate.create({
-      data: {
-        userId: players[0].id,
-        programId: beginnerProgram.id,
-        title: 'Basketball Fundamentals Completion',
-        description:
-          'Successfully completed the Beginner Basketball Fundamentals program.',
-        graduationClass: 'Spring 2026',
-        ageGroupTeam: 'U-12',
-        achievementDate: new Date('2026-06-01'),
-        certificateNumber: `CERT-${Date.now()}-001`,
-        issuedBy: 'Basketball Academy Administration',
-      },
-    })
+    const now = new Date()
+    let r = 0
+    for (const playerCert of players) {
+      await db.certificate.create({
+        data: {
+          userId: playerCert.id,
+          programId: beginnerProgram.id,
+          classId: beginnerClass1.id,
+          title: 'Basketball Fundamentals Completion',
+          description:
+            'Successfully completed the Beginner Basketball Fundamentals program.',
+          graduationClass: 'Spring 2026',
+          ageGroupTeam: 'U-12',
+          achievementDate: now.toISOString(),
+          certificateNumber: `CERT-${Date.now()}-00${r}`,
+          pdfUrl: `https://example.com/certificates/beginner-cert-00${r}.pdf`,
+          qrCode: `https://example.com/certificates/beginner-cert-00${r}-qr.png`,
+          issuedBy: 'Basketball Academy Administration',
+          templateId: 'beginner_certificate_template',
+          signatureUrl: 'https://example.com/signature.png',
+          verificationCode: `CERT-${Date.now()}-00${r}-VERIFY`,
+          withAssessment: false,
+          status: 'ISSUED',
+          expiryDate: now.toISOString(),
+          verifiedAt: now.toISOString(),
+          revokedAt: now.toISOString(),
+          revokedReason:
+            'Graduation certificate issued for successful completion of the program.',
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        },
+      })
+      r++
+    }
 
     // Create Skill Assessments
     console.log('Creating skill assessments...')
@@ -623,6 +643,7 @@ export async function seed() {
         data: {
           userId: player.id,
           gameDate: new Date('2026-04-10'),
+          gameName: 'Spring 2026 Scrimmage VS Team A - BS Academy',
           points: Math.floor(Math.random() * 30),
           rebounds: Math.floor(Math.random() * 15),
           assists: Math.floor(Math.random() * 10),
@@ -637,25 +658,46 @@ export async function seed() {
     console.log('Creating announcements...')
     await db.announcement.create({
       data: {
-        createdById: adminUser.id,
         title: 'Welcome to Basketball Academy!',
-        content:
+        message:
           'We are excited to have you join our basketball training program. This season promises to be filled with learning, growth, and fun!',
-        publishDate: new Date('2026-04-01'),
-        expiryDate: new Date('2026-05-31'),
+        type: 'INFO',
+        isDismissible: true,
+        priority: 1,
+        createdAt: new Date('2026-04-01'),
+        updatedAt: new Date('2026-05-31'),
         isActive: true,
+        createdById: adminUser.id,
       },
     })
 
     await db.announcement.create({
       data: {
-        createdById: coach1.id,
-        title: 'Upcoming Tournament',
-        content:
+        title: 'Upcoming Tournament Q1 2026',
+        message:
           'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
-        publishDate: new Date('2026-04-02'),
-        expiryDate: new Date('2026-05-15'),
+        type: 'INFO',
+        isDismissible: true,
+        priority: 2,
+        createdAt: new Date('2026-04-02'),
+        updatedAt: new Date('2026-05-15'),
         isActive: true,
+        createdById: adminUser.id,
+      },
+    })
+
+    await db.announcement.create({
+      data: {
+        title: 'Upcoming Tournament Q2 2026',
+        message:
+          'Mark your calendars! We have an exciting tournament coming up on May 15th. All intermediate and advanced players are encouraged to participate.',
+        type: 'INFO',
+        isDismissible: true,
+        priority: 3,
+        createdAt: new Date('2026-04-02'),
+        updatedAt: new Date('2026-05-15'),
+        isActive: true,
+        createdById: adminUser.id,
       },
     })
 
@@ -683,6 +725,218 @@ export async function seed() {
       },
     })
 
+    // Create Site Settings
+    console.log('Creating site settings...')
+    await db.siteSetting.deleteMany({})
+
+    // Site Identity Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'site_name',
+        label: 'Site Name',
+        group: 'site_identity',
+        value: 'Basketball Academy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'site_logo',
+        label: 'Site Logo URL',
+        group: 'site_identity',
+        value: '🏀',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'site_tagline',
+        label: 'Site Tagline',
+        group: 'site_identity',
+        value: 'Excellence in Basketball Training',
+        valueType: 'text',
+      },
+    })
+
+    // Header Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'header_title',
+        label: 'Header Title',
+        group: 'header',
+        value: 'Basketball Academy Admin',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'header_subtitle',
+        label: 'Header Subtitle',
+        group: 'header',
+        value: 'Admin Dashboard',
+        valueType: 'text',
+      },
+    })
+
+    // Footer Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_text',
+        label: 'Footer Text',
+        group: 'footer',
+        value: '© 2026 Basketball Academy. All rights reserved.',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_address',
+        label: 'Footer Address',
+        group: 'footer',
+        value: '123 Academy Way, Springfield, IL 62701',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_phone',
+        label: 'Footer Phone',
+        group: 'footer',
+        value: '+1 (555) 123-4567',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'footer_email',
+        label: 'Footer Email',
+        group: 'footer',
+        value: 'info@basketballacademy.com',
+        valueType: 'text',
+      },
+    })
+
+    // Content Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'homepage_welcome_title',
+        label: 'Homepage Welcome Title',
+        group: 'content',
+        value: 'Welcome to Basketball Academy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'homepage_welcome_text',
+        label: 'Homepage Welcome Text',
+        group: 'content',
+        value:
+          'Develop your basketball skills with our expert coaches and state-of-the-art facilities.',
+        valueType: 'text',
+      },
+    })
+
+    // Contact Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_phone',
+        label: 'Contact Phone Number',
+        group: 'contact',
+        value: '+1 (555) 123-4567',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_email',
+        label: 'Contact Email',
+        group: 'contact',
+        value: 'info@basketballacademy.com',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'contact_address',
+        label: 'Contact Address',
+        group: 'contact',
+        value: '123 Academy Way, Springfield, IL 62701, USA',
+        valueType: 'text',
+      },
+    })
+
+    // Social Media Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'facebook_url',
+        label: 'Facebook URL',
+        group: 'social_media',
+        value: 'https://facebook.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'twitter_url',
+        label: 'Twitter URL',
+        group: 'social_media',
+        value: 'https://twitter.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'instagram_url',
+        label: 'Instagram URL',
+        group: 'social_media',
+        value: 'https://instagram.com/basketballacademy',
+        valueType: 'text',
+      },
+    })
+
+    // Feature Settings
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_enrollment',
+        label: 'Enable Enrollment',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_payments',
+        label: 'Enable Payments',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_announcements',
+        label: 'Enable Announcements',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
     console.log('✅ Database seeded successfully!')
     console.log(`Created:`)
     console.log(`  - 1 Admin user`)
@@ -699,8 +953,9 @@ export async function seed() {
     console.log(`  - 1 Certificate`)
     console.log(`  - 5 Skill Assessments`)
     console.log(`  - 5 Player Stats`)
-    console.log(`  - 2 Announcements`)
+    console.log(`  - 3 Announcements`)
     console.log(`  - 2 Messages`)
+    console.log(`  - 23 Site Settings`)
   } catch (error) {
     console.error('🔥 Error seeding database:', error)
     throw error

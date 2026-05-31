@@ -1,4 +1,11 @@
 export const schema = gql`
+  enum CertificateStatus {
+    DRAFT
+    ISSUED
+    REVOKED
+    EXPIRED
+  }
+
   type Certificate {
     id: String!
     userId: String!
@@ -6,6 +13,7 @@ export const schema = gql`
     programId: String!
     program: Program!
     classId: String
+    class: Class
     title: String!
     description: String
     graduationClass: String
@@ -15,6 +23,15 @@ export const schema = gql`
     pdfUrl: String
     qrCode: String
     issuedBy: String
+    templateId: String
+    signatureUrl: String
+    verificationCode: String!
+    withAssessment: Boolean
+    status: CertificateStatus!
+    expiryDate: DateTime
+    verifiedAt: DateTime
+    revokedAt: DateTime
+    revokedReason: String
     createdAt: DateTime!
     updatedAt: DateTime!
   }
@@ -22,6 +39,7 @@ export const schema = gql`
   type Query {
     certificates: [Certificate!]! @requireAuth
     certificate(id: String!): Certificate @requireAuth
+    verifyCertificateByCode(verificationCode: String!): Certificate @skipAuth
   }
 
   input CreateCertificateInput {
@@ -34,9 +52,20 @@ export const schema = gql`
     ageGroupTeam: String
     achievementDate: DateTime!
     certificateNumber: String!
+    verificationCode: String!
+    withAssessment: Boolean
     pdfUrl: String
     qrCode: String
     issuedBy: String
+    templateId: String
+    signatureUrl: String
+    expiryDate: DateTime
+    status: CertificateStatus
+    verifiedAt: DateTime
+    revokedAt: DateTime
+    revokedReason: String
+    createdAt: DateTime
+    updatedAt: DateTime
   }
 
   input UpdateCertificateInput {
@@ -49,9 +78,18 @@ export const schema = gql`
     ageGroupTeam: String
     achievementDate: DateTime
     certificateNumber: String
+    verificationCode: String!
+    withAssessment: Boolean
     pdfUrl: String
     qrCode: String
     issuedBy: String
+    templateId: String
+    signatureUrl: String
+    expiryDate: DateTime
+    status: CertificateStatus
+    verifiedAt: DateTime
+    revokedAt: DateTime
+    revokedReason: String
   }
 
   type Mutation {
@@ -61,5 +99,7 @@ export const schema = gql`
       input: UpdateCertificateInput!
     ): Certificate! @requireAuth
     deleteCertificate(id: String!): Certificate! @requireAuth
+    verifyCertificate(id: String!): Certificate! @requireAuth
+    revokeCertificate(id: String!, reason: String!): Certificate! @requireAuth
   }
 `

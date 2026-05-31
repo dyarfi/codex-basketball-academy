@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type {
   QueryResolvers,
   MutationResolvers,
@@ -10,6 +11,83 @@ export const users: QueryResolvers['users'] = () => {
   return db.user.findMany()
 }
 
+export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
+  page = 1,
+  pageSize = 10,
+  search,
+  role,
+  isActive,
+}) => {
+  const conditions: Prisma.UserWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          email: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          profile: {
+            is: {
+              firstName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          profile: {
+            is: {
+              lastName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  if (role) {
+    conditions.push({ role })
+  }
+
+  if (typeof isActive === 'boolean') {
+    conditions.push({ isActive })
+  }
+
+  const where: Prisma.UserWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+  const safePageSize = Math.max(1, pageSize)
+  const totalCount = await db.user.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
+
+  const items = await db.user.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
+
+  return {
+    items,
+    totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
+  }
+}
+
 export const user: QueryResolvers['user'] = ({ id }) => {
   return db.user.findUnique({
     where: { id },
@@ -17,15 +95,108 @@ export const user: QueryResolvers['user'] = ({ id }) => {
 }
 
 export const createUser: MutationResolvers['createUser'] = ({ input }) => {
+  const { email, role, isActive, profile } = input
   return db.user.create({
-    data: input,
+    data: {
+      email,
+      role,
+      isActive,
+      hashedPassword: '', // Placeholder - should be set via password reset or invitation email
+      salt: '', // Placeholder - should be set via password reset or invitation email
+      profile: {
+        create: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          dateOfBirth: profile.dateOfBirth
+            ? new Date(profile.dateOfBirth)
+            : null,
+          phoneNumber: profile.phoneNumber || null,
+          address: profile.address || null,
+          city: profile.city || null,
+          state: profile.state || null,
+          zipCode: profile.zipCode || null,
+          country: profile.country || null,
+          position: profile.position || null,
+          jerseyNumber: profile.jerseyNumber || null,
+          heightCm: profile.heightCm || null,
+          weightKg: profile.weightKg || null,
+          medicalInfo: profile.medicalInfo || null,
+          emergencyContactName: profile.emergencyContactName || null,
+          emergencyContactPhone: profile.emergencyContactPhone || null,
+          relationshipToPlayer: profile.relationshipToPlayer || null,
+          profilePhoto: profile.profilePhoto || null,
+        },
+      },
+    },
+    include: {
+      profile: true,
+    },
   })
 }
 
 export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
+  const { profile, ...userInput } = input
+
+  const updateData: Record<string, any> = { ...userInput }
+
+  if (profile) {
+    const {
+      firstName,
+      lastName,
+      dateOfBirth,
+      phoneNumber,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      position,
+      jerseyNumber,
+      heightCm,
+      weightKg,
+      medicalInfo,
+      emergencyContactName,
+      emergencyContactPhone,
+      relationshipToPlayer,
+      playerUserId,
+      profilePhoto,
+    } = profile
+
+    const profileData = {
+      firstName,
+      lastName,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      phoneNumber,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      position,
+      jerseyNumber,
+      heightCm,
+      weightKg,
+      medicalInfo,
+      emergencyContactName,
+      emergencyContactPhone,
+      relationshipToPlayer,
+      playerUserId,
+      profilePhoto,
+    }
+
+    // Use upsert to handle both create and update
+    updateData.profile = {
+      upsert: {
+        create: profileData,
+        update: profileData,
+      },
+    }
+  }
+
   return db.user.update({
-    data: input,
+    data: updateData,
     where: { id },
+    include: { profile: true },
   })
 }
 

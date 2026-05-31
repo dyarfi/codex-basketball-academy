@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 
-import { useMutation } from '@apollo/client'
-
 import { Link, navigate } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
-import { SIGNUP_MUTATION } from 'src/graphql/mutations'
+import { ToastContainer } from 'src/components/Toast/Toast'
+import { useToast } from 'src/components/Toast/useToast'
 
 const SignupPage = () => {
-  const { isAuthenticated, loading: isLoading } = useAuth()
+  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { isAuthenticated, loading: isLoading, signUp } = useAuth()
+  const [loading, setLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -21,14 +22,14 @@ const SignupPage = () => {
   })
   const [error, setError] = useState('')
 
-  const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
-    onCompleted: () => {
-      navigate('/dashboard')
-    },
-    onError: (err) => {
-      setError(err.message || 'Signup failed')
-    },
-  })
+  // const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
+  //   onCompleted: () => {
+  //     navigate('/dashboard')
+  //   },
+  //   onError: (err) => {
+  //     setError(err.message || 'Signup failed')
+  //   },
+  // })
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -38,7 +39,7 @@ const SignupPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-xl text-gray-600">Loading...</div>
       </div>
     )
@@ -85,28 +86,38 @@ const SignupPage = () => {
       )
       return
     }
-
+    // console.log({ formData })
     try {
-      await signup({
-        variables: {
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: formData.role,
-          dateOfBirth: formData.dateOfBirth
-            ? new Date(formData.dateOfBirth).toISOString()
-            : null,
-        },
+      setLoading(true)
+      const response = await signUp({
+        username: formData.email,
+        password: formData.password,
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role,
+        dateOfBirth: formData.dateOfBirth
+          ? new Date(formData.dateOfBirth).toISOString()
+          : null,
       })
-    } catch (err) {
-      // Error handled by onError callback
+      if (response.message) {
+        success(response.message)
+      } else if (response.error) {
+        toastError(response.error)
+      } else {
+        // user is signed in automatically
+        success('Welcome!')
+      }
+      setLoading(false)
+    } catch (err: any) {
+      toastError(err.message || 'Signup failed')
+      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create Account
@@ -138,7 +149,7 @@ const SignupPage = () => {
                 required
                 value={formData.firstName}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -156,7 +167,7 @@ const SignupPage = () => {
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -174,7 +185,7 @@ const SignupPage = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -190,7 +201,7 @@ const SignupPage = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               >
                 <option value="PLAYER">Player</option>
                 <option value="PARENT">Parent</option>
@@ -212,7 +223,7 @@ const SignupPage = () => {
                 name="dateOfBirth"
                 value={formData.dateOfBirth}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -230,7 +241,7 @@ const SignupPage = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -248,7 +259,7 @@ const SignupPage = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
               />
             </div>
 
@@ -261,7 +272,7 @@ const SignupPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
@@ -273,6 +284,7 @@ const SignupPage = () => {
             </Link>
           </p>
         </form>
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
       </div>
     </div>
   )

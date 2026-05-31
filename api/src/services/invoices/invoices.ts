@@ -3,11 +3,108 @@ import type {
   MutationResolvers,
   InvoiceRelationResolvers,
 } from 'types/graphql'
+import { Prisma } from '@prisma/client'
 
 import { db } from 'src/lib/db'
 
 export const invoices: QueryResolvers['invoices'] = () => {
   return db.invoice.findMany()
+}
+
+export const paginatedInvoices: QueryResolvers['paginatedInvoices'] = async ({
+  page = 1,
+  pageSize = 10,
+  search,
+  status,
+}) => {
+  const conditions: Prisma.InvoiceWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          invoiceNumber: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          user: {
+            is: {
+              email: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          user: {
+            is: {
+              profile: {
+                is: {
+                  firstName: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          user: {
+            is: {
+              profile: {
+                is: {
+                  lastName: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  if (status) {
+    conditions.push({ status })
+  }
+
+  const where: Prisma.InvoiceWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+  const safePageSize = Math.max(1, pageSize)
+  const totalCount = await db.invoice.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
+
+  const items = await db.invoice.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
+
+  return {
+    items,
+    totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
+  }
 }
 
 export const invoice: QueryResolvers['invoice'] = ({ id }) => {

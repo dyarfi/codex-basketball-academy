@@ -17,10 +17,25 @@ export const schema = gql`
     createdAt: DateTime!
     updatedAt: DateTime!
   }
-
+  type PaginatedSkillAssessments {
+    items: [SkillAssessment!]!
+    totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
   type Query {
     skillAssessments: [SkillAssessment!]! @requireAuth
     skillAssessment(id: String!): SkillAssessment @requireAuth
+    skillsAssessmentsByProgram(id: String!): SkillAssessment @requireAuth
+    paginatedSkillAssessments(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      programId: String
+    ): PaginatedSkillAssessments! @requireAuth
   }
 
   input CreateSkillAssessmentInput {

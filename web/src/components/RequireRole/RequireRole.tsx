@@ -15,11 +15,14 @@ const RequireRole = ({ children, roles }: RequireRoleProps) => {
   useEffect(() => {
     if (!isLoading) {
       if (!currentUser) {
-        navigate('/login')
+        navigate('/')
       } else {
         const allowedRoles = Array.isArray(roles) ? roles : [roles]
+        // if (!allowedRoles.includes(currentUser.role)) {
+        //   navigate('/dashboard')
+        // }
         if (!allowedRoles.includes(currentUser.role)) {
-          navigate('/dashboard')
+          navigate('/')
         }
       }
     }

@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import { Link, routes } from '@redwoodjs/router'
 import { useQuery } from '@redwoodjs/web'
 
+import Footer from 'src/components/Footer/Footer'
+import Navigation from 'src/components/Navigation/Navigation'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 
 type Program = {
@@ -59,27 +61,7 @@ const ProgramsListPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to={routes.home()} className="text-2xl font-bold text-blue-600">
-            🏀 Basketball Academy
-          </Link>
-          <div className="flex items-center space-x-4">
-            <Link
-              to={routes.dashboard()}
-              className="font-medium text-gray-700 hover:text-blue-600"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to={routes.UserProfile()}
-              className="font-medium text-gray-700 hover:text-blue-600"
-            >
-              Profile
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       <main>
         <section className="bg-blue-600 px-4 py-12 text-white">
@@ -228,6 +210,8 @@ const ProgramsListPage = () => {
           </div>
         </section>
       </main>
+
+      <Footer />
     </div>
   )
 }

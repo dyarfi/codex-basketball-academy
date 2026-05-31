@@ -34,6 +34,61 @@ export const GET_CLASSES = gql`
   }
 `
 
+export const GET_PAGINATED_CLASSES = gql`
+  query GetPaginatedClasses(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $programId: String
+    $coachId: String
+    $isActive: Boolean
+  ) {
+    paginatedClasses(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      programId: $programId
+      coachId: $coachId
+      isActive: $isActive
+    ) {
+      items {
+        id
+        name
+        description
+        scheduleDay
+        scheduleTime
+        capacity
+        currentEnrollment
+        isActive
+        startDate
+        endDate
+        programId
+        program {
+          id
+          name
+        }
+        coachId
+        coach {
+          id
+          email
+          profile {
+            firstName
+            lastName
+          }
+        }
+        createdAt
+        updatedAt
+      }
+      totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+`
+
 /**
  * Fetch a single class by ID
  */
@@ -64,6 +119,8 @@ export const CREATE_CLASS = gql`
     createClass(input: $input) {
       id
       name
+      coachId
+      programId
       isActive
       createdAt
     }
@@ -78,6 +135,8 @@ export const UPDATE_CLASS = gql`
     updateClass(id: $id, input: $input) {
       id
       name
+      coachId
+      programId
       isActive
       updatedAt
     }
@@ -92,6 +151,37 @@ export const DELETE_CLASS = gql`
     deleteClass(id: $id) {
       id
       name
+    }
+  }
+`
+
+export const CLASSES_QUERY = gql`
+  query GetClasses {
+    classes {
+      id
+      name
+      description
+      scheduleDay
+      scheduleTime
+      capacity
+      currentEnrollment
+      isActive
+      startDate
+      endDate
+      program {
+        id
+        name
+      }
+      coach {
+        id
+        email
+        profile {
+          firstName
+          lastName
+        }
+      }
+      createdAt
+      updatedAt
     }
   }
 `

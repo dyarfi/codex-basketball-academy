@@ -18,6 +18,16 @@ export const schema = gql`
     skillAssessments: [SkillAssessment]!
   }
 
+  type PaginatedPrograms {
+    items: [Program!]!
+    totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
   enum ProgramLevel {
     BEGINNER
     INTERMEDIATE
@@ -28,6 +38,13 @@ export const schema = gql`
   type Query {
     programs: [Program!]! @requireAuth
     program(id: String!): Program @requireAuth
+    paginatedPrograms(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      level: ProgramLevel
+      isActive: Boolean
+    ): PaginatedPrograms! @requireAuth
   }
 
   input CreateProgramInput {

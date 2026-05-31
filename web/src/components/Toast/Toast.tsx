@@ -90,7 +90,7 @@ export const ToastContainer: React.FC<{
   onRemove: (id: string) => void
 }> = ({ toasts, onRemove }) => {
   return (
-    <div className="fixed right-4 top-4 z-50 space-y-2">
+    <div className="fixed right-4 top-4 space-y-2" style={{ zIndex: 201 }}>
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={onRemove} />
       ))}

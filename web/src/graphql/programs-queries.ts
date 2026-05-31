@@ -22,6 +22,45 @@ export const GET_PROGRAMS = gql`
   }
 `
 
+export const GET_PAGINATED_PROGRAMS = gql`
+  query GetPaginatedPrograms(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $level: ProgramLevel
+    $isActive: Boolean
+  ) {
+    paginatedPrograms(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      level: $level
+      isActive: $isActive
+    ) {
+      items {
+        id
+        name
+        description
+        level
+        minAge
+        maxAge
+        capacity
+        durationWeeks
+        pricePerMonth
+        isActive
+        createdAt
+        updatedAt
+      }
+      totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+`
+
 /**
  * Fetch a single program by ID
  */

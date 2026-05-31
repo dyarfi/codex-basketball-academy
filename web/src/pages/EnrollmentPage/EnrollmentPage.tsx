@@ -78,15 +78,18 @@ const EnrollmentPage = () => {
 
     setFormData((current) => ({
       ...current,
-      playerFirstName: current.playerFirstName || currentUser.profile?.firstName || '',
-      playerLastName: current.playerLastName || currentUser.profile?.lastName || '',
+      playerFirstName:
+        current.playerFirstName || currentUser.profile?.firstName || '',
+      playerLastName:
+        current.playerLastName || currentUser.profile?.lastName || '',
       playerDateOfBirth:
         current.playerDateOfBirth ||
         (currentUser.profile?.dateOfBirth
           ? new Date(currentUser.profile.dateOfBirth).toISOString().slice(0, 10)
           : ''),
       playerEmail: current.playerEmail || currentUser.email || '',
-      playerPhone: current.playerPhone || currentUser.profile?.phoneNumber || '',
+      playerPhone:
+        current.playerPhone || currentUser.profile?.phoneNumber || '',
       emergencyContactName:
         current.emergencyContactName ||
         currentUser.profile?.emergencyContactName ||
@@ -102,13 +105,20 @@ const EnrollmentPage = () => {
     }))
   }, [currentUser])
 
-  const { data, loading, error } = useQuery<{ program: Program | null }>(GET_PROGRAM, {
-    variables: { id: programId },
-    skip: !programId,
-  })
+  const { data, loading, error } = useQuery<{ program: Program | null }>(
+    GET_PROGRAM,
+    {
+      variables: { id: programId },
+      skip: !programId,
+    }
+  )
 
   const selectedClassIds = useMemo(
-    () => classesParam.split(',').map((item) => item.trim()).filter(Boolean),
+    () =>
+      classesParam
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
     [classesParam]
   )
 
@@ -123,9 +133,8 @@ const EnrollmentPage = () => {
     )
   }, [program, selectedClassIds])
 
-  const [createEnrollment, { loading: isSubmitting }] = useMutation(
-    CREATE_ENROLLMENT
-  )
+  const [createEnrollment, { loading: isSubmitting }] =
+    useMutation(CREATE_ENROLLMENT)
 
   const validateStep = (stepNum: number): boolean => {
     const newErrors: Record<string, string> = {}
@@ -236,7 +245,9 @@ const EnrollmentPage = () => {
       }, 2000)
     } catch (mutationError) {
       const message =
-        mutationError instanceof Error ? mutationError.message : 'Enrollment failed'
+        mutationError instanceof Error
+          ? mutationError.message
+          : 'Enrollment failed'
 
       setErrors({
         submit: message.includes('Unique constraint')
@@ -247,12 +258,16 @@ const EnrollmentPage = () => {
   }
 
   const isProgramSelectionInvalid =
-    !programId || !classesParam || (!loading && (!program || selectedClasses.length === 0))
+    !programId ||
+    !classesParam ||
+    (!loading && (!program || selectedClasses.length === 0))
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">Loading enrollment details...</div>
+        <div className="text-xl text-gray-600">
+          Loading enrollment details...
+        </div>
       </div>
     )
   }
@@ -272,7 +287,10 @@ const EnrollmentPage = () => {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white shadow-sm">
           <div className="mx-auto flex h-16 max-w-4xl items-center px-4 sm:px-6 lg:px-8">
-            <Link to={routes.home()} className="text-2xl font-bold text-blue-600">
+            <Link
+              to={routes.home()}
+              className="text-2xl font-bold text-blue-600"
+            >
               🏀 Basketball Academy
             </Link>
           </div>
@@ -344,7 +362,9 @@ const EnrollmentPage = () => {
                   key={classItem.id}
                   className="rounded-lg border border-blue-100 bg-blue-50 p-4"
                 >
-                  <div className="font-semibold text-gray-900">{classItem.name}</div>
+                  <div className="font-semibold text-gray-900">
+                    {classItem.name}
+                  </div>
                   <div className="text-sm text-gray-600">
                     {classItem.scheduleDay} at {classItem.scheduleTime}
                   </div>
@@ -384,10 +404,15 @@ const EnrollmentPage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="rounded-lg bg-white p-8 shadow-lg">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-lg bg-white p-8 shadow-lg"
+          >
             {errors.submit && (
               <div className="mb-6 rounded-md bg-red-50 p-4">
-                <p className="text-sm font-medium text-red-800">{errors.submit}</p>
+                <p className="text-sm font-medium text-red-800">
+                  {errors.submit}
+                </p>
               </div>
             )}
 
@@ -467,7 +492,9 @@ const EnrollmentPage = () => {
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {errors.playerEmail && (
-                        <p className="mt-1 text-sm text-red-600">{errors.playerEmail}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.playerEmail}
+                        </p>
                       )}
                     </div>
 
@@ -483,7 +510,9 @@ const EnrollmentPage = () => {
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {errors.playerPhone && (
-                        <p className="mt-1 text-sm text-red-600">{errors.playerPhone}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.playerPhone}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -549,7 +578,9 @@ const EnrollmentPage = () => {
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {errors.parentEmail && (
-                        <p className="mt-1 text-sm text-red-600">{errors.parentEmail}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.parentEmail}
+                        </p>
                       )}
                     </div>
 
@@ -565,7 +596,9 @@ const EnrollmentPage = () => {
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {errors.parentPhone && (
-                        <p className="mt-1 text-sm text-red-600">{errors.parentPhone}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.parentPhone}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -640,7 +673,8 @@ const EnrollmentPage = () => {
                     </h3>
                     <div className="space-y-2 text-gray-700">
                       <p>
-                        <span className="font-semibold">Program:</span> {program?.name}
+                        <span className="font-semibold">Program:</span>{' '}
+                        {program?.name}
                       </p>
                       <p>
                         <span className="font-semibold">Player:</span>{' '}
@@ -666,12 +700,14 @@ const EnrollmentPage = () => {
                       className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
-                      I confirm the enrollment details are accurate and accept the
-                      academy terms and participation requirements.
+                      I confirm the enrollment details are accurate and accept
+                      the academy terms and participation requirements.
                     </span>
                   </label>
                   {errors.termsAccepted && (
-                    <p className="text-sm text-red-600">{errors.termsAccepted}</p>
+                    <p className="text-sm text-red-600">
+                      {errors.termsAccepted}
+                    </p>
                   )}
                 </div>
               </div>

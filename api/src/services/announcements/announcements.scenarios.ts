@@ -1,40 +1,24 @@
-import type { Prisma, Announcement } from '@prisma/client'
+import type { Prisma, Announcement } from "@prisma/client";
 
-import type { ScenarioData } from '@redwoodjs/testing/api'
+import type { ScenarioData } from "@redwoodjs/testing/api";
 
 export const standard = defineScenario<Prisma.AnnouncementCreateArgs>({
   announcement: {
     one: {
       data: {
-        title: 'String',
-        content: 'String',
-        updatedAt: '2026-04-02T19:07:20.186Z',
-        createdBy: {
-          create: {
-            email: 'String4725231',
-            hashedPassword: 'String',
-            salt: 'String',
-            updatedAt: '2026-04-02T19:07:20.502Z',
-          },
-        },
+        title: "String",
+        message: "String",
+        updatedAt: "2025-07-31T14:46:32.093Z",
       },
     },
     two: {
       data: {
-        title: 'String',
-        content: 'String',
-        updatedAt: '2026-04-02T19:07:20.502Z',
-        createdBy: {
-          create: {
-            email: 'String3278689',
-            hashedPassword: 'String',
-            salt: 'String',
-            updatedAt: '2026-04-02T19:07:20.724Z',
-          },
-        },
+        title: "String",
+        message: "String",
+        updatedAt: "2025-07-31T14:46:32.093Z",
       },
     },
   },
-})
+});
 
-export type StandardScenario = ScenarioData<Announcement, 'announcement'>
+export type StandardScenario = ScenarioData<Announcement, "announcement">;

@@ -7,17 +7,27 @@ export const schema = gql`
     createdAt: DateTime!
     updatedAt: DateTime!
     profile: Profile
-    enrollments: [Enrollment]!
-    attendances: [Attendance]!
-    payments: [Payment]!
-    invoices: [Invoice]!
-    certificates: [Certificate]!
-    skillAssessments: [SkillAssessment]!
-    playerStats: [PlayerStats]!
-    announcements: [Announcement]!
-    sentMessages: [Message]!
-    receivedMessages: [Message]!
-    classesAsTutor: [Class]!
+    enrollments: [Enrollment]
+    attendances: [Attendance]
+    payments: [Payment]
+    invoices: [Invoice]
+    certificates: [Certificate]
+    skillAssessments: [SkillAssessment]
+    playerStats: [PlayerStats]
+    announcements: [Announcement]
+    sentMessages: [Message]
+    receivedMessages: [Message]
+    classesAsTutor: [Class]
+  }
+
+  type PaginatedUsers {
+    items: [User!]!
+    totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
   }
 
   enum Role {
@@ -31,18 +41,48 @@ export const schema = gql`
   type Query {
     users: [User!]! @requireAuth
     user(id: String!): User @requireAuth
+    paginatedUsers(
+      page: Int = 1
+      pageSize: Int = 10
+      search: String
+      role: Role
+      isActive: Boolean
+    ): PaginatedUsers! @requireAuth
   }
 
   input CreateUserInput {
     email: String!
     role: Role!
     isActive: Boolean!
+    profile: CreateProfileInput!
+  }
+
+  input CreateProfileInput {
+    firstName: String!
+    lastName: String!
+    dateOfBirth: DateTime
+    phoneNumber: String
+    address: String
+    city: String
+    state: String
+    zipCode: String
+    country: String
+    position: String
+    jerseyNumber: Int
+    heightCm: Float
+    weightKg: Float
+    medicalInfo: String
+    emergencyContactName: String
+    emergencyContactPhone: String
+    relationshipToPlayer: String
+    profilePhoto: String
   }
 
   input UpdateUserInput {
     email: String
     role: Role
     isActive: Boolean
+    profile: UpdateProfileInput
   }
 
   type Mutation {

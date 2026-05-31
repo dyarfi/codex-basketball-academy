@@ -9,14 +9,18 @@ import {
   Group,
   Stack,
   Text,
+  Tabs,
+  NumberInput,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 
 interface UserModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
-  userData?: any // If present, it's an edit
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSave: (data: Record<string, any>) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userData?: Record<string, any> // If present, it's an edit
   isLoading?: boolean
 }
 
@@ -35,13 +39,27 @@ const UserModal: React.FC<UserModalProps> = ({
       profile: {
         firstName: '',
         lastName: '',
+        dateOfBirth: '',
+        phoneNumber: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
+        position: '',
+        jerseyNumber: '',
+        heightCm: '',
+        weightKg: '',
+        medicalInfo: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
+        relationshipToPlayer: '',
+        profilePhoto: '',
       },
     },
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-      'profile.firstName': (value) =>
-        !value ? 'First name is required' : null,
-      'profile.lastName': (value) => (!value ? 'Last name is required' : null),
+      email: (value: string) =>
+        /^\S+@\S+$/.test(value) ? null : 'Invalid email',
     },
   })
 
@@ -54,15 +72,60 @@ const UserModal: React.FC<UserModalProps> = ({
         profile: {
           firstName: userData.profile?.firstName || '',
           lastName: userData.profile?.lastName || '',
+          dateOfBirth: userData.profile?.dateOfBirth
+            ? new Date(userData.profile.dateOfBirth).toISOString().split('T')[0]
+            : '',
+          phoneNumber: userData.profile?.phoneNumber || '',
+          address: userData.profile?.address || '',
+          city: userData.profile?.city || '',
+          state: userData.profile?.state || '',
+          zipCode: userData.profile?.zipCode || '',
+          country: userData.profile?.country || '',
+          position: userData.profile?.position || '',
+          jerseyNumber: userData.profile?.jerseyNumber?.toString() || '',
+          heightCm: userData.profile?.heightCm?.toString() || '',
+          weightKg: userData.profile?.weightKg?.toString() || '',
+          medicalInfo: userData.profile?.medicalInfo || '',
+          emergencyContactName: userData.profile?.emergencyContactName || '',
+          emergencyContactPhone: userData.profile?.emergencyContactPhone || '',
+          relationshipToPlayer: userData.profile?.relationshipToPlayer || '',
+          profilePhoto: userData.profile?.profilePhoto || '',
         },
       })
     } else if (!isOpen) {
       form.reset()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, isOpen])
 
   const handleSubmit = (values: typeof form.values) => {
-    onSave(values)
+    // Validate required profile fields
+    if (!values.profile.firstName) {
+      form.setFieldError('profile.firstName', 'First name is required')
+      return
+    }
+    if (!values.profile.lastName) {
+      form.setFieldError('profile.lastName', 'Last name is required')
+      return
+    }
+
+    // Convert string numbers to actual numbers
+    const processedValues = {
+      ...values,
+      profile: {
+        ...values.profile,
+        jerseyNumber: values.profile.jerseyNumber
+          ? parseInt(values.profile.jerseyNumber)
+          : undefined,
+        heightCm: values.profile.heightCm
+          ? parseFloat(values.profile.heightCm)
+          : undefined,
+        weightKg: values.profile.weightKg
+          ? parseFloat(values.profile.weightKg)
+          : undefined,
+      },
+    }
+    onSave(processedValues)
   }
 
   return (
@@ -70,77 +133,192 @@ const UserModal: React.FC<UserModalProps> = ({
       opened={isOpen}
       onClose={onClose}
       title={userData ? 'Edit User' : 'Create New User'}
-      size="md"
+      size="xl"
+      scrollAreaComponent={Tabs}
     >
       <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
-          {userData ? (
-            <div>
-              <Text size="sm" fw={500} className="mb-1 text-gray-600">
-                Email
-              </Text>
-              <Text className="rounded border border-gray-200 bg-gray-50 p-2 text-gray-500">
-                {userData.email}
-              </Text>
-            </div>
-          ) : (
-            <TextInput
-              label="Email Address"
-              placeholder="e.g. john@example.com"
-              required
-              {...form.getInputProps('email')}
-            />
+        <Tabs defaultValue="basic">
+          <Tabs.List>
+            <Tabs.Tab value="basic">Basic Info</Tabs.Tab>
+            <Tabs.Tab value="contact">Contact Details</Tabs.Tab>
+            {form.values.role === 'PLAYER' && (
+              <Tabs.Tab value="player">Player Details</Tabs.Tab>
+            )}
+            <Tabs.Tab value="emergency">Emergency</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="basic" pt="md">
+            <Stack gap="md">
+              {userData ? (
+                <div>
+                  <Text size="sm" fw={500} className="mb-1 text-gray-600">
+                    Email
+                  </Text>
+                  <Text className="rounded border border-gray-200 bg-gray-50 p-2 text-gray-500">
+                    {userData.email}
+                  </Text>
+                </div>
+              ) : (
+                <TextInput
+                  label="Email Address"
+                  placeholder="e.g. john@example.com"
+                  required
+                  {...form.getInputProps('email')}
+                />
+              )}
+
+              <Group grow>
+                <TextInput
+                  label="First Name"
+                  placeholder="John"
+                  required
+                  error={form.errors['profile.firstName']}
+                  {...form.getInputProps('profile.firstName')}
+                />
+                <TextInput
+                  label="Last Name"
+                  placeholder="Doe"
+                  required
+                  error={form.errors['profile.lastName']}
+                  {...form.getInputProps('profile.lastName')}
+                />
+              </Group>
+
+              <TextInput
+                label="Date of Birth"
+                type="date"
+                {...form.getInputProps('profile.dateOfBirth')}
+              />
+
+              <Select
+                label="Role"
+                placeholder="System role"
+                data={[
+                  { value: 'ADMIN', label: 'Admin' },
+                  { value: 'COACH', label: 'Coach' },
+                  { value: 'PLAYER', label: 'Player' },
+                  { value: 'PARENT', label: 'Parent' },
+                  { value: 'PROSPECT', label: 'Prospect' },
+                ]}
+                required
+                {...form.getInputProps('role')}
+              />
+
+              <Switch
+                label="User is Active"
+                {...form.getInputProps('isActive', { type: 'checkbox' })}
+              />
+
+              {!userData && (
+                <Text size="xs" color="dimmed">
+                  New users will receive an email to set their password.
+                </Text>
+              )}
+            </Stack>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="contact" pt="md">
+            <Stack gap="md">
+              <TextInput
+                label="Phone Number"
+                placeholder="+1-234-567-8900"
+                {...form.getInputProps('profile.phoneNumber')}
+              />
+              <TextInput
+                label="Address"
+                placeholder="123 Main Street"
+                {...form.getInputProps('profile.address')}
+              />
+              <Group grow>
+                <TextInput
+                  label="City"
+                  placeholder="New York"
+                  {...form.getInputProps('profile.city')}
+                />
+                <TextInput
+                  label="State"
+                  placeholder="NY"
+                  {...form.getInputProps('profile.state')}
+                />
+              </Group>
+              <Group grow>
+                <TextInput
+                  label="Zip Code"
+                  placeholder="10001"
+                  {...form.getInputProps('profile.zipCode')}
+                />
+                <TextInput
+                  label="Country"
+                  placeholder="United States"
+                  {...form.getInputProps('profile.country')}
+                />
+              </Group>
+            </Stack>
+          </Tabs.Panel>
+
+          {form.values.role === 'PLAYER' && (
+            <Tabs.Panel value="player" pt="md">
+              <Stack gap="md">
+                <TextInput
+                  label="Position"
+                  placeholder="e.g., Guard, Forward"
+                  {...form.getInputProps('profile.position')}
+                />
+                <NumberInput
+                  label="Jersey Number"
+                  placeholder="23"
+                  {...form.getInputProps('profile.jerseyNumber')}
+                />
+                <Group grow>
+                  <NumberInput
+                    label="Height (cm)"
+                    placeholder="180"
+                    {...form.getInputProps('profile.heightCm')}
+                  />
+                  <NumberInput
+                    label="Weight (kg)"
+                    placeholder="85"
+                    {...form.getInputProps('profile.weightKg')}
+                  />
+                </Group>
+                <TextInput
+                  label="Medical Information"
+                  placeholder="Allergies, injuries, etc."
+                  {...form.getInputProps('profile.medicalInfo')}
+                />
+              </Stack>
+            </Tabs.Panel>
           )}
 
-          <Group grow>
-            <TextInput
-              label="First Name"
-              placeholder="John"
-              required
-              {...form.getInputProps('profile.firstName')}
-            />
-            <TextInput
-              label="Last Name"
-              placeholder="Doe"
-              required
-              {...form.getInputProps('profile.lastName')}
-            />
-          </Group>
+          <Tabs.Panel value="emergency" pt="md">
+            <Stack gap="md">
+              <TextInput
+                label="Emergency Contact Name"
+                placeholder="Parent/Guardian name"
+                {...form.getInputProps('profile.emergencyContactName')}
+              />
+              <TextInput
+                label="Emergency Contact Phone"
+                placeholder="+1-234-567-8900"
+                {...form.getInputProps('profile.emergencyContactPhone')}
+              />
+              <TextInput
+                label="Relationship to Player"
+                placeholder="Parent, Guardian, etc."
+                {...form.getInputProps('profile.relationshipToPlayer')}
+              />
+            </Stack>
+          </Tabs.Panel>
+        </Tabs>
 
-          <Select
-            label="Role"
-            placeholder="System role"
-            data={[
-              { value: 'ADMIN', label: 'Admin' },
-              { value: 'COACH', label: 'Coach' },
-              { value: 'PLAYER', label: 'Player' },
-              { value: 'PARENT', label: 'Parent' },
-              { value: 'PROSPECT', label: 'Prospect' },
-            ]}
-            required
-            {...form.getInputProps('role')}
-          />
-
-          <Switch
-            label="User is Active"
-            {...form.getInputProps('isActive', { type: 'checkbox' })}
-          />
-
-          {!userData && (
-            <Text size="xs" color="dimmed">
-              New users will receive an email to set their password.
-            </Text>
-          )}
-
-          <Group justify="flex-end" mt="xl">
-            <Button variant="default" onClick={onClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={isLoading}>
-              {userData ? 'Save Changes' : 'Create User'}
-            </Button>
-          </Group>
-        </Stack>
+        <Group justify="flex-end" mt="xl">
+          <Button variant="default" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={isLoading}>
+            {userData ? 'Save Changes' : 'Create User'}
+          </Button>
+        </Group>
       </form>
     </Modal>
   )

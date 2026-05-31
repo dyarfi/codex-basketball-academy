@@ -1,4 +1,4 @@
-import React, { Profiler, ReactNode } from 'react'
+import React, { ReactNode, useState } from 'react'
 
 import {
   AppShell,
@@ -8,20 +8,35 @@ import {
   Text,
   NavLink,
   Loader,
+  Burger,
+  Box,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import {
-  IconDashboard,
-  IconUsers,
-  IconPackage,
-  IconNotebook,
-  IconCash,
-  IconFileText,
-  IconLogout,
-} from '@tabler/icons-react'
+  SpeakerHifiIcon,
+  ChatCircleIcon,
+  BooksIcon,
+  CalendarDotsIcon,
+  ChartLineUpIcon,
+  GearSixIcon,
+  HouseIcon,
+  IdentificationCardIcon,
+  MedalIcon,
+  ReceiptIcon,
+  SignOutIcon,
+  UsersIcon,
+  ImageIcon,
+  ScalesIcon,
+  LinkIcon,
+} from '@phosphor-icons/react'
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
+import { useRoutePath } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
+import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
+import { useSettings } from 'src/providers/SettingsProvider'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -29,8 +44,33 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // const navigate = navigate();
+  const routePath = useRoutePath()
+  const [opened, { toggle }] = useDisclosure()
+
   const location = useLocation()
   const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
+  const { isDark } = useAppTheme()
+  const { getSetting, loading: settingsLoading } = useSettings()
+
+  const siteName = getSetting('site_name', 'Basketball Academy')
+  const headerSubtitle = getSetting('header_subtitle', 'Admin Dashboard')
+
+  const user = currentUser as {
+    email?: string
+    role?: string
+    profile?: {
+      firstName?: string
+      lastName?: string
+    }
+  } | null
+
+  const surfaceClass = isDark
+    ? 'border-slate-800 bg-slate-950 text-slate-100'
+    : 'border-slate-200 bg-white text-slate-900'
+  const panelClass = isDark
+    ? 'border-slate-800 bg-slate-900'
+    : 'border-slate-200 bg-slate-50'
+  const textMutedClass = isDark ? 'text-slate-400' : 'text-slate-500'
 
   if (isLoading) {
     return (
@@ -40,14 +80,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     )
   }
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (user?.role !== 'ADMIN') {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold text-red-600">
             Access Denied
           </h1>
-          <p className="mb-4 text-gray-600">
+          <p className={`mb-4 ${textMutedClass}`}>
             You don't have permission to access this page.
           </p>
           <button
@@ -61,114 +101,189 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     )
   }
 
-  const handleLogout = () => {
-    if (isAuthenticated) {
-      logOut()
-    }
-    return navigate(routes.login(), { replace: true })
-  }
+  // const handleLogout = () => {
+  //   if (isAuthenticated) {
+  //     logOut()
+  //   }
+  //   return navigate(routes.login(), { replace: true })
+  // }
 
   const navItems = [
     {
       label: 'Dashboard',
-      icon: <IconDashboard size={16} />,
+      icon: <HouseIcon size={16} weight="bold" />,
       href: '/admin-panel',
     },
     {
       label: 'Users Management',
-      icon: <IconUsers size={16} />,
+      icon: <UsersIcon size={16} weight="bold" />,
       href: '/admin-panel/users',
     },
     {
       label: 'Programs Management',
-      icon: <IconPackage size={16} />,
+      icon: <BooksIcon size={16} weight="bold" />,
       href: '/admin-panel/programs',
     },
     {
       label: 'Classes Management',
-      icon: <IconNotebook size={16} />,
+      icon: <CalendarDotsIcon size={16} weight="bold" />,
       href: '/admin-panel/classes',
     },
     {
+      label: 'Enrollments Management',
+      icon: <IdentificationCardIcon size={16} weight="bold" />,
+      href: '/admin-panel/enrollments',
+    },
+    {
       label: 'Payments & Invoices',
-      icon: <IconCash size={16} />,
+      icon: <ReceiptIcon size={16} weight="bold" />,
       href: '/admin-panel/payments',
     },
     {
+      label: 'Announcements',
+      icon: <SpeakerHifiIcon size={16} weight="bold" />,
+      href: '/admin-panel/announcements',
+    },
+    {
+      label: 'Messages',
+      icon: <ChatCircleIcon size={16} weight="bold" />,
+      href: '/admin-panel/messages',
+    },
+    {
+      label: 'Attendance',
+      icon: <CalendarDotsIcon size={16} weight="bold" />,
+      href: '/admin-panel/attendances',
+    },
+    {
+      label: 'Certificates',
+      icon: <MedalIcon size={16} weight="bold" />,
+      href: '/admin-panel/certificates',
+    },
+    {
+      label: 'Skill Assessment',
+      icon: <ScalesIcon size={16} weight="bold" />,
+      href: '/admin-panel/skill-assessment',
+    },
+    {
+      label: 'Player Stats',
+      icon: <ChartLineUpIcon size={16} weight="bold" />,
+      href: '/admin-panel/player-stats',
+    },
+    {
+      label: 'Galleries',
+      icon: <ImageIcon size={16} weight="bold" />,
+      href: '/admin-panel/galleries',
+    },
+    {
+      label: 'Invitation Links',
+      icon: <LinkIcon size={16} weight="bold" />,
+      href: '/admin-panel/invitation-links',
+    },
+    {
       label: 'Reports',
-      icon: <IconFileText size={16} />,
+      icon: <ChartLineUpIcon size={16} weight="bold" />,
       href: '/admin-panel/reports',
+    },
+    {
+      label: 'Settings',
+      icon: <GearSixIcon size={16} weight="bold" />,
+      href: '/admin-panel/settings',
     },
   ]
 
   const isActive = (href: string) =>
-    location.pathname === href || location.pathname.startsWith(href + '/')
+    href !== '/admin-panel' && routePath?.startsWith(href)
 
   return (
     <AppShell
       layout="alt"
       navbar={{
-        width: 250,
+        width: { base: 250, sm: 250 },
         breakpoint: 'sm',
-        collapsed: { mobile: false },
+        collapsed: { mobile: !opened, desktop: false },
       }}
       header={{ height: 60 }}
+      transitionTimingFunction="ease-in-out"
     >
       <AppShell.Navbar
         p="md"
-        className="bg-gradient-to-b from-slate-900 to-slate-800"
+        className={`${surfaceClass} overflow-y-auto border-r`}
       >
         <div className="mb-4">
-          <Text size="lg" fw={700} className="mb-1 text-white">
-            Basketball Academy
-          </Text>
-          <Text size="xs" className="text-slate-400">
-            Admin Dashboard
-          </Text>
+          <Group justify="space-between" align="start">
+            <Box>
+              <Text size="md" fw={700} className="mb-1">
+                {siteName}
+              </Text>
+              <Text size="xs" className={`${textMutedClass}`}>
+                {headerSubtitle}
+              </Text>
+            </Box>
+            <Burger
+              hidden={!opened}
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="md"
+              size="sm"
+            />
+          </Group>
         </div>
-
         <AppShell.Section grow>
           <div className="space-y-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.href}
                 label={item.label}
-                icon={item.icon}
+                leftSection={item.icon}
                 active={isActive(item.href)}
                 onClick={() => navigate(item.href)}
-                className={`cursor-pointer ${
-                  isActive(item.href)
-                    ? 'bg-blue-500/20 text-blue-300'
-                    : 'text-slate-300 hover:bg-slate-700/50'
-                }`}
+                style={{
+                  borderRadius: '0.5rem',
+                  color: isActive(item.href)
+                    ? isDark
+                      ? '#93c5fd'
+                      : '#1d4ed8'
+                    : isDark
+                      ? '#cbd5e1'
+                      : '#475569',
+                  backgroundColor: isActive(item.href)
+                    ? isDark
+                      ? 'rgba(59, 130, 246, 0.2)'
+                      : '#eff6ff'
+                    : 'transparent',
+                  fontSize: '0.875rem',
+                }}
               />
             ))}
           </div>
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Header
-        p="xs"
-        pl={'lg'}
-        className="border-b border-gray-200 bg-white"
-      >
+      <AppShell.Header p="xs" pl={'lg'} className={`${surfaceClass} border-b`}>
         <Group justify="space-between" h="100%">
-          <div className="flex items-center gap-3">
-            <Text fw={600} size="lg">
-              Basketball Academy Admin
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="md"
+              size="sm"
+            />
+            <Text fw={600} size="md" sm={{ size: 'lg' }} truncate>
+              {siteName}
             </Text>
           </div>
-
-          <Group gap="lg">
-            <Text size="sm" className="text-gray-600">
-              {currentUser?.profile.firstName}
+          <Group gap="xs" sm={{ gap: 'lg' }}>
+            <ThemeToggle />
+            <Text size="xs" className={`${textMutedClass} hidden sm:block`}>
+              {user?.profile?.firstName}
             </Text>
             <Menu position="bottom-end" shadow="md">
               <Menu.Target>
                 <Avatar
-                  name={currentUser?.email || 'Admin'}
-                  color="blue"
+                  name={user?.email || 'Admin'}
+                  color={isDark ? 'cyan' : 'blue'}
                   radius="xl"
+                  size="sm"
                   className="cursor-pointer"
                 />
               </Menu.Target>
@@ -177,17 +292,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Menu.Item>
                   <Link to="/profile">
                     <Text size="sm" fw={500}>
-                      {currentUser?.email}
+                      {user?.email}
                     </Text>
                   </Link>
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
-                  leftSection={<IconLogout size={14} />}
-                  onClick={handleLogout}
+                  leftSection={<SignOutIcon size={14} weight="bold" />}
                   color="red"
                 >
-                  Logout
+                  <Link to="/auth/logout">Logout</Link>
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -195,7 +309,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Main className="bg-gray-50">{children}</AppShell.Main>
+      <AppShell.Main className={panelClass}>{children}</AppShell.Main>
     </AppShell>
   )
 }
