@@ -31,6 +31,30 @@ export const ANNOUNCEMENTS_QUERY = gql`
   }
 `
 
+export const ANNOUNCEMENT_LISTS_QUERY = gql`
+  query GetAnnouncementLists($page: Int!, $search: String) {
+    announcementLists(page: $page, search: $search) {
+      announcements {
+        id
+        message
+        title
+        actionLabel
+        actionUrl
+        priority
+        showFrom
+        showUntil
+        meta
+        createdAt
+        updatedAt
+        isDismissible
+        isActive
+        type
+      }
+      count
+    }
+  }
+`
+
 export const ANNOUNCEMENT_QUERY = gql`
   query GetAnnouncement($id: Int!) {
     announcement(id: $id) {

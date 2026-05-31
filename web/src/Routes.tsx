@@ -11,8 +11,10 @@ import AdminDashboardPage from 'src/pages/AdminDashboardPage/AdminDashboardPage'
 import AdminEnrollmentsPage from 'src/pages/AdminEnrollmentsPage/AdminEnrollmentsPage'
 import AdminGalleriesPage from 'src/pages/AdminGalleriesPage/AdminGalleriesPage'
 import AdminInvitationLinksPage from 'src/pages/AdminInvitationLinksPage/AdminInvitationLinksPage'
+import AdminMediaPage from 'src/pages/AdminMediaPage/AdminMediaPage'
 import AdminMessagesPage from 'src/pages/AdminMessagesPage/AdminMessagesPage'
 import AdminPaymentsPage from 'src/pages/AdminPaymentsPage/AdminPaymentsPage'
+import AdminPlayerStatsPage from 'src/pages/AdminPlayerStatsPage/AdminPlayerStatsPage'
 import AdminProgramsPage from 'src/pages/AdminProgramsPage/AdminProgramsPage'
 import AdminReportsPage from 'src/pages/AdminReportsPage/AdminReportsPage'
 import AdminSettingsPage from 'src/pages/AdminSettingsPage/AdminSettingsPage'
@@ -77,8 +79,10 @@ const Routes = () => {
             <Route path="/admin-panel/attendances" page={AdminAttendancePage} name="adminAttendances" />
             <Route path="/admin-panel/certificates" page={AdminCertificatesPage} name="adminCertificates" />
             <Route path="/admin-panel/galleries" page={AdminGalleriesPage} name="adminGalleries" />
+            <Route path="/admin-panel/medias" page={AdminMediaPage} name="adminMedias" />
             <Route path="/admin-panel/invitation-links" page={AdminInvitationLinksPage} name="adminInvitationLinks" />
             <Route path="/admin-panel/skill-assessment" page={AdminSkillAssessment} name="adminSkillAssessment" />
+            <Route path="/admin-panel/player-stats" page={AdminPlayerStatsPage} name="adminPlayerStats" />
             <Route path="/admin-panel/messages" page={AdminMessagesPage} name="adminMessages" />
             <Route path="/admin-panel/reports" page={AdminReportsPage} name="adminReports" />
             <Route path="/admin-panel/settings" page={AdminSettingsPage} name="adminSettings" />

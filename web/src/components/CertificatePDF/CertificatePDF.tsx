@@ -29,7 +29,12 @@ interface CertificateData {
   signatureUrl?: string
   verifiedAt?: string
   pdfUrl?: string
+  templateId?: string
   isDark?: boolean
+}
+
+type NextPage = {
+  nextPage?: string[]
 }
 
 const styles = StyleSheet.create({
@@ -234,8 +239,10 @@ export const CertificatePDF = ({
   signatureUrl,
   verifiedAt,
   pdfUrl: _pdfUrl,
+  templateId,
   isDark = false,
-}: CertificateData) => {
+  nextPage,
+}: CertificateData & NextPage) => {
   const pageStyle = isDark ? styles.pageDark : styles.page
   const titleStyle = isDark ? styles.titleDark : styles.title
   const subtitleStyle = isDark ? styles.subtitleDark : styles.subtitle
@@ -256,11 +263,14 @@ export const CertificatePDF = ({
     ? styles.signatureTextDark
     : styles.signatureText
   const certNumberStyle = isDark ? styles.certNumberDark : styles.certNumber
+  console.log({})
 
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={pageStyle}>
-        <ImageBackground src="/certs/cert-template-01.png">
+        <ImageBackground
+          src={`/certs/${templateId ? templateId : 'cert-template-01.png'}`}
+        >
           <View style={styles.container}>
             <View>
               <View style={styles.main}>
@@ -364,6 +374,57 @@ export const CertificatePDF = ({
               </View>
             </View>
           </View>
+          {nextPage && (
+            <View style={styles.container}>
+              <View style={{ marginTop: 40, height: 500 }}>
+                <View style={styles.main}>
+                  {/* Header */}
+                  <View style={styles.header}>
+                    <Text style={titleStyle}>ASSESSMENTS</Text>
+                    <Text style={subtitleStyle}>of Achievement</Text>
+                  </View>
+
+                  {/* Main Assessment */}
+                  <View style={{ marginTop: 20 }}>
+                    <Text style={descriptionStyle}>
+                      Shooting: {nextPage?.shooting}
+                    </Text>
+                    <Text style={descriptionStyle}>
+                      Dribbling: {nextPage?.dribbling}
+                    </Text>
+                    <Text style={descriptionStyle}>
+                      Defense: {nextPage?.defense}
+                    </Text>
+                    <Text style={descriptionStyle}>
+                      Basketball IQ: {nextPage?.basketballIQ}
+                    </Text>
+                    <Text style={descriptionStyle}>
+                      Athleticism: {nextPage?.athleticism}
+                    </Text>
+                    <Text style={descriptionStyle}>
+                      Overall Score: {nextPage?.overallScore}
+                    </Text>
+                  </View>
+
+                  {/* Footer with Signature */}
+                  <View style={footerStyle}>
+                    <View style={styles.signatureSection}>
+                      <View style={signatureLineStyle} />
+                      <Text style={signatureTextStyle}>
+                        {nextPage?.assessedBy || 'Program Director'}
+                      </Text>
+                    </View>
+                    <View style={styles.signatureSection}>
+                      <View style={signatureLineStyle} />
+                      <Text style={signatureTextStyle}>
+                        {nextPage?.feedback || 'Good Job!'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
         </ImageBackground>
       </Page>
     </Document>

@@ -27,6 +27,57 @@ export const ATTENDANCES_QUERY = gql`
   }
 `
 
+export const GET_PAGINATED_ATTENDANCES = gql`
+  query GetPaginatedAttendances(
+    $page: Int!
+    $pageSize: Int!
+    $search: String
+    $classId: String
+    $userId: String
+    $date: DateTime
+    $status: AttendanceStatus
+  ) {
+    paginatedAttendances(
+      page: $page
+      pageSize: $pageSize
+      search: $search
+      classId: $classId
+      userId: $userId
+      date: $date
+      status: $status
+    ) {
+      items {
+        id
+        classId
+        userId
+        attendanceDate
+        status
+        notes
+        createdAt
+        updatedAt
+        class {
+          id
+          name
+        }
+        user {
+          id
+          email
+          profile {
+            firstName
+            lastName
+          }
+        }
+      }
+      totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+`
+
 export const ATTENDANCE_QUERY = gql`
   query GetAttendance($id: String!) {
     attendance(id: $id) {

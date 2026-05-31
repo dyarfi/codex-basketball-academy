@@ -600,6 +600,7 @@ export async function seed() {
           templateId: 'beginner_certificate_template',
           signatureUrl: 'https://example.com/signature.png',
           verificationCode: `CERT-${Date.now()}-00${r}-VERIFY`,
+          withAssessment: false,
           status: 'ISSUED',
           expiryDate: now.toISOString(),
           verifiedAt: now.toISOString(),
@@ -642,6 +643,7 @@ export async function seed() {
         data: {
           userId: player.id,
           gameDate: new Date('2026-04-10'),
+          gameName: 'Spring 2026 Scrimmage VS Team A - BS Academy',
           points: Math.floor(Math.random() * 30),
           rebounds: Math.floor(Math.random() * 15),
           assists: Math.floor(Math.random() * 10),

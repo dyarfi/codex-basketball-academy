@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import type { QueryResolvers, MutationResolvers } from 'types/graphql'
 
 import { db } from 'src/lib/db'
@@ -9,39 +10,43 @@ export const announcementLists: QueryResolvers['announcementLists'] = async ({
   page = 1,
   search = '',
 }) => {
-  const offset = (page - 1) * LIST_PER_PAGE
-  const searchParams =
-    search.trim() !== ''
-      ? {
-          where: {
-            OR: [
-              {
-                title: {
-                  contains: search,
-                },
-              },
-              {
-                message: {
-                  contains: search,
-                },
-              },
-            ],
+  const searchTerm = search?.trim() ?? ''
+  const where: Prisma.AnnouncementWhereInput | undefined = searchTerm
+    ? {
+        OR: [
+          {
+            title: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
           },
-        }
-      : ''
+          {
+            message: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      }
+    : undefined
+
+  const totalCount = await db.announcement.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / LIST_PER_PAGE))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const offset = (currentPage - 1) * LIST_PER_PAGE
 
   const result = {
     announcements: await db.announcement.findMany({
       take: LIST_PER_PAGE,
       skip: offset,
-      ...searchParams,
+      where,
       orderBy: { id: 'desc' },
     }),
   }
 
   return {
     ...result,
-    count: await db.announcement.count({ ...searchParams }),
+    count: totalCount,
   }
 }
 
@@ -50,7 +55,7 @@ export const publicAnnouncement: QueryResolvers['publicAnnouncement'] = () => {
 }
 
 export const announcements: QueryResolvers['announcements'] = () => {
-  return db.announcement.findMany()
+  return db.announcement.findMany({ orderBy: { id: 'desc' } })
 }
 
 export const announcement: QueryResolvers['announcement'] = ({ id }) => {

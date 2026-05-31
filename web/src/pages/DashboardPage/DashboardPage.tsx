@@ -2,11 +2,11 @@ import { useEffect } from 'react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
 
-import Footer from 'src/components/Footer/Footer'
 import { useAuth } from 'src/auth'
+import Footer from 'src/components/Footer/Footer'
 import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
-import { useAppTheme } from 'src/providers/ThemeProvider'
 import { useSettings } from 'src/providers/SettingsProvider'
+import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const DashboardPage = () => {
   const { currentUser, loading: isLoading, logOut, isAuthenticated } = useAuth()
@@ -63,7 +63,7 @@ const DashboardPage = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <h1 className={`text-2xl font-bold ${headingClass}`}>
-              {siteName}
+              <Link to="/">{siteName}</Link>
             </h1>
             <div className="flex items-center gap-3">
               <ThemeToggle />

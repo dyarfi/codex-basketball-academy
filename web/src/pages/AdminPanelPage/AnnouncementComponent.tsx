@@ -1,53 +1,84 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { useMutation, useQuery } from '@apollo/client'
 import {
-  Table,
+  Alert,
   Button,
   Modal,
   TextInput,
   Group,
   Stack,
   Loader,
-  Center,
-  ActionIcon,
   Text,
   Badge,
   Card,
-  Grid,
   Textarea,
-  Input,
   Switch,
-  rem,
   Container,
+  Select,
+  NumberInput,
 } from '@mantine/core'
-import { Trash, Plus, Pencil, Calendar } from '@phosphor-icons/react'
+import { useDebouncedValue } from '@mantine/hooks'
+import { Plus } from '@phosphor-icons/react'
+import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { format, parseISO } from 'date-fns'
 
+import { routes, useParams } from '@redwoodjs/router'
+import { useMutation, useQuery } from '@redwoodjs/web'
+
 import { useAuth } from 'src/auth'
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
+import { CrudTable } from 'src/components/CrudTable'
 
 import {
-  ANNOUNCEMENTS_QUERY,
+  ANNOUNCEMENT_LISTS_QUERY,
   CREATE_ANNOUNCEMENT_MUTATION,
   UPDATE_ANNOUNCEMENT_MUTATION,
   DELETE_ANNOUNCEMENT_MUTATION,
 } from '../../graphql/announcements-queries'
 
+type RouteQuery = Record<string, boolean | number | string | null | undefined>
+type RouteBuilder = (params?: RouteQuery) => string
+
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
 const AnnouncementComponent = () => {
+  const PAGE_SIZE = 10
+  const { page = 1, search } = useParams()
   const { currentUser } = useAuth()
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
+  const hasMountedSearch = useRef(false)
   const [opened, setOpened] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    imageUrl: '',
     // publishDate: format(new Date(), 'yyyy-MM-dd'),
     // expiryDate: '',
+    actionLabel: '',
+    actionUrl: '',
+    priority: 0,
+    type: 'INFO',
     isActive: true,
+    isDismissible: true,
   })
 
+  const variables = {
+    page: currentPage,
+    search: debouncedSearchQuery || undefined,
+  }
+
   // Queries
-  const { data, loading, refetch } = useQuery(ANNOUNCEMENTS_QUERY)
+  const { data, loading, error, refetch } = useQuery(ANNOUNCEMENT_LISTS_QUERY, {
+    variables,
+  })
 
   // Mutations
   const [createAnnouncement] = useMutation(CREATE_ANNOUNCEMENT_MUTATION, {
@@ -68,7 +99,18 @@ const AnnouncementComponent = () => {
     },
   })
 
-  const announcements = data?.announcements || []
+  const announcements = data?.announcementLists?.announcements || []
+  const totalAnnouncements = data?.announcementLists?.count || 0
+  const totalPages = Math.max(1, Math.ceil(totalAnnouncements / PAGE_SIZE))
+
+  useEffect(() => {
+    if (!hasMountedSearch.current) {
+      hasMountedSearch.current = true
+      return
+    }
+
+    setCurrentPage(1)
+  }, [debouncedSearchQuery])
 
   const handleOpenModal = (announcement?: any) => {
     if (announcement) {
@@ -76,22 +118,24 @@ const AnnouncementComponent = () => {
       setFormData({
         title: announcement.title,
         message: announcement.message,
-        imageUrl: announcement.imageUrl || '',
-        // publishDate: format(parseISO(announcement.publishDate), 'yyyy-MM-dd'),
-        // expiryDate: announcement.expiryDate
-        //   ? format(parseISO(announcement.expiryDate), 'yyyy-MM-dd')
-        //   : '',
         isActive: announcement.isActive,
+        actionLabel: announcement.actionLabel,
+        actionUrl: announcement.actionUrl,
+        priority: announcement.priority,
+        type: announcement.type,
+        isDismissible: announcement.isDismissible,
       })
     } else {
       setEditingId(null)
       setFormData({
         title: '',
         message: '',
-        imageUrl: '',
-        // publishDate: format(new Date(), 'yyyy-MM-dd'),
-        // expiryDate: '',
+        actionLabel: '',
+        actionUrl: '',
+        priority: 0,
+        type: 'INFO',
         isActive: true,
+        isDismissible: true,
       })
     }
     setOpened(true)
@@ -111,16 +155,13 @@ const AnnouncementComponent = () => {
     const input = {
       title: formData.title,
       message: formData.message,
-      imageUrl: formData.imageUrl || null,
-      // publishDate: new Date(formData.publishDate).toISOString(),
-      // expiryDate: formData.expiryDate
-      //   ? new Date(formData.expiryDate).toISOString()
-      //   : null,
-      isDismissible: true,
-      priority: 1,
-      type: 'INFO',
+      actionLabel: formData.actionLabel,
+      actionUrl: formData.actionUrl,
+      priority: formData.priority,
+      type: formData.type,
       isActive: formData.isActive,
-      createdById: 'cmpdxj0oo0000hspgmggso4jr',
+      isDismissible: formData.isDismissible,
+      ...(editingId ? {} : { createdById: currentUser?.id }),
     }
 
     if (editingId) {
@@ -139,15 +180,15 @@ const AnnouncementComponent = () => {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (announcement: any) => {
     if (confirm('Are you sure you want to delete this announcement?')) {
       await deleteAnnouncement({
-        variables: { id },
+        variables: { id: announcement.id },
       })
     }
   }
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <Container size="xl" py="xl">
         <Group justify="center" p="xl">
@@ -157,6 +198,67 @@ const AnnouncementComponent = () => {
     )
   }
 
+  if (error) {
+    return (
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load announcements: {error.message}
+        </Alert>
+      </Container>
+    )
+  }
+
+  const columns = [
+    {
+      key: 'title',
+      header: 'Title',
+      thClassName: 'w-64',
+    },
+    {
+      key: 'message',
+      header: 'Message',
+      render: (val: string) => val,
+      thClassName: 'w-96',
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (val: string) => (
+        <Badge color={val === 'INFO' ? 'blue' : 'red'}>{val}</Badge>
+      ),
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+    },
+    {
+      key: 'createdAt',
+      header: 'Created At',
+      render: (val: string) => format(parseISO(val), 'MMM dd, yyyy'),
+    },
+    {
+      key: 'isDismissible',
+      header: 'Dismissible',
+      render: (val: boolean) => (
+        <Badge color={val ? 'green' : 'red'}>{val ? 'Yes' : 'No'}</Badge>
+      ),
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      render: (val: boolean) => (
+        <Badge color={val ? 'green' : 'red'}>
+          {val ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+  ]
+
   return (
     <Container
       size="xl"
@@ -164,8 +266,8 @@ const AnnouncementComponent = () => {
       px={{ base: 'xs', sm: 'md' }}
     >
       <Stack gap="lg">
-        <Card withBorder p="lg">
-          <Card.Section withBorder inheritPadding py="md">
+        <Card bg="transparent">
+          <Card.Section py="md">
             <Group justify="space-between">
               <Text fw={500} size="lg">
                 Announcements
@@ -179,78 +281,44 @@ const AnnouncementComponent = () => {
             </Group>
           </Card.Section>
 
-          <Card.Section>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Title</Table.Th>
-                  <Table.Th>Publish Date</Table.Th>
-                  <Table.Th>Expiry Date</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {announcements.length > 0 ? (
-                  announcements.map((announcement) => (
-                    <Table.Tr key={announcement.id}>
-                      <Table.Td>{announcement.title}</Table.Td>
-                      <Table.Td>
-                        {format(
-                          parseISO(announcement.createdAt),
-                          'MMM dd, yyyy'
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        {announcement.showForm
-                          ? format(
-                              parseISO(announcement.showForm),
-                              'MMM dd, yyyy'
-                            )
-                          : '-'}
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
-                          color={announcement.isActive ? 'green' : 'red'}
-                          variant="light"
-                        >
-                          {announcement.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap={0}>
-                          <ActionIcon
-                            size="sm"
-                            color="blue"
-                            variant="subtle"
-                            onClick={() => handleOpenModal(announcement)}
-                          >
-                            <Pencil size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            size="sm"
-                            color="red"
-                            variant="subtle"
-                            onClick={() => handleDelete(announcement.id)}
-                          >
-                            <Trash size={16} />
-                          </ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))
-                ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={5}>
-                      <Center py="xl">
-                        <Text c="dimmed">No announcements found</Text>
-                      </Center>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
+          <Card.Section pb="md">
+            <Group
+              gap="md"
+              className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+              grow={true}
+            >
+              <TextInput
+                placeholder="Search by title or message..."
+                leftSection={<IconSearch size={16} />}
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.currentTarget.value)}
+                className="flex-1"
+              />
+            </Group>
           </Card.Section>
+
+          <Card.Section>
+            <CrudTable
+              data={announcements}
+              columns={columns as any}
+              isLoading={loading && !data}
+              onEdit={handleOpenModal}
+              onDelete={handleDelete}
+            />
+          </Card.Section>
+
+          <AdminPagination
+            label="announcements"
+            totalItems={totalAnnouncements}
+            page={currentPage}
+            totalPages={totalPages}
+            route={routes.adminAnnouncements as RouteBuilder}
+            query={{
+              search: debouncedSearchQuery || undefined,
+            }}
+            onPageChange={setCurrentPage}
+            pageSize={PAGE_SIZE}
+          />
         </Card>
 
         <Modal
@@ -278,37 +346,56 @@ const AnnouncementComponent = () => {
               }
               required
             />
-            <TextInput
-              label="Image URL"
-              placeholder="https://..."
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.currentTarget.value })
+            <NumberInput
+              label="Priority"
+              placeholder="1"
+              min={0}
+              value={formData.priority}
+              onChange={(value) =>
+                setFormData({
+                  ...formData,
+                  priority:
+                    typeof value === 'number' ? value : Number(value) || 0,
+                })
               }
             />
-            {/* <Input
-                type="date"
-                label="Publish Date"
-                value={formData.publishDate}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    publishDate: e.currentTarget.value,
-                  })
-                }
-                required
-              />
-              <Input
-                type="date"
-                label="Expiry Date"
-                value={formData.expiryDate}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    expiryDate: e.currentTarget.value,
-                  })
-                }
-              /> */}
+            <TextInput
+              label="Action Label"
+              placeholder="Join.."
+              value={formData.actionLabel}
+              onChange={(e) =>
+                setFormData({ ...formData, actionLabel: e.currentTarget.value })
+              }
+            />
+            <TextInput
+              label="Action URL"
+              placeholder="https://..."
+              value={formData.actionUrl}
+              onChange={(e) =>
+                setFormData({ ...formData, actionUrl: e.currentTarget.value })
+              }
+            />
+            <Select
+              label="Type"
+              placeholder="Select type"
+              data={['INFO', 'SUCCESS', 'WARNING', 'ERROR']}
+              value={formData.type}
+              required
+              onChange={(value) =>
+                setFormData({ ...formData, type: value || 'INFO' })
+              }
+            />
+            <Switch
+              label="Dismissible"
+              checked={formData.isDismissible}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  isDismissible: event.currentTarget.checked,
+                })
+              }
+              description="Dismiss not showing on user"
+            />
             <Switch
               label="Active"
               checked={formData.isActive}
@@ -318,6 +405,7 @@ const AnnouncementComponent = () => {
                   isActive: event.currentTarget.checked,
                 })
               }
+              description="Not displayed on user"
             />
             <Group justify="flex-end">
               <Button variant="default" onClick={handleCloseModal}>

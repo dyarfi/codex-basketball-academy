@@ -1,15 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import { useLazyQuery } from '@apollo/client'
 import { Modal, Button, Group, Loader, Center } from '@mantine/core'
 import { FileArrowDown, FileArrowUp } from '@phosphor-icons/react'
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer'
 import { format } from 'date-fns'
+
+import { ASSESSMENT_QUERY } from '../../graphql/certificates-queries'
 
 import { CertificatePDF } from './CertificatePDF'
 
 interface CertificatePDFViewerProps {
   certificate: any
   isDark?: boolean
+  isNextPage?: boolean
   size?: string
   buttonText?: string
   onClose?: () => void
@@ -18,12 +22,18 @@ interface CertificatePDFViewerProps {
 export const CertificatePDFViewer = ({
   certificate,
   isDark = false,
+  isNextPage = false,
   size = 'xs',
   buttonText = 'View PDF',
   onClose,
 }: CertificatePDFViewerProps) => {
   const [opened, setOpened] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  // Use lazy query instead of regular query
+  const [
+    getSkillsAssessment,
+    { data: { skillsAssessmentsByProgram } = '', loading: loadingAssessment },
+  ] = useLazyQuery(ASSESSMENT_QUERY)
 
   const userName = certificate.user?.profile
     ? `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`
@@ -31,13 +41,24 @@ export const CertificatePDFViewer = ({
 
   const programName = certificate.program?.name || 'Program'
 
-  const handleOpen = () => {
-    setIsGenerating(true)
-    // Simulate generation delay for better UX
-    setTimeout(() => {
+  const handleOpen = async () => {
+    try {
+      // Execute the query here
+      if (isNextPage) {
+        await getSkillsAssessment({
+          variables: { id: certificate.programId },
+        })
+      }
+
+      // Simulate generation delay for better UX
+      setTimeout(() => {
+        setIsGenerating(false)
+        setOpened(true)
+      }, 500)
+    } catch (error) {
+      console.error('Error fetching assessment:', error)
       setIsGenerating(false)
-      setOpened(true)
-    }, 500)
+    }
   }
 
   const handleClose = () => {
@@ -73,7 +94,11 @@ export const CertificatePDFViewer = ({
           </Center>
         ) : (
           <div>
-            <PDFViewer height={600} style={{ width: '100%' }}>
+            <PDFViewer
+              // height={isNextPage ? 1200 : 600}
+              height={600}
+              style={{ width: '100%' }}
+            >
               <CertificatePDF
                 certificateNumber={certificate.certificateNumber}
                 title={certificate.title}
@@ -88,6 +113,8 @@ export const CertificatePDFViewer = ({
                 // verifiedAt={format(certificate.verifiedAt, 'DD-MM-YYYY')}
                 verifiedAt={certificate.verifiedAt}
                 signatureUrl={certificate.signatureUrl}
+                templateId={certificate.templateId}
+                nextPage={skillsAssessmentsByProgram}
                 isDark={isDark}
               />
             </PDFViewer>
@@ -107,6 +134,8 @@ export const CertificatePDFViewer = ({
                     issuedBy={certificate.issuedBy}
                     expiryDate={certificate.expiryDate}
                     signatureUrl={certificate.signatureUrl}
+                    templateId={certificate.templateId}
+                    nextPage={skillsAssessmentsByProgram}
                     isDark={isDark}
                   />
                 }

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { useMutation, useQuery } from '@apollo/client'
 import {
+  Alert,
   Table,
   Button,
   Modal,
@@ -17,21 +17,22 @@ import {
   Card,
   Grid,
   Textarea,
-  Input,
-  rem,
   Container,
 } from '@mantine/core'
 import { DateTimePicker } from '@mantine/dates'
-import { Trash, Plus, Pencil, Calendar } from '@phosphor-icons/react'
+import { useDebouncedValue } from '@mantine/hooks'
+import { Trash, Plus, Pencil } from '@phosphor-icons/react'
+import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { format, parseISO } from 'date-fns'
 
+import { routes, useParams } from '@redwoodjs/router'
+import { useMutation, useQuery } from '@redwoodjs/web'
+
 import { AdminLayout } from 'src/components/AdminLayout'
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 
 import {
-  ATTENDANCES_QUERY,
-  ATTENDANCES_BY_CLASS_QUERY,
-  ATTENDANCES_BY_USER_QUERY,
-  ATTENDANCES_BY_DATE_QUERY,
+  GET_PAGINATED_ATTENDANCES,
   CREATE_ATTENDANCE_MUTATION,
   UPDATE_ATTENDANCE_MUTATION,
   DELETE_ATTENDANCE_MUTATION,
@@ -55,7 +56,36 @@ const ATTENDANCE_STATUS_COLORS: Record<string, string> = {
   EXCUSED: 'blue',
 }
 
+type RouteQuery = Record<string, boolean | number | string | null | undefined>
+type RouteBuilder = (params?: RouteQuery) => string
+
+const getPageFromParam = (value: unknown) => {
+  const parsedPage = Number(value)
+
+  return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
+}
+
+const getDateVariable = (value: string | null) => {
+  if (!value) {
+    return undefined
+  }
+
+  const parsedDate = new Date(value)
+
+  return Number.isNaN(parsedDate.getTime())
+    ? undefined
+    : parsedDate.toISOString()
+}
+
 export const AttendanceComponent = () => {
+  const PAGE_SIZE = 10
+  const { page = 1, search, classId, userId, date, status } = useParams()
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
+  const hasMountedFilters = useRef(false)
   const [opened, setOpened] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<AttendanceFormData>({
@@ -67,17 +97,36 @@ export const AttendanceComponent = () => {
   })
 
   // Filters
-  const [filterClass, setFilterClass] = useState<string | null>(null)
-  const [filterUser, setFilterUser] = useState<string | null>(null)
-  const [filterDate, setFilterDate] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string | null>(null)
+  const [filterClass, setFilterClass] = useState<string | null>(
+    typeof classId === 'string' ? classId : null
+  )
+  const [filterUser, setFilterUser] = useState<string | null>(
+    typeof userId === 'string' ? userId : null
+  )
+  const [filterDate, setFilterDate] = useState<string | null>(
+    typeof date === 'string' ? date : null
+  )
+  const [filterStatus, setFilterStatus] = useState<string | null>(
+    typeof status === 'string' ? status : null
+  )
+
+  const variables = {
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    classId: filterClass || undefined,
+    userId: filterUser || undefined,
+    date: getDateVariable(filterDate),
+    status: filterStatus || undefined,
+  }
 
   // Queries
   const {
     data: attendancesData,
     loading: attendancesLoading,
+    error: attendancesError,
     refetch,
-  } = useQuery(ATTENDANCES_QUERY)
+  } = useQuery(GET_PAGINATED_ATTENDANCES, { variables })
   const { data: classesData = [] } = useQuery(CLASSES_QUERY) || []
   const { data: usersData = [] } = useQuery(USERS_QUERY) || []
 
@@ -102,24 +151,27 @@ export const AttendanceComponent = () => {
 
   const classes = classesData?.classes || []
   const users = usersData?.users || []
-  let attendances = attendancesData?.attendances || []
+  const attendances = attendancesData?.paginatedAttendances?.items || []
+  const totalAttendances =
+    attendancesData?.paginatedAttendances?.totalCount || 0
+  const totalPages =
+    attendancesData?.paginatedAttendances?.totalPages ??
+    Math.max(1, Math.ceil(totalAttendances / PAGE_SIZE))
 
-  // Apply filters
-  if (filterClass) {
-    attendances = attendances.filter((a) => a.classId === filterClass)
-  }
-  if (filterUser) {
-    attendances = attendances.filter((a) => a.userId === filterUser)
-  }
-  if (filterDate) {
-    attendances = attendances.filter(
-      (a) =>
-        format(parseISO(a.attendanceDate), 'yyyy-MM-dd HH:mm') === filterDate
-    )
-  }
-  if (filterStatus) {
-    attendances = attendances.filter((a) => a.status === filterStatus)
-  }
+  useEffect(() => {
+    if (!hasMountedFilters.current) {
+      hasMountedFilters.current = true
+      return
+    }
+
+    setCurrentPage(1)
+  }, [
+    debouncedSearchQuery,
+    filterClass,
+    filterUser,
+    filterDate,
+    filterStatus,
+  ])
 
   const handleOpenModal = (attendance?: any) => {
     if (attendance) {
@@ -190,7 +242,7 @@ export const AttendanceComponent = () => {
     }
   }
 
-  if (attendancesLoading) {
+  if (attendancesLoading && !attendancesData) {
     return (
       <AdminLayout>
         <Container size="xl" py="xl">
@@ -202,9 +254,30 @@ export const AttendanceComponent = () => {
     )
   }
 
+  if (attendancesError) {
+    return (
+      <AdminLayout>
+        <Container size="xl" py="xl">
+          <Alert
+            icon={<IconAlertCircle size={16} />}
+            title="Error"
+            color="red"
+            variant="filled"
+          >
+            Failed to load attendance records: {attendancesError.message}
+          </Alert>
+        </Container>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
+      <Container
+        size="xl"
+        py={{ base: 'sm', sm: 'md', md: 'xl' }}
+        px={{ base: 'xs', sm: 'md' }}
+      >
         <Stack gap="lg">
           <Card withBorder p="lg">
             <Card.Section withBorder inheritPadding py="md">
@@ -223,6 +296,17 @@ export const AttendanceComponent = () => {
 
             <Card.Section>
               <Grid p="md" gutter="md">
+                <Grid.Col span={{ base: 12 }}>
+                  <TextInput
+                    label="Search"
+                    placeholder="Search by player, email, class, or notes"
+                    leftSection={<IconSearch size={16} />}
+                    value={searchQuery}
+                    onChange={(event) =>
+                      setSearchQuery(event.currentTarget.value)
+                    }
+                  />
+                </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
                   <Select
                     label="Filter by Class"
@@ -354,6 +438,23 @@ export const AttendanceComponent = () => {
                 </Table.Tbody>
               </Table>
             </Card.Section>
+
+            <AdminPagination
+              label="attendance records"
+              totalItems={totalAttendances}
+              page={currentPage}
+              totalPages={totalPages}
+              route={routes.adminAttendances as RouteBuilder}
+              query={{
+                search: debouncedSearchQuery || undefined,
+                classId: filterClass || undefined,
+                userId: filterUser || undefined,
+                date: filterDate || undefined,
+                status: filterStatus || undefined,
+              }}
+              onPageChange={setCurrentPage}
+              pageSize={PAGE_SIZE}
+            />
           </Card>
 
           <Modal

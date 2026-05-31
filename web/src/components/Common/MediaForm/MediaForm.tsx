@@ -17,13 +17,18 @@ import { IconPhoto, IconUpload, IconX } from '@tabler/icons-react'
 
 import { useFileUploader } from 'src/hooks/useFileUploader'
 
-import MediasCell from '../MediasCell'
+// import MediasCell from '../MediasCell'
 
 export default function FileUploader({
   folderId = 'gallery',
   propertyId,
   page = 1,
   search = '',
+}: {
+  folderId?: string
+  propertyId?: string
+  page?: number
+  search?: string
 }) {
   // const { page = 1, search } = useParams()
   const [progress, setProgress] = useState<{ [fileName: string]: number }>({})
@@ -110,7 +115,7 @@ export default function FileUploader({
 
         {/* Errors */}
         {errors.length > 0 && (
-          <Box className="text-sm text-red-500 space-y-1" m={'md'}>
+          <Box className="space-y-1 text-sm text-red-500" m={'md'}>
             {errors.map((err, i) => (
               <div key={i}>{err}</div>
             ))}
@@ -126,7 +131,7 @@ export default function FileUploader({
                   <Image
                     src={file.url}
                     alt={file.name}
-                    className="w-full object-cover rounded shadow"
+                    className="w-full rounded object-cover shadow"
                     h={186}
                   />
                   <Text c={'dimmed'} size="xs" mt={4}>
@@ -135,7 +140,7 @@ export default function FileUploader({
                 </Box>
               ) : (
                 <Box key={file.id}>
-                  <div className="p-4 bg-gray-100 rounded text-sm flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded bg-gray-100 p-4 text-sm">
                     📄 {file.name}
                   </div>
                   <Text c={'dimmed'} size="xs" mt={4}>
@@ -147,9 +152,9 @@ export default function FileUploader({
           </SimpleGrid>
         )}
       </Paper>
-      <Box my={20} mx={0} px={0}>
+      {/* <Box my={20} mx={0} px={0}>
         <MediasCell page={Number(page)} search={search} library />
-      </Box>
+      </Box> */}
     </Container>
   )
 }

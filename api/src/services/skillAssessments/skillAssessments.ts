@@ -71,6 +71,13 @@ export const skillAssessment: QueryResolvers['skillAssessment'] = ({ id }) => {
   })
 }
 
+export const skillsAssessmentsByProgram: QueryResolvers['skillsAssessmentsByProgram'] =
+  ({ id }) => {
+    return db.skillAssessment.findFirst({
+      where: { programId: id },
+    })
+  }
+
 export const createSkillAssessment: MutationResolvers['createSkillAssessment'] =
   ({ input }) => {
     return db.skillAssessment.create({

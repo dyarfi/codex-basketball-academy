@@ -29,6 +29,7 @@ export const schema = gql`
   type Query {
     skillAssessments: [SkillAssessment!]! @requireAuth
     skillAssessment(id: String!): SkillAssessment @requireAuth
+    skillsAssessmentsByProgram(id: String!): SkillAssessment @requireAuth
     paginatedSkillAssessments(
       page: Int = 1
       pageSize: Int = 10

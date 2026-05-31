@@ -7,6 +7,8 @@ const C_TSTAMP = Date.now() / 1000
 const C_UP_URL = `https://api.cloudinary.com/v1_1/${C_CLOUD}/image/upload`
 const C_LC_URL = `https://api.cloudinary.com/v1_1/${C_CLOUD}/resources/search`
 const KEY_BREVO = process.env.KEY_BREVO
+const APP_NAME = process.env.APP_NAME
+const APP_URL = process.env.APP_URL
 
 export function uploadCloud(file: any, folder: string) {
   return new Promise((resolve, reject) => {
@@ -69,35 +71,27 @@ export function listCloud() {
 
 export async function sendEmailMessage({
   subject = 'Hello World',
-  sender: { name = 'Dykaf', email = 'defrian.yarfi@gmail.com' },
-  to = [],
-  messages = '<html><head></head><body><p>Hello,</p>This is my first transactional email sent from Brevo.</p></body></html>',
+  sender = { name: APP_NAME as string, email: 'defrian.yarfi@gmail.com' },
+  to = [{ name: 'John Doe', email: 'defrian.yarfi@gmail.com' }],
+  messages = 'This is a test email sent from the application.',
 }: {
   subject: string
-  sender: { name: string; email: string }
-  to: [{ name: string; email: string }]
-  phone: number
-  messages: string
+  sender?: { name: string; email: string }
+  to?: [{ name: string; email: string }]
+  phone?: number
+  messages?: string
 }) {
+  // Brevo API endpoint and payload construction
   const url = 'https://api.brevo.com/v3/smtp/email'
-
+  const htmlContent = `<!DOCTYPE html><html><body><h3>${subject}</h3><p>Hello ${to[0]?.email || 'there'},</p>${messages}</p<hr><p style="font-size: 12px; color: #888;">This email was sent by ${APP_NAME} website: ${APP_URL}.</p></body></html>`
+  // Construct the payload for Brevo API
   const payload = {
-    sender: {
-      name,
-      email,
-    },
-    to: to.length
-      ? to
-      : [
-          {
-            email: 'defrian.yarfi@gmail.com',
-            name: 'John Doe',
-          },
-        ],
+    sender,
+    to,
     subject,
-    htmlContent: messages,
+    htmlContent,
   }
-
+  // Set up headers for the API request
   const headers = {
     'api-key': KEY_BREVO as string,
     accept: 'application/json',

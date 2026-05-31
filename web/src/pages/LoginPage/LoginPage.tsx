@@ -72,7 +72,9 @@ const LoginPage = () => {
                 isDark ? 'text-slate-50' : 'text-gray-700'
               }`}
             >
-              {siteLogo} {siteName}
+              <Link to="/">
+                {siteLogo} {siteName}
+              </Link>
             </h3>
           )}
           <p

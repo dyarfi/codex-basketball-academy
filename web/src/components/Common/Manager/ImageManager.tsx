@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from 'react'
+
 import {
   Box,
   Button,
@@ -11,15 +13,16 @@ import {
   ScrollArea,
   TextInput,
 } from '@mantine/core'
-import React, { useEffect, useState } from 'react'
-import FormDropZone from '../Form/FormDropZone'
-import { IconPhoto } from '@tabler/icons-react'
 import {
   useDisclosure,
   useListState,
   useSetState,
   useFetch,
 } from '@mantine/hooks'
+import { IconPhoto } from '@tabler/icons-react'
+
+import FormDropZone from '../Form/FormDropZone'
+
 import { Axios, uploadCloud } from '@/lib/axios'
 
 interface Item {

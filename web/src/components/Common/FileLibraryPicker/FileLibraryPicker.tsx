@@ -20,12 +20,14 @@ const MEDIA_QUERY = gql`
 
 export default function FileLibraryPicker({
   opened = false,
+  placeholder = 'file_name.jpg',
   onClose,
   onSelect,
 }: {
   opened?: boolean
+  placeholder?: string
   onClose: () => {}
-  onSelect: () => {}
+  onSelect: (params: any) => {}
 }) {
   const [value, setValue] = useDebouncedState('', 600)
   const { data, loading } = useQuery(MEDIA_QUERY, {
@@ -49,7 +51,7 @@ export default function FileLibraryPicker({
           name="search"
           size={'xs'}
           leftSection={<IconSearch size={16} />}
-          placeholder={''}
+          placeholder={placeholder}
           onChange={(event) => onSearchAction(event.currentTarget.value)}
           defaultValue={value}
         />

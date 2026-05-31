@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Box, Group, Image, SimpleGrid, Text } from '@mantine/core'
 import { Dropzone, FileWithPath } from '@mantine/dropzone'
 import { IconUpload, IconX, IconPhoto } from '@tabler/icons-react'
-import { t } from 'i18next'
+// import { t } from 'i18next'
 
 import classess from './FormDropZone.module.css'
 import '@mantine/dropzone/styles.css'
@@ -116,7 +116,7 @@ export default function FormDropZone({
               {placeholder}
             </Text>
             <Text size="sm" c="dimmed" inline mt={7}>
-              {multiple ? t('admin.attachMultiFile') : t('admin.attachFile')}
+              {multiple ? 'admin.attachMultiFile' : 'admin.attachFile'}
             </Text>
           </div>
         </Group>

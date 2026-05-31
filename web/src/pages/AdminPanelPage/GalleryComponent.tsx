@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 
 import {
   Container,
@@ -19,6 +19,7 @@ import {
   Alert,
   ActionIcon,
   Image,
+  Flex,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -27,10 +28,12 @@ import {
   Plus,
   Images as ImagesIcon,
 } from '@phosphor-icons/react'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { IconAdjustments, IconAlertCircle } from '@tabler/icons-react'
 
+import { TextField } from '@redwoodjs/forms'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
+import FileLibraryPicker from 'src/components/Common/FileLibraryPicker/FileLibraryPicker'
 import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
@@ -42,10 +45,13 @@ import {
   DELETE_GALLERY_MEDIA,
   GET_GALLERY,
 } from 'src/graphql/galleries-queries'
+import { useFilePicker } from 'src/hooks/useFilePicker'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 export const GalleryComponent = () => {
   const { isDark } = useAppTheme()
+  const { file, setSelectedFile, openPicker, PickerModal } = useFilePicker()
+
   const [opened, { open, close }] = useDisclosure(false)
   const { toasts, success, error: toastError, removeToast } = useToast()
   const [mediaOpened, { open: openMedia, close: closeMedia }] =
@@ -54,10 +60,12 @@ export const GalleryComponent = () => {
   const [selectedGalleryId, setSelectedGalleryId] = useState<number | null>(
     null
   )
+  // Gallery form
   const [formData, setFormData] = useState({
     name: '',
     description: '',
   })
+  // Media Gallery form
   const [mediaFormData, setMediaFormData] = useState({
     name: '',
     description: '',
@@ -71,13 +79,19 @@ export const GalleryComponent = () => {
     refetch,
   } = useQuery(GET_GALLERIES)
 
+  useEffect(() => {
+    if (file?.url) {
+      setMediaFormData({ ...mediaFormData, image: file?.url })
+    }
+  }, [file?.url])
+
   const { data: galleryData } = useQuery(GET_GALLERY, {
     variables: { id: selectedGalleryId },
     skip: !selectedGalleryId,
   })
 
   const [createGalleryMutation] = useMutation(CREATE_GALLERY, {
-    refetchQueries: [{ query: GET_GALLERIES }],
+    // refetchQueries: [{ query: GET_GALLERIES }],
     onCompleted: () => {
       success('Gallery created successfully')
       refetch()
@@ -89,7 +103,7 @@ export const GalleryComponent = () => {
   })
 
   const [updateGalleryMutation] = useMutation(UPDATE_GALLERY, {
-    refetchQueries: [{ query: GET_GALLERIES }],
+    // refetchQueries: [{ query: GET_GALLERIES }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       success('Gallery updated successfully')
@@ -101,7 +115,7 @@ export const GalleryComponent = () => {
   })
 
   const [deleteGalleryMutation] = useMutation(DELETE_GALLERY, {
-    refetchQueries: [{ query: GET_GALLERIES }],
+    // refetchQueries: [{ query: GET_GALLERIES }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       success('Gallery deleted successfully')
@@ -155,6 +169,7 @@ export const GalleryComponent = () => {
       setFormData({ name: '', description: '' })
     }
     open()
+    setSelectedFile(null)
   }
 
   const handleSaveGallery = async () => {
@@ -199,7 +214,6 @@ export const GalleryComponent = () => {
 
     try {
       await deleteGalleryMutation({ variables: { id } })
-      success('Gallery deleted successfully')
       refetch()
     } catch (error) {
       toastError('Error deleting gallery')
@@ -211,6 +225,7 @@ export const GalleryComponent = () => {
     setSelectedGalleryId(galleryId)
     setMediaFormData({ name: '', description: '', image: '' })
     openMedia()
+    setSelectedFile(null)
   }
 
   const handleSaveMedia = async () => {
@@ -230,7 +245,6 @@ export const GalleryComponent = () => {
           },
         },
       })
-      success('Image added successfully')
       setMediaFormData({ name: '', description: '', image: '' })
       refetch()
       closeMedia()
@@ -244,10 +258,8 @@ export const GalleryComponent = () => {
     if (!window.confirm('Are you sure you want to delete this image?')) {
       return
     }
-
     try {
       await deleteGalleryMediaMutation({ variables: { id: mediaId } })
-      success('Image deleted successfully')
       refetch()
     } catch (error) {
       toastError('Error deleting image')
@@ -357,7 +369,7 @@ export const GalleryComponent = () => {
                             alt={img.name}
                             fit="cover"
                             height={64}
-                            width={64}
+                            // width={64}
                           />
                         </div>
                       ))}
@@ -455,13 +467,38 @@ export const GalleryComponent = () => {
             }
             minRows={2}
           />
+
+          <Box>
+            <Flex display={'inline'}>
+              <Button
+                onClick={openPicker}
+                radius={4}
+                size="xs"
+                leftSection={<IconAdjustments size={18} />}
+              >
+                Select Image
+              </Button>
+              <PickerModal component={FileLibraryPicker} />
+            </Flex>
+          </Box>
+
+          {mediaFormData.image && (
+            <Image
+              src={mediaFormData.image}
+              fallbackSrc="https://placehold.co/200x260?text=Image"
+              alt={mediaFormData.image}
+              // w={'100%'}
+              h={260}
+              fit="cover"
+              radius="md"
+              mt={15}
+            />
+          )}
           <TextInput
-            label="Image URL"
-            placeholder="Enter image URL or path"
-            value={mediaFormData.image}
-            onChange={(e) =>
-              setMediaFormData({ ...mediaFormData, image: e.target.value })
-            }
+            name="image"
+            type="hidden"
+            defaultValue={mediaFormData.image}
+            className="rw-input invisible h-0"
           />
 
           {currentGallery?.images && currentGallery.images.length > 0 && (
@@ -472,14 +509,14 @@ export const GalleryComponent = () => {
               <Box className={`${surfaceClass} p-md rounded border`}>
                 <Group gap="xs" wrap="wrap">
                   {currentGallery.images.map((img) => (
-                    <div key={img.id} className="relative">
+                    <div key={img.id}>
                       <div className="relative h-20 w-20 overflow-hidden rounded border">
                         <Image
                           src={img.image}
                           alt={img.name}
                           fit="cover"
-                          height={80}
                           width={80}
+                          height={80}
                         />
                       </div>
                       <ActionIcon

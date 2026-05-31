@@ -11,7 +11,7 @@ datasource db {
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = "native"
+  binaryTargets = ["native", "darwin", "darwin-arm64"] // Add "darwin" and/or "darwin-arm64"
 }
 
 // Enums
@@ -283,6 +283,7 @@ model Certificate {
   templateId        String?
   signatureUrl      String?
   verificationCode  String              @unique
+  withAssessment    Boolean?             @default(false)
   status            CertificateStatus   @default(DRAFT)
   expiryDate        DateTime?
   verifiedAt        DateTime?
@@ -330,6 +331,7 @@ model PlayerStats {
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   gameDate       DateTime
+  gameName       String
   points         Int       @default(0)
   rebounds       Int       @default(0)
   assists        Int       @default(0)
@@ -399,6 +401,7 @@ model SiteSetting {
   @@index([key])
 }
 
+// Media Model
 model Media {
   id         Int        @id @default(autoincrement())
   name       String
@@ -415,6 +418,7 @@ model Media {
   @@index(fields: [name, url, pathName])
 }
 
+// Gallery Model
 model Gallery {
   id          Int             @id @default(autoincrement())
   name        String
@@ -431,6 +435,7 @@ model Gallery {
   @@index(fields: [name, slug])
 }
 
+// GalleryMedia Model
 model GalleryMedia {
   id          Int        @id @default(autoincrement())
   name        String
@@ -444,6 +449,7 @@ model GalleryMedia {
   @@index(fields: [name, galleryId])
 }
 
+// InvitationLink Model
 model InvitationLink {
   id           Int      @id @default(autoincrement())
   code         String   @unique

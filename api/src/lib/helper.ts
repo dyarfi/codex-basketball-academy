@@ -8,7 +8,7 @@ function generateCertificateNumber(): string {
 }
 
 // Helper function to generate unique verification code
-function generateVerificationCode(count: number): string {
+function generateVerificationCode(count?: number): string {
   return (
     Math.random()
       .toString(count || 36)

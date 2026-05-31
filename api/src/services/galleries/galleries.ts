@@ -7,11 +7,11 @@ import type {
 import { db } from 'src/lib/db'
 
 export const publicGallery: QueryResolvers['publicGallery'] = () => {
-  return db.gallery.findMany()
+  return db.gallery.findMany({ orderBy: { createdAt: 'desc' } })
 }
 
 export const galleries: QueryResolvers['galleries'] = () => {
-  return db.gallery.findMany()
+  return db.gallery.findMany({ orderBy: { createdAt: 'asc' } })
 }
 
 export const gallery: QueryResolvers['gallery'] = ({ id }) => {

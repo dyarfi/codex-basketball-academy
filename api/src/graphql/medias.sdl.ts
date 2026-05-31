@@ -19,9 +19,8 @@ export const schema = gql`
   }
 
   type Query {
-    mediaLists(page: Int!, search: String): MediaLists
-      @requireAuth
-      @hasGates(gates: ["admin:media:*"])
+    mediaLists(page: Int!, search: String): MediaLists @requireAuth
+    # @hasGates(gates: ["admin:media:*"])
     medias: [Media!]! @requireAuth
     media(id: Int!): Media @requireAuth
     # @hasGates(gates: ["media:lists", "media:lists"])

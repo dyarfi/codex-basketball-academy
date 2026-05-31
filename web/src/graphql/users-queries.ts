@@ -117,6 +117,26 @@ export const UPDATE_USER = gql`
       email
       role
       isActive
+      profile {
+        firstName
+        lastName
+        dateOfBirth
+        phoneNumber
+        address
+        city
+        state
+        zipCode
+        country
+        position
+        jerseyNumber
+        heightCm
+        weightKg
+        medicalInfo
+        emergencyContactName
+        emergencyContactPhone
+        relationshipToPlayer
+        profilePhoto
+      }
     }
   }
 `

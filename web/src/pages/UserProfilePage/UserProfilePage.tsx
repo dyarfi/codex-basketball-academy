@@ -102,8 +102,6 @@ const UserProfilePage = () => {
       description: 'Fundamentals 101 - May Payment',
     },
   ]
-  // console.log({ currentUser })
-  // console.log({ auth })
 
   if (!currentUser) {
     return (

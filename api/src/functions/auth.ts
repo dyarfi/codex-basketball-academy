@@ -2,6 +2,7 @@ import type { APIGatewayProxyEvent, Context } from 'aws-lambda'
 
 import { DbAuthHandler } from '@redwoodjs/auth-dbauth-api'
 import type { DbAuthHandlerOptions, UserType } from '@redwoodjs/auth-dbauth-api'
+import type { Role } from '@prisma/client'
 
 import { cookieName } from '../lib/auth'
 import { db } from '../lib/db'
@@ -47,7 +48,19 @@ export const handler = async (
   }
 
   interface UserAttributes {
+    email?: string
+    username: string
+    firstName?: string
+    lastName?: string
+    role?: Role
     roles?: string
+    dateOfBirth?: string | null
+    profile?: {
+      firstName?: string
+      lastName?: string
+      role?: Role
+      dateOfBirth?: string | null
+    }
   }
 
   const signupOptions: DbAuthHandlerOptions<
@@ -55,16 +68,31 @@ export const handler = async (
     UserAttributes
   >['signup'] = {
     handler: ({ username, hashedPassword, salt, userAttributes }) => {
-      if (process.env.ALLOW_ADMIN_SIGNUP !== 'true') {
-        throw new Error('Admin signup is disabled')
-      }
+      // if (process.env.ALLOW_ADMIN_SIGNUP !== 'true') {
+      //   throw new Error('Admin signup is disabled')
+      // }
+      const profileAttributes = userAttributes?.profile
+      const dateOfBirth =
+        userAttributes?.dateOfBirth ?? profileAttributes?.dateOfBirth
 
       return db.user.create({
         data: {
-          email: username,
           hashedPassword,
           salt,
-          roles: userAttributes?.roles || 'admin',
+          email: userAttributes?.email || username,
+          role: userAttributes?.role || profileAttributes?.role || 'PROSPECT',
+          profile: {
+            create: {
+              firstName:
+                userAttributes?.firstName || profileAttributes?.firstName || '',
+              lastName:
+                userAttributes?.lastName || profileAttributes?.lastName || '',
+              dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+            },
+          },
+        },
+        include: {
+          profile: true,
         },
       })
     },

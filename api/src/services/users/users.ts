@@ -96,7 +96,6 @@ export const user: QueryResolvers['user'] = ({ id }) => {
 
 export const createUser: MutationResolvers['createUser'] = ({ input }) => {
   const { email, role, isActive, profile } = input
-
   return db.user.create({
     data: {
       email,
@@ -141,7 +140,6 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
   const updateData: Record<string, any> = { ...userInput }
 
   if (profile) {
-    // Handle profile update
     const {
       firstName,
       lastName,
@@ -164,27 +162,33 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
       profilePhoto,
     } = profile
 
+    const profileData = {
+      firstName,
+      lastName,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      phoneNumber,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      position,
+      jerseyNumber,
+      heightCm,
+      weightKg,
+      medicalInfo,
+      emergencyContactName,
+      emergencyContactPhone,
+      relationshipToPlayer,
+      playerUserId,
+      profilePhoto,
+    }
+
+    // Use upsert to handle both create and update
     updateData.profile = {
-      update: {
-        firstName,
-        lastName,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        phoneNumber,
-        address,
-        city,
-        state,
-        zipCode,
-        country,
-        position,
-        jerseyNumber,
-        heightCm,
-        weightKg,
-        medicalInfo,
-        emergencyContactName,
-        emergencyContactPhone,
-        relationshipToPlayer,
-        playerUserId,
-        profilePhoto,
+      upsert: {
+        create: profileData,
+        update: profileData,
       },
     }
   }

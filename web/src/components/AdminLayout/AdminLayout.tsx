@@ -165,6 +165,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       href: '/admin-panel/skill-assessment',
     },
     {
+      label: 'Player Stats',
+      icon: <ChartLineUpIcon size={16} weight="bold" />,
+      href: '/admin-panel/player-stats',
+    },
+    {
       label: 'Galleries',
       icon: <ImageIcon size={16} weight="bold" />,
       href: '/admin-panel/galleries',

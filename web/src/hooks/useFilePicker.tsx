@@ -12,6 +12,7 @@ export function useFilePicker() {
   }
 
   return {
+    setSelectedFile,
     file: selectedFile,
     openPicker: open,
     PickerModal: (props) => (

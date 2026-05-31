@@ -21,6 +21,7 @@ import {
   Image,
   Paper,
   Divider,
+  Switch,
 } from '@mantine/core'
 import {
   TrashIcon,
@@ -48,6 +49,7 @@ import {
   DELETE_CERTIFICATE_MUTATION,
   VERIFY_CERTIFICATE_MUTATION,
   REVOKE_CERTIFICATE_MUTATION,
+  ASSESSMENT_QUERY,
 } from '../../graphql/certificates-queries'
 import { GET_CLASSES } from '../../graphql/classes-queries'
 import { GET_PROGRAMS } from '../../graphql/programs-queries'
@@ -82,6 +84,7 @@ const CertificateComponent = () => {
     expiryDate: '',
     status: 'DRAFT',
     verificationCode: '',
+    withAssessment: false,
   })
 
   // Queries
@@ -235,6 +238,7 @@ const CertificateComponent = () => {
           : '',
         status: certificate.status || 'DRAFT',
         verificationCode: certificate.verificationCode || '',
+        withAssessment: certificate.withAssessment || false,
       })
       // Set preview if QR code exists
       if (certificate.qrCode) {
@@ -261,6 +265,7 @@ const CertificateComponent = () => {
         expiryDate: '',
         status: 'DRAFT',
         verificationCode: newVerificationCode,
+        withAssessment: false,
       })
       setQrCodePreview(null)
     }
@@ -457,6 +462,7 @@ const CertificateComponent = () => {
                             {certificate.status === 'ISSUED' && (
                               <CertificatePDFViewer
                                 certificate={certificate}
+                                isNextPage={certificate.withAssessment}
                                 isDark={isDark}
                                 buttonText="View"
                               />
@@ -771,6 +777,14 @@ const CertificateComponent = () => {
                   setFormData({ ...formData, status: value || 'DRAFT' })
                 }
                 required
+              />
+              <Switch
+                label="With Assessment"
+                type="checkbox"
+                defaultChecked={formData.withAssessment}
+                onChange={(value) =>
+                  setFormData({ ...formData, withAssessment: value })
+                }
               />
               <Group justify="flex-end">
                 <Button variant="light" onClick={handleCloseModal}>

@@ -19,6 +19,7 @@ export const CERTIFICATES_QUERY = gql`
       templateId
       signatureUrl
       verificationCode
+      withAssessment
       status
       expiryDate
       verifiedAt
@@ -61,6 +62,7 @@ export const CERTIFICATE_QUERY = gql`
       templateId
       signatureUrl
       verificationCode
+      withAssessment
       status
       expiryDate
       verifiedAt
@@ -84,6 +86,27 @@ export const CERTIFICATE_QUERY = gql`
   }
 `
 
+export const ASSESSMENT_QUERY = gql`
+  query GetSkillsAssessmentByProgram($id: String!) {
+    skillsAssessmentsByProgram(id: $id) {
+      id
+      userId
+      programId
+      shooting
+      dribbling
+      defense
+      basketballIQ
+      athleticism
+      overallScore
+      feedback
+      assessedBy
+      assessmentDate
+      createdAt
+      updatedAt
+    }
+  }
+`
+
 export const CREATE_CERTIFICATE_MUTATION = gql`
   mutation CreateCertificate($input: CreateCertificateInput!) {
     createCertificate(input: $input) {
@@ -103,6 +126,7 @@ export const CREATE_CERTIFICATE_MUTATION = gql`
       templateId
       signatureUrl
       verificationCode
+      withAssessment
       status
       expiryDate
       verifiedAt
@@ -133,6 +157,7 @@ export const UPDATE_CERTIFICATE_MUTATION = gql`
       templateId
       signatureUrl
       verificationCode
+      withAssessment
       status
       expiryDate
       verifiedAt

@@ -24,11 +24,13 @@ import {
   IconPlus,
   IconAlertCircle,
   IconCloudDownload,
+  IconPassword,
 } from '@tabler/icons-react'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
+import { useAuth } from 'src/auth'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
@@ -41,6 +43,7 @@ import {
   DELETE_USER,
   CREATE_USER,
 } from 'src/graphql/users-queries'
+import { sendEmailMessage } from 'src/lib/fetch'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
 type RouteBuilder = (params?: RouteQuery) => string
@@ -55,6 +58,8 @@ const UsersPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, role } = useParams()
   const { toasts, success, error: toastError, removeToast } = useToast()
+  const { currentUser } = useAuth()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -148,6 +153,29 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
+            profile: {
+              firstName: values.profile.firstName,
+              lastName: values.profile.lastName,
+              dateOfBirth: values.profile.dateOfBirth
+                ? new Date(values.profile.dateOfBirth).toISOString()
+                : null,
+              phoneNumber: values.profile.phoneNumber || null,
+              address: values.profile.address || null,
+              city: values.profile.city || null,
+              state: values.profile.state || null,
+              zipCode: values.profile.zipCode || null,
+              country: values.profile.country || null,
+              position: values.profile.position || null,
+              jerseyNumber: values.profile.jerseyNumber || null,
+              heightCm: values.profile.heightCm || null,
+              weightKg: values.profile.weightKg || null,
+              medicalInfo: values.profile.medicalInfo || null,
+              emergencyContactName: values.profile.emergencyContactName || null,
+              emergencyContactPhone:
+                values.profile.emergencyContactPhone || null,
+              relationshipToPlayer: values.profile.relationshipToPlayer || null,
+              profilePhoto: values.profile.profilePhoto || null,
+            },
           },
         },
       })
@@ -195,6 +223,15 @@ const UsersPage = () => {
     }
   }
 
+  const handleResetPassword = (user: any) => {
+    // Disabled temporary
+    // return sendEmailMessage({
+    //   subject: 'You have reset your password',
+    //   to: [{ name: user.email, email: user.email }],
+    //   messages: 'Thank you for registering',
+    // })
+  }
+
   const columns = [
     {
       key: 'profile',
@@ -230,6 +267,17 @@ const UsersPage = () => {
               </PDFDownloadLink>
             </ActionIcon>
           )}
+          {currentUser?.role === 'ADMIN'}
+          <Button
+            title="Reset Password"
+            variant="outline"
+            size="compact-xs"
+            leftSection={<IconPassword stroke={0.5} />}
+            m={0}
+            onClick={() => handleResetPassword(user)}
+          >
+            Reset
+          </Button>
         </Group>
       ),
     },
@@ -353,19 +401,21 @@ const UsersPage = () => {
         onDelete={handleDeleteClick}
       />
 
-      <AdminPagination
-        label="users"
-        totalItems={totalUsers}
-        page={currentPage}
-        totalPages={totalPages}
-        route={routes.adminUsers as RouteBuilder}
-        query={{
-          search: debouncedSearchQuery || undefined,
-          role: roleFilter || undefined,
-        }}
-        onPageChange={setCurrentPage}
-        pageSize={PAGE_SIZE}
-      />
+      {users.length > 0 && totalPages > 1 && (
+        <AdminPagination
+          label="users"
+          totalItems={totalUsers}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.adminUsers as RouteBuilder}
+          query={{
+            search: debouncedSearchQuery || undefined,
+            role: roleFilter || undefined,
+          }}
+          onPageChange={setCurrentPage}
+          pageSize={PAGE_SIZE}
+        />
+      )}
 
       <UserModal
         isOpen={isModalOpen}

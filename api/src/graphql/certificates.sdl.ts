@@ -26,6 +26,7 @@ export const schema = gql`
     templateId: String
     signatureUrl: String
     verificationCode: String!
+    withAssessment: Boolean
     status: CertificateStatus!
     expiryDate: DateTime
     verifiedAt: DateTime
@@ -52,6 +53,7 @@ export const schema = gql`
     achievementDate: DateTime!
     certificateNumber: String!
     verificationCode: String!
+    withAssessment: Boolean
     pdfUrl: String
     qrCode: String
     issuedBy: String
@@ -77,6 +79,7 @@ export const schema = gql`
     achievementDate: DateTime
     certificateNumber: String
     verificationCode: String!
+    withAssessment: Boolean
     pdfUrl: String
     qrCode: String
     issuedBy: String

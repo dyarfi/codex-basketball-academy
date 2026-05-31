@@ -7,17 +7,17 @@ export const schema = gql`
     createdAt: DateTime!
     updatedAt: DateTime!
     profile: Profile
-    enrollments: [Enrollment]!
-    attendances: [Attendance]!
-    payments: [Payment]!
-    invoices: [Invoice]!
-    certificates: [Certificate]!
-    skillAssessments: [SkillAssessment]!
-    playerStats: [PlayerStats]!
-    announcements: [Announcement]!
-    sentMessages: [Message]!
-    receivedMessages: [Message]!
-    classesAsTutor: [Class]!
+    enrollments: [Enrollment]
+    attendances: [Attendance]
+    payments: [Payment]
+    invoices: [Invoice]
+    certificates: [Certificate]
+    skillAssessments: [SkillAssessment]
+    playerStats: [PlayerStats]
+    announcements: [Announcement]
+    sentMessages: [Message]
+    receivedMessages: [Message]
+    classesAsTutor: [Class]
   }
 
   type PaginatedUsers {
