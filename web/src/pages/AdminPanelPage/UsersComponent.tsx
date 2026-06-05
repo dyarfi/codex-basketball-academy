@@ -35,7 +35,6 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import UserModal from 'src/components/Modals/UserModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_PAGINATED_USERS,
@@ -43,7 +42,7 @@ import {
   DELETE_USER,
   CREATE_USER,
 } from 'src/graphql/users-queries'
-import { sendEmailMessage } from 'src/lib/fetch'
+// import { sendEmailMessage } from 'src/lib/fetch'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
 type RouteBuilder = (params?: RouteQuery) => string
@@ -57,7 +56,7 @@ const getPageFromParam = (value: unknown) => {
 const UsersPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, role } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const { currentUser } = useAuth()
 
   const [searchQuery, setSearchQuery] = useState(
@@ -433,8 +432,6 @@ const UsersPage = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

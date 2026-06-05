@@ -35,7 +35,6 @@ import { useQuery, useMutation } from '@redwoodjs/web'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import MediaForm from 'src/components/Common/MediaForm/MediaForm'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_MEDIA_LISTS,
@@ -74,7 +73,7 @@ export const MediaComponent = () => {
   )
   const [modalContent, setModalContent] = useState('')
 
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
 
   // const [page, setPage] = useState(1)
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
@@ -540,9 +539,6 @@ export const MediaComponent = () => {
           <Image src={modalContent} w={'100%'} alt={modalContent} />
         </Modal>
       )}
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

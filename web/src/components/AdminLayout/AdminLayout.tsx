@@ -258,14 +258,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </AppShell.Section>
       </AppShell.Navbar>
-
       <AppShell.Header p="xs" pl={'lg'} className={`${surfaceClass} border-b`}>
         <Group justify="space-between" h="100%">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Burger
               opened={opened}
               onClick={toggle}
-              hiddenFrom="md"
+              hiddenFrom="sm"
               size="sm"
             />
             <Text fw={600} size="md" sm={{ size: 'lg' }} truncate>
@@ -308,7 +307,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Group>
         </Group>
       </AppShell.Header>
-
       <AppShell.Main className={panelClass}>{children}</AppShell.Main>
     </AppShell>
   )

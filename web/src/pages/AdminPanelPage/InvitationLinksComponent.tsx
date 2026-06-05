@@ -34,7 +34,6 @@ import { IconAlertCircle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_INVITATION_LINKS,
@@ -46,6 +45,7 @@ import { useAppTheme } from 'src/providers/ThemeProvider'
 
 export const InvitationLinksComponent = () => {
   const { isDark } = useAppTheme()
+  const { success, error: toastError } = useToast()
   const [opened, { open, close }] = useDisclosure(false)
   const [editingLink, setEditingLink] = useState<any>(null)
   const [formData, setFormData] = useState({
@@ -55,7 +55,6 @@ export const InvitationLinksComponent = () => {
     maxUses: null as number | null,
     expiresAt: '',
   })
-  const { toasts, success, error: toastError, removeToast } = useToast()
   const {
     data: linksData,
     loading,
@@ -499,8 +498,6 @@ export const InvitationLinksComponent = () => {
           </Group>
         </Stack>
       </Modal>
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

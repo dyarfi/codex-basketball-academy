@@ -15,10 +15,8 @@ import {
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_MESSAGES,
@@ -28,7 +26,7 @@ import {
 } from 'src/graphql/messages-queries'
 
 const MessagesComponent = () => {
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const { data, loading, error, refetch } = useQuery(GET_MESSAGES)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedMessage, setSelectedMessage] = useState<any>(null)
@@ -106,41 +104,36 @@ const MessagesComponent = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py="xl">
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
-        <h1 className="mb-6 text-2xl font-bold">Messages</h1>
-        {error && (
-          <Alert color="red" className="mb-6">
-            Failed to load messages: {error.message}
-          </Alert>
-        )}
-        <CrudTable
-          columns={columns}
-          data={messages}
-          onDelete={handleDeleteClick}
-        />
-        <ConfirmDelete
-          isOpen={isDeleteModalOpen}
-          title="Delete Message"
-          message="Are you sure you want to delete this message?"
-          isLoading={isDeleting}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
-        />
-      </Container>
-    </AdminLayout>
+    <Container size="xl" py="xl">
+      <h1 className="mb-6 text-2xl font-bold">Messages</h1>
+      {error && (
+        <Alert color="red" className="mb-6">
+          Failed to load messages: {error.message}
+        </Alert>
+      )}
+      <CrudTable
+        columns={columns}
+        data={messages}
+        onDelete={handleDeleteClick}
+      />
+      <ConfirmDelete
+        isOpen={isDeleteModalOpen}
+        title="Delete Message"
+        message="Are you sure you want to delete this message?"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
+    </Container>
   )
 }
 

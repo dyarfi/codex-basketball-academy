@@ -74,28 +74,46 @@ export async function sendEmailMessage({
   sender = { name: APP_NAME as string, email: 'defrian.yarfi@gmail.com' },
   to = [{ name: 'John Doe', email: 'defrian.yarfi@gmail.com' }],
   messages = 'This is a test email sent from the application.',
+  attachment = [
+    {
+      content: '',
+      name: '',
+      url: '',
+    },
+  ],
+  sandbox = false,
 }: {
   subject: string
   sender?: { name: string; email: string }
   to?: [{ name: string; email: string }]
   phone?: number
   messages?: string
+  attachment?: [
+    {
+      content: string // Base64-encoded attachment data
+      name: string // Attachment filename. Required when content is provided.
+      url?: string // Absolute URL of the attachment. Local file paths are not supported.
+    },
+  ]
+  sandbox?: boolean
 }) {
   // Brevo API endpoint and payload construction
   const url = 'https://api.brevo.com/v3/smtp/email'
-  const htmlContent = `<!DOCTYPE html><html><body><h3>${subject}</h3><p>Hello ${to[0]?.email || 'there'},</p>${messages}</p<hr><p style="font-size: 12px; color: #888;">This email was sent by ${APP_NAME} website: ${APP_URL}.</p></body></html>`
+  const htmlContent = templateEmailCertificate({ subject, to, messages })
   // Construct the payload for Brevo API
   const payload = {
     sender,
     to,
     subject,
     htmlContent,
+    attachment,
   }
   // Set up headers for the API request
   const headers = {
     'api-key': KEY_BREVO as string,
     accept: 'application/json',
     'Content-Type': 'application/json',
+    ...(sandbox && { 'X-Sib-Sandbox': 'drop' }),
   }
 
   try {
@@ -115,4 +133,40 @@ export async function sendEmailMessage({
   } catch (error) {
     console.error('Network or fetch error:', error)
   }
+}
+
+export function templateEmailCertificate({
+  subject = 'Hello World',
+  to = [{ name: 'John Doe', email: '' }],
+  messages = 'This is a test email sent from the application.',
+}) {
+  return `<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Certificate</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <!-- Tailwind CSS v4 -->
+            <script src="https://cdn.tailwindcss.com"></script>
+          </head>
+          <body class="bg-gray-100">
+            <div class="max-w-md mx-auto bg-white shadow-lg p-4 rounded-lg mt-10">
+              <!-- Header -->
+              <header class="mb-4">
+                <h1 class="text-2xl font-bold text-center">${subject}</h1>
+              </header>
+              <!-- Certificate Details -->
+              <main>
+                <p>Dear ${to[0]?.name || 'Customer'},</p>
+                <p class="text-gray-700 mb-2">Thank you for your participation. Below are your certificate details:</p>
+                <p class="text-gray-700 mb-2">${messages}</p>
+                <a href="#" class="block bg-red-900 text-white text-center px-4 py-2 rounded mt-4">View Details</a>
+              </main>
+              <!-- Footer -->
+              <footer class="mt-4 text-center text-gray-600">
+                <p>For any questions, contact support. <a href="${APP_URL}" target="_blank">${APP_NAME}</a></p>
+              </footer>
+            </div>
+          </body>
+          </html>`
 }

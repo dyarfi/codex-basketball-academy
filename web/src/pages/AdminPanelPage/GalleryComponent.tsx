@@ -34,7 +34,6 @@ import { TextField } from '@redwoodjs/forms'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
 import FileLibraryPicker from 'src/components/Common/FileLibraryPicker/FileLibraryPicker'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_GALLERIES,
@@ -53,7 +52,7 @@ export const GalleryComponent = () => {
   const { file, setSelectedFile, openPicker, PickerModal } = useFilePicker()
 
   const [opened, { open, close }] = useDisclosure(false)
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const [mediaOpened, { open: openMedia, close: closeMedia }] =
     useDisclosure(false)
   const [editingGallery, setEditingGallery] = useState<any>(null)
@@ -544,7 +543,6 @@ export const GalleryComponent = () => {
           </Group>
         </Stack>
       </Modal>
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

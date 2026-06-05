@@ -21,7 +21,6 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import PlayerStatsModal from 'src/components/Modals/PlayerStatsModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   CREATE_PLAYER_STAT,
@@ -70,7 +69,7 @@ const toEndOfDayIso = (value: string) =>
 const PlayerStatsComponent = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, userId } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -413,8 +412,6 @@ const PlayerStatsComponent = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

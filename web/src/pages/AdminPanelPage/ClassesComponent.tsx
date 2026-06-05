@@ -17,12 +17,10 @@ import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import ClassModal from 'src/components/Modals/ClassModal'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_PAGINATED_CLASSES,
@@ -42,7 +40,7 @@ const getPageFromParam = (value: unknown) => {
 const ClassesPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -220,122 +218,118 @@ const ClassesPage = () => {
 
   if (loading && !data) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
-            color="red"
-            variant="filled"
-          >
-            Failed to load classes: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load classes: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
-          <div>
-            <Text size="lg" fw={700}>
-              Classes Management
-            </Text>
-            <Text size="sm" color="dimmed">
-              Organize and schedule training sessions
-            </Text>
-          </div>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={handleCreate}
-            color="blue"
-          >
-            Add New Class
-          </Button>
-        </Group>
-
-        <Group
-          gap="md"
-          mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
-          grow={true}
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <div>
+          <Text size="lg" fw={700}>
+            Classes Management
+          </Text>
+          <Text size="sm" color="dimmed">
+            Organize and schedule training sessions
+          </Text>
+        </div>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={handleCreate}
+          color="blue"
         >
-          <TextInput
-            placeholder="Search by class name..."
-            leftSection={<IconSearch size={16} />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-            className="flex-1"
-          />
+          Add New Class
+        </Button>
+      </Group>
 
-          <Select
-            placeholder="Filter by program"
-            data={[{ value: '', label: 'All Programs' }, ...programOptions]}
-            value={programFilter || ''}
-            onChange={(value) => setProgramFilter(value || null)}
-            clearable
-          />
-        </Group>
-
-        <CrudTable
-          data={classes}
-          columns={columns as any}
-          isLoading={loading && !data}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
+      <Group
+        gap="md"
+        mb="lg"
+        className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+        grow={true}
+      >
+        <TextInput
+          placeholder="Search by class name..."
+          leftSection={<IconSearch size={16} />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          className="flex-1"
         />
 
-        <AdminPagination
-          label="classes"
-          totalItems={totalClasses}
-          page={currentPage}
-          totalPages={totalPages}
-          route={routes.adminClasses}
-          query={{
-            search: debouncedSearchQuery || undefined,
-            programId: programFilter || undefined,
-          }}
-          onPageChange={setCurrentPage}
-          pageSize={PAGE_SIZE}
+        <Select
+          placeholder="Filter by program"
+          data={[{ value: '', label: 'All Programs' }, ...programOptions]}
+          value={programFilter || ''}
+          onChange={(value) => setProgramFilter(value || null)}
+          clearable
         />
+      </Group>
 
-        <ClassModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          classData={selectedClass}
-          programs={programs}
-          coaches={coaches}
-          isLoading={isCreating || isUpdating}
-          isDataLoading={programsLoading || coachesLoading}
-        />
+      <CrudTable
+        data={classes}
+        columns={columns as any}
+        isLoading={loading && !data}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-        <ConfirmDelete
-          isOpen={isDeleteModalOpen}
-          title="Delete Class"
-          message={`Are you sure you want to delete "${selectedClass?.name}"? This will also affect enrolled students.`}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          isLoading={isDeleting}
-        />
+      <AdminPagination
+        label="classes"
+        totalItems={totalClasses}
+        page={currentPage}
+        totalPages={totalPages}
+        route={routes.adminClasses}
+        query={{
+          search: debouncedSearchQuery || undefined,
+          programId: programFilter || undefined,
+        }}
+        onPageChange={setCurrentPage}
+        pageSize={PAGE_SIZE}
+      />
 
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </Container>
-    </AdminLayout>
+      <ClassModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        classData={selectedClass}
+        programs={programs}
+        coaches={coaches}
+        isLoading={isCreating || isUpdating}
+        isDataLoading={programsLoading || coachesLoading}
+      />
+
+      <ConfirmDelete
+        isOpen={isDeleteModalOpen}
+        title="Delete Class"
+        message={`Are you sure you want to delete "${selectedClass?.name}"? This will also affect enrolled students.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={isDeleting}
+      />
+    </Container>
   )
 }
 

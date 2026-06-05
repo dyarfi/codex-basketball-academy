@@ -21,7 +21,6 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import SkillAssessmentModal from 'src/components/Modals/SkillAssessmentModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import {
@@ -41,7 +40,7 @@ const getPageFromParam = (value: unknown) => {
 const SkillAssessmentsPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -354,8 +353,6 @@ const SkillAssessmentsPage = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

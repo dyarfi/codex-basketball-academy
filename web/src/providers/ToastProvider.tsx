@@ -3,13 +3,18 @@ import React, { createContext, useContext, useCallback, useState } from 'react'
 import { Toast, ToastContainer, ToastType } from '../components/Toast/Toast'
 
 interface ToastContextType {
-  success: (message: string) => void
-  error: (message: string) => void
-  info: (message: string) => void
-  warning: (message: string) => void
+  toasts: Toast[]
+  addToast: (message: string, type: ToastType, duration?: number) => string
+  removeToast: (id: string) => void
+  success: (message: string) => string
+  error: (message: string) => string
+  info: (message: string) => string
+  warning: (message: string) => string
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
+export const ToastContext = createContext<ToastContextType | undefined>(
+  undefined
+)
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -20,6 +25,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     (message: string, type: ToastType = 'info', duration = 4000) => {
       const id = Math.random().toString(36).substring(7)
       setToasts((prev) => [...prev, { id, type, message, duration }])
+      return id
     },
     []
   )
@@ -34,7 +40,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   const warning = (message: string) => addToast(message, 'warning')
 
   return (
-    <ToastContext.Provider value={{ success, error, info, warning }}>
+    <ToastContext.Provider
+      value={{ toasts, addToast, removeToast, success, error, info, warning }}
+    >
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>

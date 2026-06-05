@@ -263,7 +263,6 @@ export const CertificatePDF = ({
     ? styles.signatureTextDark
     : styles.signatureText
   const certNumberStyle = isDark ? styles.certNumberDark : styles.certNumber
-  console.log({})
 
   return (
     <Document>

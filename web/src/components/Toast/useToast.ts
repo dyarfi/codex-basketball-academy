@@ -1,5 +1,7 @@
 // web/src/components/Toast/useToast.ts
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useContext } from 'react'
+
+import { ToastContext } from 'src/providers/ToastProvider'
 
 import type { Toast, ToastType } from './Toast'
 
@@ -14,6 +16,23 @@ interface UseToastReturn {
 }
 
 export const useToast = (): UseToastReturn => {
+  // Try to use context first if available
+  const context = useContext(ToastContext)
+
+  if (context) {
+    // We're inside a ToastProvider, use the shared context
+    return {
+      toasts: context.toasts,
+      addToast: context.addToast,
+      removeToast: context.removeToast,
+      success: context.success,
+      error: context.error,
+      info: context.info,
+      warning: context.warning,
+    }
+  }
+
+  // Fallback to local state if not in ToastProvider
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const addToast = useCallback(

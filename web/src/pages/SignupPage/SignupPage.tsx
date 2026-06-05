@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react'
 import { Link, navigate } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
-import { ToastContainer } from 'src/components/Toast/Toast'
 import { useToast } from 'src/components/Toast/useToast'
 
 const SignupPage = () => {
-  const { toasts, success, error: toastError, removeToast } = useToast()
+  const { success, error: toastError } = useToast()
   const { isAuthenticated, loading: isLoading, signUp } = useAuth()
   const [loading, setLoading] = useState(false)
 
@@ -284,7 +283,6 @@ const SignupPage = () => {
             </Link>
           </p>
         </form>
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
       </div>
     </div>
   )
