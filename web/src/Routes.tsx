@@ -24,6 +24,7 @@ import CoachPage from 'src/pages/CoachPage/CoachPage'
 import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
 import EnrollmentPage from 'src/pages/EnrollmentPage/EnrollmentPage'
 import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
+import GalleryPage from 'src/pages/GalleryPage/GalleryPage'
 import HomePage from 'src/pages/HomePage/HomePage'
 import InvitePage from 'src/pages/InvitePage/InvitePage'
 import LoginPage from 'src/pages/LoginPage/LoginPage'
@@ -57,6 +58,7 @@ const Routes = () => {
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
         <Route path="/enrollment" page={EnrollmentPage} name="EnrollmentPage" />
+        <Route path="/gallery" page={GalleryPage} name="GalleryPage" />
         <Route path="/programs" page={ProgramsListPage} name="ProgramsListPage" />
         <Route path="/programs/{id}" page={ProgramDetailsPage} name="ProgramsDetailPage" />
         <Route path="/invite/{code}" page={InvitePage} name="InvitePage" />

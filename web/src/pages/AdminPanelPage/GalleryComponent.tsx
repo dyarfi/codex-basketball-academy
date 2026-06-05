@@ -10,11 +10,9 @@ import {
   Textarea,
   Badge,
   Text,
-  Table,
   Box,
   Card,
   Stack,
-  Select,
   Loader,
   Alert,
   ActionIcon,
@@ -28,7 +26,14 @@ import {
   Plus,
   Images as ImagesIcon,
 } from '@phosphor-icons/react'
-import { IconAdjustments, IconAlertCircle } from '@tabler/icons-react'
+import {
+  IconAdjustments,
+  IconAlertCircle,
+  IconPencil,
+  IconPhoto,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react'
 
 import { TextField } from '@redwoodjs/forms'
 import { useQuery, useMutation } from '@redwoodjs/web'
@@ -222,14 +227,18 @@ export const GalleryComponent = () => {
 
   const handleOpenMediaModal = (galleryId: number) => {
     setSelectedGalleryId(galleryId)
-    setMediaFormData({ name: '', description: '', image: '' })
     openMedia()
+    setMediaFormData({ name: '', description: '', image: '' })
     setSelectedFile(null)
   }
 
   const handleSaveMedia = async () => {
-    if (!mediaFormData.name.trim() || !mediaFormData.image.trim()) {
-      toastError('Image name and URL are required')
+    if (!mediaFormData.image.trim()) {
+      toastError('Select an image first')
+      return
+    }
+    if (!mediaFormData.name.trim() || !mediaFormData.description.trim()) {
+      toastError('Image name and Description are required')
       return
     }
 
@@ -328,7 +337,7 @@ export const GalleryComponent = () => {
         </Alert>
       ) : (
         <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
-          {galleries.map((gallery) => (
+          {galleries.map((gallery: any) => (
             <Grid.Col key={gallery.id} span={{ base: 12, sm: 6, md: 4 }}>
               <Card
                 shadow="sm"
@@ -356,51 +365,73 @@ export const GalleryComponent = () => {
                 </Card.Section>
 
                 <Stack gap="xs" mt="md">
-                  {gallery.images && gallery.images.length > 0 && (
+                  {gallery.images && gallery.images.length > 0 ? (
                     <Group gap="xs">
-                      {gallery.images.slice(0, 3).map((img) => (
-                        <div
-                          key={img.id}
-                          className="relative h-16 w-16 overflow-hidden rounded border"
-                        >
+                      {gallery.images.slice(0, 4).map((img) => (
+                        <Box key={img.id} pos="relative">
                           <Image
                             src={img.image}
                             alt={img.name}
+                            w={'88'}
+                            h={'88'}
                             fit="cover"
-                            height={64}
-                            // width={64}
+                            bdrs={'sm'}
                           />
-                        </div>
+                          <ActionIcon
+                            pos={'absolute'}
+                            top={1}
+                            right={1}
+                            variant="gradient"
+                            size="xs"
+                            color="red"
+                            onClick={() => handleDeleteMedia(img.id)}
+                            title="Remove Image"
+                          >
+                            <IconX size={14} />
+                          </ActionIcon>
+                        </Box>
                       ))}
                     </Group>
+                  ) : (
+                    <Text size="xs" c="gray">
+                      Empty, please add your image media first
+                    </Text>
                   )}
 
                   <Group grow>
                     <Button
-                      size="xs"
-                      leftSection={<ImagesIcon size={14} weight="bold" />}
+                      size="compact-xs"
+                      leftSection={<IconPhoto size={13} />}
                       onClick={() => handleOpenMediaModal(gallery.id)}
                       color="blue"
                       variant="light"
+                      title="Manage Images"
+                      fz={'10'}
                     >
-                      Media
+                      MANAGE
                     </Button>
-                    <ActionIcon
-                      size="sm"
+                    <Button
+                      size="compact-xs"
+                      leftSection={<IconPencil size={14} />}
                       color="blue"
                       onClick={() => handleOpenModal(gallery)}
                       variant="light"
+                      title="Update Gallery"
+                      fz={'10'}
                     >
-                      <PencilSimple size={16} weight="bold" />
-                    </ActionIcon>
-                    <ActionIcon
-                      size="sm"
+                      UPDATE
+                    </Button>
+                    <Button
+                      size="compact-xs"
+                      leftSection={<IconTrash size={14} />}
                       color="red"
                       onClick={() => handleDeleteGallery(gallery.id)}
                       variant="light"
+                      title="Remove Gallery"
+                      fz={'10'}
                     >
-                      <Trash size={16} weight="bold" />
-                    </ActionIcon>
+                      REMOVE
+                    </Button>
                   </Group>
                 </Stack>
               </Card>
@@ -443,30 +474,9 @@ export const GalleryComponent = () => {
         opened={mediaOpened}
         onClose={closeMedia}
         title="Add Image to Gallery"
-        size="md"
+        size="lg"
       >
         <Stack gap="md">
-          <TextInput
-            label="Image Name"
-            placeholder="Enter image name"
-            value={mediaFormData.name}
-            onChange={(e) =>
-              setMediaFormData({ ...mediaFormData, name: e.target.value })
-            }
-          />
-          <Textarea
-            label="Description"
-            placeholder="Enter image description"
-            value={mediaFormData.description}
-            onChange={(e) =>
-              setMediaFormData({
-                ...mediaFormData,
-                description: e.target.value,
-              })
-            }
-            minRows={2}
-          />
-
           <Box>
             <Flex display={'inline'}>
               <Button
@@ -480,54 +490,83 @@ export const GalleryComponent = () => {
               <PickerModal component={FileLibraryPicker} />
             </Flex>
           </Box>
+          <Box>
+            {mediaFormData.image && (
+              <>
+                <TextInput
+                  label="Image Name"
+                  placeholder="Enter image name"
+                  value={mediaFormData.name}
+                  onChange={(e) =>
+                    setMediaFormData({ ...mediaFormData, name: e.target.value })
+                  }
+                />
+                <Textarea
+                  label="Description"
+                  placeholder="Enter image description"
+                  value={mediaFormData.description}
+                  onChange={(e) =>
+                    setMediaFormData({
+                      ...mediaFormData,
+                      description: e.target.value,
+                    })
+                  }
+                  minRows={2}
+                />
+              </>
+            )}
 
-          {mediaFormData.image && (
-            <Image
-              src={mediaFormData.image}
-              fallbackSrc="https://placehold.co/200x260?text=Image"
-              alt={mediaFormData.image}
-              // w={'100%'}
-              h={260}
-              fit="cover"
-              radius="md"
-              mt={15}
+            {mediaFormData.image && (
+              <Image
+                src={mediaFormData.image}
+                fallbackSrc="https://placehold.co/200x260?text=Image"
+                alt={mediaFormData.image}
+                // w={'100%'}
+                h={260}
+                fit="cover"
+                radius="md"
+                mt={15}
+              />
+            )}
+            <TextInput
+              name="image"
+              type="hidden"
+              defaultValue={mediaFormData.image}
+              className="rw-input invisible h-0"
             />
-          )}
-          <TextInput
-            name="image"
-            type="hidden"
-            defaultValue={mediaFormData.image}
-            className="rw-input invisible h-0"
-          />
-
+          </Box>
           {currentGallery?.images && currentGallery.images.length > 0 && (
             <div>
               <Text size="sm" fw={600} mb="xs">
                 Gallery Images ({currentGallery.images.length})
               </Text>
-              <Box className={`${surfaceClass} p-md rounded border`}>
-                <Group gap="xs" wrap="wrap">
-                  {currentGallery.images.map((img) => (
-                    <div key={img.id}>
-                      <div className="relative h-20 w-20 overflow-hidden rounded border">
+              <Box className={`${surfaceClass} rounded border`} py={'4'}>
+                <Group gap="xs" wrap="wrap" justify="center">
+                  {currentGallery.images.map(
+                    (img: { id: number; image: string; name: string }) => (
+                      <Box key={img.id} pos="relative">
                         <Image
                           src={img.image}
                           alt={img.name}
+                          h={'72'}
                           fit="cover"
-                          width={80}
-                          height={80}
+                          bdrs={'sm'}
                         />
-                      </div>
-                      <ActionIcon
-                        size="xs"
-                        color="red"
-                        className="absolute -right-1 -top-1"
-                        onClick={() => handleDeleteMedia(img.id)}
-                      >
-                        <Trash size={12} weight="bold" />
-                      </ActionIcon>
-                    </div>
-                  ))}
+                        <ActionIcon
+                          pos={'absolute'}
+                          top={1}
+                          right={1}
+                          variant="gradient"
+                          size="xs"
+                          color="red"
+                          onClick={() => handleDeleteMedia(img.id)}
+                          title="Remove Image"
+                        >
+                          <IconX size={14} />
+                        </ActionIcon>
+                      </Box>
+                    )
+                  )}
                 </Group>
               </Box>
             </div>
