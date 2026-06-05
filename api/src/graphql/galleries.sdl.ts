@@ -23,9 +23,24 @@ export const schema = gql`
     updatedAt: DateTime
   }
 
+  type PaginatedGalleries {
+    items: [Gallery!]!
+    totalCount: Int!
+    currentPage: Int!
+    pageSize: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
   type Query {
     publicGallery: [Gallery!]! @skipAuth
     galleries: [Gallery!]! @requireAuth
+    paginatedGalleries(
+      page: Int!
+      pageSize: Int!
+      search: String
+    ): PaginatedGalleries! @requireAuth
     gallery(id: Int!): Gallery @requireAuth
     galleryMedias: [GalleryMedia!]! @requireAuth
     galleryMedia(id: Int!): GalleryMedia @requireAuth

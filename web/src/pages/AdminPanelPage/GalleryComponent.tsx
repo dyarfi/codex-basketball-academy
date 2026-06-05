@@ -19,7 +19,7 @@ import {
   Image,
   Flex,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import {
   Trash,
   PencilSimple,
@@ -35,13 +35,15 @@ import {
   IconX,
 } from '@tabler/icons-react'
 
-import { TextField } from '@redwoodjs/forms'
+import { useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
+import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import FileLibraryPicker from 'src/components/Common/FileLibraryPicker/FileLibraryPicker'
 import { useToast } from 'src/components/Toast/useToast'
 import {
   GET_GALLERIES,
+  GET_PAGINATED_GALLERIES,
   CREATE_GALLERY,
   UPDATE_GALLERY,
   DELETE_GALLERY,
@@ -52,9 +54,17 @@ import {
 import { useFilePicker } from 'src/hooks/useFilePicker'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
+const PAGE_SIZE = 10
+
+const getPageFromParam = (page: any): number => {
+  const pageNum = parseInt(page as string, 10)
+  return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum
+}
+
 export const GalleryComponent = () => {
   const { isDark } = useAppTheme()
   const { file, setSelectedFile, openPicker, PickerModal } = useFilePicker()
+  const { page = 1, search } = useParams()
 
   const [opened, { open, close }] = useDisclosure(false)
   const { success, error: toastError } = useToast()
@@ -64,6 +74,14 @@ export const GalleryComponent = () => {
   const [selectedGalleryId, setSelectedGalleryId] = useState<number | null>(
     null
   )
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
+  const [searchQuery, setSearchQuery] = useState(
+    typeof search === 'string' ? search : ''
+  )
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+
   // Gallery form
   const [formData, setFormData] = useState({
     name: '',
@@ -76,12 +94,19 @@ export const GalleryComponent = () => {
     image: '',
   })
 
+  // Pagination variables
+  const variables = {
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+  }
+
   const {
     data: galleriesData,
     loading,
     error,
     refetch,
-  } = useQuery(GET_GALLERIES)
+  } = useQuery(GET_PAGINATED_GALLERIES, { variables })
 
   useEffect(() => {
     if (file?.url) {
@@ -95,10 +120,9 @@ export const GalleryComponent = () => {
   })
 
   const [createGalleryMutation] = useMutation(CREATE_GALLERY, {
-    // refetchQueries: [{ query: GET_GALLERIES }],
+    refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     onCompleted: () => {
       success('Gallery created successfully')
-      refetch()
     },
     onError: (err) => {
       toastError(err.message || 'Failed to create Gallery')
@@ -107,11 +131,10 @@ export const GalleryComponent = () => {
   })
 
   const [updateGalleryMutation] = useMutation(UPDATE_GALLERY, {
-    // refetchQueries: [{ query: GET_GALLERIES }],
+    refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       success('Gallery updated successfully')
-      refetch()
     },
     onError: (err) => {
       toastError(err.message || 'Failed to update Gallery')
@@ -119,11 +142,10 @@ export const GalleryComponent = () => {
   })
 
   const [deleteGalleryMutation] = useMutation(DELETE_GALLERY, {
-    // refetchQueries: [{ query: GET_GALLERIES }],
+    refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       success('Gallery deleted successfully')
-      refetch()
     },
     onError: (err) => {
       toastError(err.message || 'Failed to delete Gallery')
@@ -133,11 +155,10 @@ export const GalleryComponent = () => {
   const [createGalleryMediaMutation] = useMutation(CREATE_GALLERY_MEDIA, {
     refetchQueries: [
       { query: GET_GALLERY, variables: { id: selectedGalleryId } },
-      { query: GET_GALLERIES },
+      { query: GET_PAGINATED_GALLERIES, variables },
     ],
     onCompleted: () => {
       success('Gallery Media created successfully')
-      refetch()
     },
     onError: (err) => {
       toastError(err.message || 'Failed to create Gallery')
@@ -147,18 +168,23 @@ export const GalleryComponent = () => {
   const [deleteGalleryMediaMutation] = useMutation(DELETE_GALLERY_MEDIA, {
     refetchQueries: [
       { query: GET_GALLERY, variables: { id: selectedGalleryId } },
-      { query: GET_GALLERIES },
+      { query: GET_PAGINATED_GALLERIES, variables },
     ],
     onCompleted: () => {
       success('Gallery Media deleted successfully')
-      refetch()
     },
     onError: (err) => {
       toastError(err.message || 'Failed to delete Gallery')
     },
   })
 
-  const galleries = galleriesData?.galleries || []
+  const galleries = galleriesData?.paginatedGalleries?.items || []
+  const {
+    totalCount = 0,
+    totalPages = 1,
+    hasNextPage = false,
+    hasPreviousPage = false,
+  } = galleriesData?.paginatedGalleries || {}
   const currentGallery = galleryData?.gallery || null
 
   const handleOpenModal = (gallery?: any) => {
@@ -218,7 +244,6 @@ export const GalleryComponent = () => {
 
     try {
       await deleteGalleryMutation({ variables: { id } })
-      refetch()
     } catch (error) {
       toastError('Error deleting gallery')
       console.error(error)
@@ -254,7 +279,6 @@ export const GalleryComponent = () => {
         },
       })
       setMediaFormData({ name: '', description: '', image: '' })
-      refetch()
       closeMedia()
     } catch (error) {
       toastError('Error adding image')
@@ -268,7 +292,6 @@ export const GalleryComponent = () => {
     }
     try {
       await deleteGalleryMediaMutation({ variables: { id: mediaId } })
-      refetch()
     } catch (error) {
       toastError('Error deleting image')
       console.error(error)
@@ -331,113 +354,137 @@ export const GalleryComponent = () => {
         </Button>
       </Group>
 
+      <Group mb="lg" grow>
+        <TextInput
+          placeholder="Search by name or description..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.currentTarget.value)
+            setCurrentPage(1)
+          }}
+        />
+      </Group>
+
       {galleries.length === 0 ? (
         <Alert color="blue" icon={<ImagesIcon />}>
           No galleries yet. Create your first gallery to get started.
         </Alert>
       ) : (
-        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
-          {galleries.map((gallery: any) => (
-            <Grid.Col key={gallery.id} span={{ base: 12, sm: 6, md: 4 }}>
-              <Card
-                shadow="sm"
-                padding="md"
-                radius="md"
-                className={`${surfaceClass} border`}
-              >
-                <Card.Section
-                  p="md"
-                  className={isDark ? 'bg-slate-800' : 'bg-slate-100'}
+        <>
+          <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
+            {galleries.map((gallery: any) => (
+              <Grid.Col key={gallery.id} span={{ base: 12, sm: 6, md: 4 }}>
+                <Card
+                  shadow="sm"
+                  padding="md"
+                  radius="md"
+                  className={`${surfaceClass} border`}
                 >
-                  <Group justify="space-between" align="flex-start">
-                    <div>
-                      <Text fw={600} size="sm" lineClamp={1}>
-                        {gallery.name}
-                      </Text>
-                      <Text size="xs" className="text-slate-500" lineClamp={2}>
-                        {gallery.description || 'No description'}
-                      </Text>
-                    </div>
-                    <Badge size="sm" variant="light">
-                      {gallery.images?.length || 0} images
-                    </Badge>
-                  </Group>
-                </Card.Section>
-
-                <Stack gap="xs" mt="md">
-                  {gallery.images && gallery.images.length > 0 ? (
-                    <Group gap="xs">
-                      {gallery.images.slice(0, 4).map((img) => (
-                        <Box key={img.id} pos="relative">
-                          <Image
-                            src={img.image}
-                            alt={img.name}
-                            w={'88'}
-                            h={'88'}
-                            fit="cover"
-                            bdrs={'sm'}
-                          />
-                          <ActionIcon
-                            pos={'absolute'}
-                            top={1}
-                            right={1}
-                            variant="gradient"
-                            size="xs"
-                            color="red"
-                            onClick={() => handleDeleteMedia(img.id)}
-                            title="Remove Image"
-                          >
-                            <IconX size={14} />
-                          </ActionIcon>
-                        </Box>
-                      ))}
+                  <Card.Section
+                    p="md"
+                    className={isDark ? 'bg-slate-800' : 'bg-slate-100'}
+                  >
+                    <Group justify="space-between" align="flex-start">
+                      <div>
+                        <Text fw={600} size="sm" lineClamp={1}>
+                          {gallery.name}
+                        </Text>
+                        <Text
+                          size="xs"
+                          className="text-slate-500"
+                          lineClamp={2}
+                        >
+                          {gallery.description || 'No description'}
+                        </Text>
+                      </div>
+                      <Badge size="sm" variant="light">
+                        {gallery.images?.length || 0} images
+                      </Badge>
                     </Group>
-                  ) : (
-                    <Text size="xs" c="gray">
-                      Empty, please add your image media first
-                    </Text>
-                  )}
+                  </Card.Section>
 
-                  <Group grow>
-                    <Button
-                      size="compact-xs"
-                      leftSection={<IconPhoto size={13} />}
-                      onClick={() => handleOpenMediaModal(gallery.id)}
-                      color="blue"
-                      variant="light"
-                      title="Manage Images"
-                      fz={'10'}
-                    >
-                      MANAGE
-                    </Button>
-                    <Button
-                      size="compact-xs"
-                      leftSection={<IconPencil size={14} />}
-                      color="blue"
-                      onClick={() => handleOpenModal(gallery)}
-                      variant="light"
-                      title="Update Gallery"
-                      fz={'10'}
-                    >
-                      UPDATE
-                    </Button>
-                    <Button
-                      size="compact-xs"
-                      leftSection={<IconTrash size={14} />}
-                      color="red"
-                      onClick={() => handleDeleteGallery(gallery.id)}
-                      variant="light"
-                      title="Remove Gallery"
-                      fz={'10'}
-                    >
-                      REMOVE
-                    </Button>
-                  </Group>
-                </Stack>
-              </Card>
-            </Grid.Col>
-          ))}
-        </Grid>
+                  <Stack gap="xs" mt="md">
+                    {gallery.images && gallery.images.length > 0 ? (
+                      <Group gap="xs">
+                        {gallery.images.slice(0, 4).map((img) => (
+                          <Box key={img.id} pos="relative">
+                            <Image
+                              src={img.image}
+                              alt={img.name}
+                              w={'88'}
+                              h={'88'}
+                              fit="cover"
+                              bdrs={'sm'}
+                            />
+                            <ActionIcon
+                              pos={'absolute'}
+                              top={1}
+                              right={1}
+                              variant="gradient"
+                              size="xs"
+                              color="red"
+                              onClick={() => handleDeleteMedia(img.id)}
+                              title="Remove Image"
+                            >
+                              <IconX size={14} />
+                            </ActionIcon>
+                          </Box>
+                        ))}
+                      </Group>
+                    ) : (
+                      <Text size="xs" c="gray">
+                        Empty, please add your image media first
+                      </Text>
+                    )}
+
+                    <Group grow>
+                      <Button
+                        size="compact-xs"
+                        leftSection={<IconPhoto size={13} />}
+                        onClick={() => handleOpenMediaModal(gallery.id)}
+                        color="blue"
+                        variant="light"
+                        title="Manage Images"
+                        fz={'10'}
+                      >
+                        MANAGE
+                      </Button>
+                      <Button
+                        size="compact-xs"
+                        leftSection={<IconPencil size={14} />}
+                        color="blue"
+                        onClick={() => handleOpenModal(gallery)}
+                        variant="light"
+                        title="Update Gallery"
+                        fz={'10'}
+                      >
+                        UPDATE
+                      </Button>
+                      <Button
+                        size="compact-xs"
+                        leftSection={<IconTrash size={14} />}
+                        color="red"
+                        onClick={() => handleDeleteGallery(gallery.id)}
+                        variant="light"
+                        title="Remove Gallery"
+                        fz={'10'}
+                      >
+                        REMOVE
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Card>
+              </Grid.Col>
+            ))}
+          </Grid>
+          {totalPages > 1 && (
+            <AdminPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </>
       )}
 
       {/* Gallery Modal */}
