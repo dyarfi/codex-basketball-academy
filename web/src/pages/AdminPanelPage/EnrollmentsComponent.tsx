@@ -17,14 +17,12 @@ import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import EnrollmentModal from 'src/components/Modals/EnrollmentModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
 import { GET_CLASSES } from 'src/graphql/classes-queries'
 import {
   GET_PAGINATED_ENROLLMENTS,
@@ -35,6 +33,7 @@ import {
 } from 'src/graphql/enrollments-queries'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
+import { sendEmailMessage } from 'src/lib/fetch'
 
 const getPageFromParam = (value: unknown) => {
   const parsedPage = Number(value)
@@ -45,11 +44,11 @@ const getPageFromParam = (value: unknown) => {
 const EnrollmentsComponent = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId, status } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
-  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 400)
   const [programFilter, setProgramFilter] = useState<string | null>(
     typeof programId === 'string' ? programId : null
   )
@@ -86,12 +85,12 @@ const EnrollmentsComponent = () => {
     CREATE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment created successfully')
+        toast.success('Enrollment created successfully')
         setIsModalOpen(false)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to create enrollment')
+        toast.error(err.message || 'Failed to create enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -102,13 +101,13 @@ const EnrollmentsComponent = () => {
     UPDATE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment updated successfully')
+        toast.success('Enrollment updated successfully')
         setIsModalOpen(false)
         setSelectedEnrollment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to update enrollment')
+        toast.error(err.message || 'Failed to update enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -119,13 +118,13 @@ const EnrollmentsComponent = () => {
     DELETE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment deleted successfully')
+        toast.success('Enrollment deleted successfully')
         setIsDeleteModalOpen(false)
         setSelectedEnrollment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to delete enrollment')
+        toast.error(err.message || 'Failed to delete enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -137,13 +136,18 @@ const EnrollmentsComponent = () => {
     {
       onCompleted: (data) => {
         const email = data?.completeEnrollment?.user?.email
-        success(
+        // sendEmailMessage({
+        //   subject: 'You have completed your Enrollment',
+        //   to: [{ name: email, email }],
+        //   messages: 'Certificate click here',
+        // })
+        toast.success(
           `Enrollment completed! Certificate auto-issued${email ? ` for ${email}` : ''}`
         )
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to complete enrollment')
+        toast.error(err.message || 'Failed to complete enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -227,9 +231,16 @@ const EnrollmentsComponent = () => {
       key: 'user',
       header: 'Player',
       render: (val: any) => (
-        <Text size="sm">
-          {val?.profile?.firstName} {val?.profile?.lastName}
-        </Text>
+        <>
+          <Text size="sm">
+            {val?.profile?.firstName} {val?.profile?.lastName}
+          </Text>
+          {val?.email && (
+            <Text size="xs" c="dimmed">
+              {val?.email}
+            </Text>
+          )}
+        </>
       ),
     },
     {
@@ -304,132 +315,128 @@ const EnrollmentsComponent = () => {
 
   if (loading && !data) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
-            color="red"
-            variant="filled"
-          >
-            Failed to load enrollments: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load enrollments: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
-          <div>
-            <Text size="xl" fw={700}>
-              Enrollments Management
-            </Text>
-            <Text size="sm" color="dimmed">
-              Manage player enrollments in classes and programs
-            </Text>
-          </div>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={handleCreate}
-            color="blue"
-          >
-            Add New Enrollment
-          </Button>
-        </Group>
-
-        <Group
-          gap="md"
-          mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-4"
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <div>
+          <Text size="xl" fw={700}>
+            Enrollments Management
+          </Text>
+          <Text size="sm" color="dimmed">
+            Manage player enrollments in classes and programs
+          </Text>
+        </div>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={handleCreate}
+          color="blue"
         >
-          <TextInput
-            placeholder="Search by player name or class..."
-            leftSection={<IconSearch size={16} />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-            className="flex-1"
-          />
+          Add New Enrollment
+        </Button>
+      </Group>
 
-          <Select
-            placeholder="Filter by program"
-            data={[{ value: '', label: 'All Programs' }, ...programOptions]}
-            value={programFilter || ''}
-            onChange={(value) => setProgramFilter(value || null)}
-            clearable
-          />
-
-          <Select
-            placeholder="Filter by status"
-            data={[{ value: '', label: 'All Status' }, ...statusOptions]}
-            value={statusFilter || ''}
-            onChange={(value) => setStatusFilter(value || null)}
-            clearable
-          />
-        </Group>
-
-        <CrudTable
-          data={enrollments}
-          columns={columns as any}
-          isLoading={loading && !data}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-          showActions={false}
+      <Group
+        gap="md"
+        mb="lg"
+        className="rounded-lg border border-gray-200 bg-white p-4"
+      >
+        <TextInput
+          placeholder="Search by player name or class..."
+          leftSection={<IconSearch size={16} />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          className="flex-1"
         />
 
-        <AdminPagination
-          label="enrollments"
-          totalItems={totalEnrollments}
-          page={currentPage}
-          totalPages={totalPages}
-          route={routes.adminEnrollments}
-          query={{
-            search: debouncedSearchQuery || undefined,
-            programId: programFilter || undefined,
-            status: statusFilter || undefined,
-          }}
-          onPageChange={setCurrentPage}
-          pageSize={PAGE_SIZE}
+        <Select
+          placeholder="Filter by program"
+          data={[{ value: '', label: 'All Programs' }, ...programOptions]}
+          value={programFilter || ''}
+          onChange={(value) => setProgramFilter(value || null)}
+          clearable
         />
 
-        <EnrollmentModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          enrollmentData={selectedEnrollment}
-          programs={programs}
-          classes={classes}
-          players={players}
-          isLoading={isCreating || isUpdating}
-          isDataLoading={programsLoading || classesLoading || usersLoading}
+        <Select
+          placeholder="Filter by status"
+          data={[{ value: '', label: 'All Status' }, ...statusOptions]}
+          value={statusFilter || ''}
+          onChange={(value) => setStatusFilter(value || null)}
+          clearable
         />
+      </Group>
 
-        <ConfirmDelete
-          isOpen={isDeleteModalOpen}
-          title="Delete Enrollment"
-          message={`Are you sure you want to delete this enrollment for ${selectedEnrollment?.user?.profile?.firstName}?`}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          isLoading={isDeleting}
-        />
+      <CrudTable
+        data={enrollments}
+        columns={columns as any}
+        isLoading={loading && !data}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+        showActions={false}
+      />
 
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </Container>
-    </AdminLayout>
+      <AdminPagination
+        label="enrollments"
+        totalItems={totalEnrollments}
+        page={currentPage}
+        totalPages={totalPages}
+        route={routes.adminEnrollments}
+        query={{
+          search: debouncedSearchQuery || undefined,
+          programId: programFilter || undefined,
+          status: statusFilter || undefined,
+        }}
+        onPageChange={setCurrentPage}
+        pageSize={PAGE_SIZE}
+      />
+
+      <EnrollmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        enrollmentData={selectedEnrollment}
+        programs={programs}
+        classes={classes}
+        players={players}
+        isLoading={isCreating || isUpdating}
+        isDataLoading={programsLoading || classesLoading || usersLoading}
+      />
+
+      <ConfirmDelete
+        isOpen={isDeleteModalOpen}
+        title="Delete Enrollment"
+        message={`Are you sure you want to delete this enrollment for ${selectedEnrollment?.user?.profile?.firstName}?`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={isDeleting}
+      />
+    </Container>
   )
 }
 

@@ -20,8 +20,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const siteName = getSetting('site_name', 'Basketball Academy')
-  const siteLogo = getSetting('site_logo', '🏀')
+  const siteName = getSetting('site_name', 'BC Academy')
+  const siteLogo = getSetting('site_logo', '')
   // console.log({ isAuthenticated })
   // console.log({ currentUser })
 

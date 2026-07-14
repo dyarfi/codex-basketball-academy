@@ -33,9 +33,9 @@ import {
 import { IconAlertCircle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
+import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import {
   GET_INVITATION_LINKS,
   CREATE_INVITATION_LINK,
@@ -46,8 +46,11 @@ import { useAppTheme } from 'src/providers/ThemeProvider'
 
 export const InvitationLinksComponent = () => {
   const { isDark } = useAppTheme()
+
   const [opened, { open, close }] = useDisclosure(false)
   const [editingLink, setEditingLink] = useState<any>(null)
+  const [isDeleteLinkModalOpen, setIsDeleteLinkModalOpen] = useState(false)
+  const [linkIdToDelete, setLinkIdToDelete] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     code: '',
     url: '',
@@ -55,7 +58,6 @@ export const InvitationLinksComponent = () => {
     maxUses: null as number | null,
     expiresAt: '',
   })
-  const { toasts, success, error: toastError, removeToast } = useToast()
   const {
     data: linksData,
     loading,
@@ -67,11 +69,11 @@ export const InvitationLinksComponent = () => {
 
   const [createLinkMutation] = useMutation(CREATE_INVITATION_LINK, {
     onCompleted: () => {
-      success('Link created successfully')
+      toast.success('Link created successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create link')
+      toast.error(err.message || 'Failed to create link')
     },
     refetchQueries: [{ query: GET_INVITATION_LINKS }],
     awaitRefetchQueries: true,
@@ -79,11 +81,11 @@ export const InvitationLinksComponent = () => {
 
   const [updateLinkMutation] = useMutation(UPDATE_INVITATION_LINK, {
     onCompleted: () => {
-      success('Link updated successfully')
+      toast.success('Link updated successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update link')
+      toast.error(err.message || 'Failed to update link')
     },
     refetchQueries: [{ query: GET_INVITATION_LINKS }],
     awaitRefetchQueries: true,
@@ -91,11 +93,11 @@ export const InvitationLinksComponent = () => {
 
   const [deleteLinkMutation] = useMutation(DELETE_INVITATION_LINK, {
     onCompleted: () => {
-      success('Link deleted successfully')
+      toast.success('Link deleted successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete link')
+      toast.error(err.message || 'Failed to delete link')
     },
     refetchQueries: [{ query: GET_INVITATION_LINKS }],
   })
@@ -127,7 +129,7 @@ export const InvitationLinksComponent = () => {
 
   const handleSaveLink = async () => {
     if (!formData.code.trim()) {
-      toastError('Invitation code is required')
+      toast.error('Invitation code is required')
       return
     }
 
@@ -159,24 +161,27 @@ export const InvitationLinksComponent = () => {
       refetch()
       close()
     } catch (error) {
-      toastError('Error saving invitation link')
+      toast.error('Error saving invitation link')
       console.error(error)
     }
   }
 
-  const handleDeleteLink = async (id: number) => {
-    if (
-      !window.confirm('Are you sure you want to delete this invitation link?')
-    ) {
-      return
-    }
+  const handleDeleteLink = (id: number) => {
+    setLinkIdToDelete(id)
+    setIsDeleteLinkModalOpen(true)
+  }
+
+  const handleConfirmDeleteLink = async () => {
+    if (!linkIdToDelete) return
 
     try {
-      await deleteLinkMutation({ variables: { id } })
-      success('Invitation link deleted successfully')
+      await deleteLinkMutation({ variables: { id: linkIdToDelete } })
+      toast.success('Invitation link deleted successfully')
+      setIsDeleteLinkModalOpen(false)
+      setLinkIdToDelete(null)
       refetch()
     } catch (error) {
-      toastError('Error deleting invitation link')
+      toast.error('Error deleting invitation link')
       console.error(error)
     }
   }
@@ -256,12 +261,11 @@ export const InvitationLinksComponent = () => {
           New Link
         </Button>
       </Group>
-
       {/* Stats Cards */}
       <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
         <Grid.Col span={{ base: 12, xs: 6, sm: 3 }}>
           <Card
-            shadow="sm"
+            shadow="none"
             padding="md"
             radius="md"
             className={`${surfaceClass} border`}
@@ -276,7 +280,7 @@ export const InvitationLinksComponent = () => {
         </Grid.Col>
         <Grid.Col span={{ base: 12, xs: 6, sm: 3 }}>
           <Card
-            shadow="sm"
+            shadow="none"
             padding="md"
             radius="md"
             className={`${surfaceClass} border`}
@@ -291,7 +295,7 @@ export const InvitationLinksComponent = () => {
         </Grid.Col>
         <Grid.Col span={{ base: 12, xs: 6, sm: 3 }}>
           <Card
-            shadow="sm"
+            shadow="none"
             padding="md"
             radius="md"
             className={`${surfaceClass} border`}
@@ -306,7 +310,7 @@ export const InvitationLinksComponent = () => {
         </Grid.Col>
         <Grid.Col span={{ base: 12, xs: 6, sm: 3 }}>
           <Card
-            shadow="sm"
+            shadow="none"
             padding="md"
             radius="md"
             className={`${surfaceClass} border`}
@@ -320,7 +324,6 @@ export const InvitationLinksComponent = () => {
           </Card>
         </Grid.Col>
       </Grid>
-
       {links.length === 0 ? (
         <Alert color="blue" icon={<Calendar />}>
           No invitation links yet. Create your first link to get started.
@@ -337,6 +340,7 @@ export const InvitationLinksComponent = () => {
                 <Table.Th>Code</Table.Th>
                 <Table.Th>Purpose</Table.Th>
                 <Table.Th>Uses</Table.Th>
+                <Table.Th>URL</Table.Th>
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Created By</Table.Th>
                 <Table.Th>Expires</Table.Th>
@@ -386,6 +390,11 @@ export const InvitationLinksComponent = () => {
                       <Text size="sm">
                         {link.useCount}
                         {link.maxUses && `/${link.maxUses}`}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" truncate maxWidth={200}>
+                        {link.url || '-'}
                       </Text>
                     </Table.Td>
                     <Table.Td>
@@ -444,7 +453,6 @@ export const InvitationLinksComponent = () => {
           </Table>
         </div>
       )}
-
       {/* Modal */}
       <Modal opened={opened} onClose={close} title="Invitation Link" size="md">
         <Stack gap="md">
@@ -499,8 +507,16 @@ export const InvitationLinksComponent = () => {
           </Group>
         </Stack>
       </Modal>
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <ConfirmDelete
+        isOpen={isDeleteLinkModalOpen}
+        title="Delete Invitation Link"
+        message="Are you sure you want to delete this invitation link? This action cannot be undone."
+        onConfirm={handleConfirmDeleteLink}
+        onCancel={() => {
+          setIsDeleteLinkModalOpen(false)
+          setLinkIdToDelete(null)
+        }}
+      />{' '}
     </Container>
   )
 }

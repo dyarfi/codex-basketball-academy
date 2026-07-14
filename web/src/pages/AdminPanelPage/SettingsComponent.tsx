@@ -15,7 +15,7 @@ import {
   Container,
   Box,
 } from '@mantine/core'
-import { CheckCircle, IconContext, WarningCircle } from '@phosphor-icons/react'
+import { WarningCircleIcon } from '@phosphor-icons/react'
 import {
   IconBorderBottomPlus,
   IconBorderTopPlus,
@@ -26,7 +26,8 @@ import {
   IconTextGrammar,
 } from '@tabler/icons-react'
 
-import { AdminLayout } from 'src/components/AdminLayout/AdminLayout'
+import { toast } from '@redwoodjs/web/toast'
+
 import {
   SITE_SETTINGS_QUERY,
   SITE_SETTINGS_BY_GROUP_QUERY,
@@ -47,7 +48,6 @@ const SettingsComponent = () => {
   const { isDark } = useAppTheme()
   const [activeTab, setActiveTab] = useState<string | null>('site_identity')
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
-  const [successMessage, setSuccessMessage] = useState<string>('')
   const [groups, setGroups] = useState<Record<string, SettingValue[]>>({})
 
   const {
@@ -105,11 +105,12 @@ const SettingsComponent = () => {
           value: editedValues[id],
         },
       })
-      setSuccessMessage('Setting updated successfully!')
-      setTimeout(() => setSuccessMessage(''), 3000)
+
       refetch()
+      toast.success(`Success ${id ? 'updating' : 'creating'} setting`)
     } catch (err) {
       console.error('Error updating setting:', err)
+      toast.error('Error updating setting')
     }
   }
 
@@ -183,170 +184,167 @@ const SettingsComponent = () => {
 
   if (error)
     return (
-      <Alert icon={<WarningCircle />} title="Error" color="red">
+      <Alert icon={<WarningCircleIcon />} title="Error" color="red">
         Failed to load settings: {error.message}
       </Alert>
     )
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Box className="space-y-4" pb="xl">
-          {successMessage && (
-            <Alert icon={<CheckCircle />} title="Success" color="green">
-              {successMessage}
-            </Alert>
-          )}
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Box className="space-y-4" pb="xl">
+        <Card className={`${surfaceClass} border`} pb="xl" shadow="none">
+          <Card.Section inheritPadding py="md">
+            <h2 className="text-2xl font-bold">Site Settings</h2>
+            <p
+              className={`mt-1 text-sm ${
+                isDark ? 'text-slate-400' : 'text-slate-600'
+              }`}
+            >
+              Manage all site configuration settings
+            </p>
+          </Card.Section>
 
-          <Card className={`${surfaceClass} border`} pb="xl">
-            <Card.Section inheritPadding py="md">
-              <h2 className="text-2xl font-bold">Site Settings</h2>
-              <p
-                className={`mt-1 text-sm ${
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                }`}
-              >
-                Manage all site configuration settings
-              </p>
-            </Card.Section>
-
-            <Card.Section inheritPadding>
-              <Tabs
-                value={activeTab}
-                onChange={setActiveTab}
-                // variant="pills"
-                classNames={{
-                  tab: isDark
-                    ? 'data-[active]:bg-blue-600 data-[active]:text-white'
-                    : 'data-[active]:bg-blue-100 data-[active]:text-blue-700',
-                }}
-              >
-                <Tabs.List>
-                  {orderedGroups.map((group) => (
-                    <Tabs.Tab key={group} value={group}>
-                      {groupLabels[group] || group}
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
-
+          <Card.Section inheritPadding>
+            <Tabs
+              value={activeTab}
+              onChange={setActiveTab}
+              // variant="pills"
+              classNames={{
+                tab: isDark
+                  ? 'data-[active]:bg-blue-600 data-[active]:text-white'
+                  : 'data-[active]:bg-blue-100 data-[active]:text-blue-700',
+              }}
+            >
+              <Tabs.List>
                 {orderedGroups.map((group) => (
-                  <Tabs.Panel key={group} value={group} pt="md">
-                    <Stack gap="lg">
-                      {groups[group]?.map((setting: SettingValue) => (
-                        <Card
-                          key={setting.id}
-                          className={`${surfaceClass} border`}
-                          p="md"
-                        >
-                          <div className="mb-3 flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">{setting.label}</h3>
-                              <p
-                                className={`text-xs ${
-                                  isDark ? 'text-slate-400' : 'text-slate-500'
-                                }`}
-                              >
-                                Key: {setting.key}
-                              </p>
-                            </div>
-                            <Badge
-                              size="sm"
-                              variant="light"
-                              color={
-                                setting.valueType === 'text' ? 'blue' : 'green'
-                              }
-                            >
-                              {setting.valueType}
-                            </Badge>
-                          </div>
-
-                          {setting.valueType === 'boolean' ? (
-                            <div className="mb-3 flex gap-2">
-                              <Button
-                                size="sm"
-                                variant={
-                                  editedValues[setting.id] === 'true'
-                                    ? 'filled'
-                                    : 'light'
-                                }
-                                onClick={() =>
-                                  handleValueChange(setting.id, 'true')
-                                }
-                              >
-                                Enabled
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant={
-                                  editedValues[setting.id] === 'false'
-                                    ? 'filled'
-                                    : 'light'
-                                }
-                                color="red"
-                                onClick={() =>
-                                  handleValueChange(setting.id, 'false')
-                                }
-                              >
-                                Disabled
-                              </Button>
-                            </div>
-                          ) : setting.valueType === 'textarea' ? (
-                            <Textarea
-                              placeholder="Enter value"
-                              value={editedValues[setting.id] || ''}
-                              onChange={(e) =>
-                                handleValueChange(setting.id, e.target.value)
-                              }
-                              minRows={3}
-                              maxRows={8}
-                              className="mb-3"
-                            />
-                          ) : (
-                            <TextInput
-                              placeholder="Enter value"
-                              value={editedValues[setting.id] || ''}
-                              onChange={(e) =>
-                                handleValueChange(setting.id, e.target.value)
-                              }
-                              className="mb-3"
-                            />
-                          )}
-
-                          <Group justify="flex-end">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => {
-                                setEditedValues((prev) => ({
-                                  ...prev,
-                                  [setting.id]: setting.value,
-                                }))
-                              }}
-                            >
-                              Reset
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleSave(setting.id)}
-                              loading={updateLoading}
-                              disabled={
-                                editedValues[setting.id] === setting.value
-                              }
-                            >
-                              Save
-                            </Button>
-                          </Group>
-                        </Card>
-                      ))}
-                    </Stack>
-                  </Tabs.Panel>
+                  <Tabs.Tab key={group} value={group}>
+                    {groupLabels[group] || group}
+                  </Tabs.Tab>
                 ))}
-              </Tabs>
-            </Card.Section>
-          </Card>
-        </Box>
-      </Container>
-    </AdminLayout>
+              </Tabs.List>
+
+              {orderedGroups.map((group) => (
+                <Tabs.Panel key={group} value={group} pt="md">
+                  <Stack gap="lg">
+                    {groups[group]?.map((setting: SettingValue) => (
+                      <Card
+                        key={setting.id}
+                        className={`${surfaceClass} border`}
+                        p="md"
+                        shadow="xs"
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold">{setting.label}</h3>
+                            <p
+                              className={`text-xs ${
+                                isDark ? 'text-slate-400' : 'text-slate-500'
+                              }`}
+                            >
+                              Key: {setting.key}
+                            </p>
+                          </div>
+                          <Badge
+                            size="sm"
+                            variant="light"
+                            color={
+                              setting.valueType === 'text' ? 'blue' : 'green'
+                            }
+                          >
+                            {setting.valueType}
+                          </Badge>
+                        </div>
+
+                        {setting.valueType === 'boolean' ? (
+                          <div className="mb-3 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={
+                                editedValues[setting.id] === 'true'
+                                  ? 'filled'
+                                  : 'light'
+                              }
+                              onClick={() =>
+                                handleValueChange(setting.id, 'true')
+                              }
+                            >
+                              Enabled
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={
+                                editedValues[setting.id] === 'false'
+                                  ? 'filled'
+                                  : 'light'
+                              }
+                              color="red"
+                              onClick={() =>
+                                handleValueChange(setting.id, 'false')
+                              }
+                            >
+                              Disabled
+                            </Button>
+                          </div>
+                        ) : setting.valueType === 'textarea' ? (
+                          <Textarea
+                            placeholder="Enter value"
+                            value={editedValues[setting.id] || ''}
+                            onChange={(e) =>
+                              handleValueChange(setting.id, e.target.value)
+                            }
+                            minRows={3}
+                            maxRows={8}
+                            className="mb-3"
+                          />
+                        ) : (
+                          <TextInput
+                            placeholder="Enter value"
+                            value={editedValues[setting.id] || ''}
+                            onChange={(e) =>
+                              handleValueChange(setting.id, e.target.value)
+                            }
+                            className="mb-3"
+                          />
+                        )}
+
+                        <Group justify="flex-end">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              setEditedValues((prev) => ({
+                                ...prev,
+                                [setting.id]: setting.value,
+                              }))
+                            }}
+                          >
+                            Reset
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSave(setting.id)}
+                            loading={updateLoading}
+                            disabled={
+                              editedValues[setting.id] === setting.value
+                            }
+                          >
+                            Save
+                          </Button>
+                        </Group>
+                      </Card>
+                    ))}
+                  </Stack>
+                </Tabs.Panel>
+              ))}
+            </Tabs>
+          </Card.Section>
+        </Card>
+      </Box>
+    </Container>
   )
 }
 

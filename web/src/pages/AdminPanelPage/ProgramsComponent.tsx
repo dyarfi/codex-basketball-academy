@@ -17,13 +17,11 @@ import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import ProgramModal from 'src/components/Modals/ProgramModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
+import { toast } from '@redwoodjs/web/toast'
 import {
   GET_PAGINATED_PROGRAMS,
   CREATE_PROGRAM,
@@ -40,7 +38,7 @@ const getPageFromParam = (value: unknown) => {
 const ProgramsPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, level } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -66,12 +64,12 @@ const ProgramsPage = () => {
 
   const [createProgram, { loading: isCreating }] = useMutation(CREATE_PROGRAM, {
     onCompleted: () => {
-      success('Program created successfully')
+      toast.success('Program created successfully')
       setIsModalOpen(false)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create program')
+      toast.error(err.message || 'Failed to create program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,
@@ -79,13 +77,13 @@ const ProgramsPage = () => {
 
   const [updateProgram, { loading: isUpdating }] = useMutation(UPDATE_PROGRAM, {
     onCompleted: () => {
-      success('Program updated successfully')
+      toast.success('Program updated successfully')
       setIsModalOpen(false)
       setSelectedProgram(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update program')
+      toast.error(err.message || 'Failed to update program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,
@@ -93,13 +91,13 @@ const ProgramsPage = () => {
 
   const [deleteProgram, { loading: isDeleting }] = useMutation(DELETE_PROGRAM, {
     onCompleted: () => {
-      success('Program deleted successfully')
+      toast.success('Program deleted successfully')
       setIsDeleteModalOpen(false)
       setSelectedProgram(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete program')
+      toast.error(err.message || 'Failed to delete program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,
@@ -185,125 +183,121 @@ const ProgramsPage = () => {
 
   if (loading && !data) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
-            color="red"
-            variant="filled"
-          >
-            Failed to load programs: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load programs: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
-          <div>
-            <Text size="lg" fw={700}>
-              Programs Management
-            </Text>
-            <Text size="sm" color="dimmed">
-              Create and manage basketball training programs
-            </Text>
-          </div>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={handleCreate}
-            color="blue"
-          >
-            Add New Program
-          </Button>
-        </Group>
-
-        <Group
-          gap="md"
-          mb="lg"
-          className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
-          grow={true}
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <div>
+          <Text size="lg" fw={700}>
+            Programs Management
+          </Text>
+          <Text size="sm" color="dimmed">
+            Create and manage basketball training programs
+          </Text>
+        </div>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={handleCreate}
+          color="blue"
         >
-          <TextInput
-            placeholder="Search by program name..."
-            leftSection={<IconSearch size={16} />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-            className="flex-1"
-          />
+          Add New Program
+        </Button>
+      </Group>
 
-          <Select
-            placeholder="Filter by level"
-            data={[
-              { value: '', label: 'All Levels' },
-              { value: 'BEGINNER', label: 'Beginner' },
-              { value: 'INTERMEDIATE', label: 'Intermediate' },
-              { value: 'ADVANCED', label: 'Advanced' },
-              { value: 'ELITE', label: 'Elite' },
-            ]}
-            value={levelFilter || ''}
-            onChange={(value) => setLevelFilter(value || null)}
-            clearable
-          />
-        </Group>
-
-        <CrudTable
-          data={programs}
-          columns={columns as any}
-          isLoading={loading && !data}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
+      <Group
+        gap="md"
+        mb="lg"
+        className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+        grow={true}
+      >
+        <TextInput
+          placeholder="Search by program name..."
+          leftSection={<IconSearch size={16} />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          className="flex-1"
         />
 
-        <AdminPagination
-          label="programs"
-          totalItems={totalPrograms}
-          page={currentPage}
-          totalPages={totalPages}
-          route={routes.programs}
-          query={{
-            search: debouncedSearchQuery || undefined,
-            level: levelFilter || undefined,
-          }}
-          onPageChange={setCurrentPage}
-          pageSize={PAGE_SIZE}
+        <Select
+          placeholder="Filter by level"
+          data={[
+            { value: '', label: 'All Levels' },
+            { value: 'BEGINNER', label: 'Beginner' },
+            { value: 'INTERMEDIATE', label: 'Intermediate' },
+            { value: 'ADVANCED', label: 'Advanced' },
+            { value: 'ELITE', label: 'Elite' },
+          ]}
+          value={levelFilter || ''}
+          onChange={(value) => setLevelFilter(value || null)}
+          clearable
         />
+      </Group>
 
-        <ProgramModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          program={selectedProgram}
-          isLoading={isCreating || isUpdating}
-        />
+      <CrudTable
+        data={programs}
+        columns={columns as any}
+        isLoading={loading && !data}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-        <ConfirmDelete
-          isOpen={isDeleteModalOpen}
-          title="Delete Program"
-          message={`Are you sure you want to delete "${selectedProgram?.name}"? This action cannot be undone.`}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          isLoading={isDeleting}
-        />
+      <AdminPagination
+        label="programs"
+        totalItems={totalPrograms}
+        page={currentPage}
+        totalPages={totalPages}
+        route={routes.programs}
+        query={{
+          search: debouncedSearchQuery || undefined,
+          level: levelFilter || undefined,
+        }}
+        onPageChange={setCurrentPage}
+        pageSize={PAGE_SIZE}
+      />
 
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </Container>
-    </AdminLayout>
+      <ProgramModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        program={selectedProgram}
+        isLoading={isCreating || isUpdating}
+      />
+
+      <ConfirmDelete
+        isOpen={isDeleteModalOpen}
+        title="Delete Program"
+        message={`Are you sure you want to delete "${selectedProgram?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={isDeleting}
+      />
+    </Container>
   )
 }
 

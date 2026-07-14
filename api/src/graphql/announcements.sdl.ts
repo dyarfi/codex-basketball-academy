@@ -29,7 +29,7 @@ export const schema = gql`
   }
 
   type Query {
-    publicAnnouncement: Announcement! @skipAuth
+    publicAnnouncement(notIn: [Int]): Announcement @skipAuth
     announcementLists(page: Int!, search: String): AnnouncementLists
       @requireAuth
     # @hasGate(gate: "admin:announcement:lists")

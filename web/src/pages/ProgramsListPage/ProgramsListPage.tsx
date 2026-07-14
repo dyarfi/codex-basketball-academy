@@ -6,6 +6,7 @@ import { useQuery } from '@redwoodjs/web'
 import Footer from 'src/components/Footer/Footer'
 import Navigation from 'src/components/Navigation/Navigation'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
+import DefaultLayout from 'src/layouts/DefaultLayout'
 
 type Program = {
   id: string
@@ -37,7 +38,9 @@ const levelIcons = {
 const ProgramsListPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string>('ALL')
-  const { data, loading, error } = useQuery<{ programs: Program[] }>(GET_PROGRAMS)
+  const { data, loading, error } = useQuery<{ programs: Program[] }>(
+    GET_PROGRAMS
+  )
 
   const programs = data?.programs ?? []
 
@@ -60,9 +63,12 @@ const ProgramsListPage = () => {
   }, [programs, searchTerm, selectedLevel])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-
+    <DefaultLayout
+      metaTags={{
+        title: 'Programs of our Basketball Academy Website',
+        description: 'Basketball Academy in your town',
+      }}
+    >
       <main>
         <section className="bg-blue-600 px-4 py-12 text-white">
           <div className="mx-auto max-w-7xl">
@@ -74,7 +80,8 @@ const ProgramsListPage = () => {
           </div>
         </section>
 
-        <section className="sticky top-16 z-40 bg-white px-4 py-6 shadow-sm">
+        {/* <section className="top-16"> */}
+        <section className="sticky top-0 z-40 bg-white px-4 py-6 shadow-sm">
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label
@@ -168,7 +175,9 @@ const ProgramsListPage = () => {
                           <div className="text-sm text-blue-100">/month</div>
                         </div>
                       </div>
-                      <h2 className="mb-2 text-2xl font-bold">{program.name}</h2>
+                      <h2 className="mb-2 text-2xl font-bold">
+                        {program.name}
+                      </h2>
                       <p className="line-clamp-2 text-blue-100">
                         {program.description || 'No description available yet.'}
                       </p>
@@ -185,7 +194,8 @@ const ProgramsListPage = () => {
                         <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                           <span className="text-gray-600">Age Range</span>
                           <span className="font-semibold text-gray-900">
-                            {program.minAge ?? 'Any'} - {program.maxAge ?? 'Any'}
+                            {program.minAge ?? 'Any'} -{' '}
+                            {program.maxAge ?? 'Any'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between border-b border-gray-100 pb-2">
@@ -210,9 +220,7 @@ const ProgramsListPage = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
-    </div>
+    </DefaultLayout>
   )
 }
 

@@ -1,8 +1,8 @@
+import type { Role } from '@prisma/client'
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda'
 
 import { DbAuthHandler } from '@redwoodjs/auth-dbauth-api'
 import type { DbAuthHandlerOptions, UserType } from '@redwoodjs/auth-dbauth-api'
-import type { Role } from '@prisma/client'
 
 import { cookieName } from '../lib/auth'
 import { db } from '../lib/db'

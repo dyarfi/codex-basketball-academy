@@ -1,3 +1,10 @@
+import { ActionIcon, Group } from '@mantine/core'
+import {
+  IconBrandFacebook,
+  IconBrandInstagram,
+  IconBrandX,
+} from '@tabler/icons-react'
+
 import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
@@ -37,7 +44,13 @@ const Footer = () => {
   if (loading) return null
 
   return (
-    <footer className={`${footerClass} py-12`}>
+    <footer
+      className={`${footerClass} py-12`}
+      // style={{
+      //   background: 'url(/images/assets/triangle-bg.svg) top center',
+      //   backgroundSize: 'contain',
+      // }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Contact Info */}
@@ -71,6 +84,21 @@ const Footer = () => {
                 </a>
               </li>
               <li>
+                <a href="/gallery" className="hover:text-blue-600">
+                  Gallery
+                </a>
+              </li>
+              <li>
+                <a href="/about" className="hover:text-blue-600">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="/contact" className="hover:text-blue-600">
+                  Contact Us
+                </a>
+              </li>
+              <li>
                 <a href="/dashboard" className="hover:text-blue-600">
                   Dashboard
                 </a>
@@ -91,41 +119,45 @@ const Footer = () => {
           {/* Social Media */}
           <div>
             <h3 className="mb-4 font-semibold text-blue-600">Follow Us</h3>
-            <div className="flex space-x-4">
+            <Group>
               {facebookUrl && (
-                <a
-                  href={facebookUrl}
-                  target="_blank"
+                <ActionIcon
+                  radius={0}
+                  autoContrast
                   rel="noopener noreferrer"
-                  className={`text-2xl hover:text-blue-600 ${textClass}`}
                   aria-label="Facebook"
+                  size={'sm'}
                 >
-                  f
-                </a>
+                  <IconBrandFacebook stroke={1} />
+                </ActionIcon>
               )}
               {twitterUrl && (
-                <a
+                <ActionIcon
+                  radius={0}
+                  autoContrast
+                  component="a"
                   href={twitterUrl}
-                  target="_blank"
                   rel="noopener noreferrer"
-                  className={`text-2xl hover:text-blue-600 ${textClass}`}
-                  aria-label="Twitter"
+                  aria-label="X"
+                  size={'sm'}
                 >
-                  𝕏
-                </a>
+                  <IconBrandX stroke={1} />
+                </ActionIcon>
               )}
               {instagramUrl && (
-                <a
+                <ActionIcon
+                  radius={0}
+                  autoContrast
+                  component="a"
                   href={instagramUrl}
-                  target="_blank"
                   rel="noopener noreferrer"
-                  className={`text-2xl hover:text-blue-600 ${textClass}`}
-                  aria-label="Instagram"
+                  aria-label="X"
+                  size={'sm'}
                 >
-                  📷
-                </a>
+                  <IconBrandInstagram stroke={1} />
+                </ActionIcon>
               )}
-            </div>
+            </Group>
           </div>
         </div>
 

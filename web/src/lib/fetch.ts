@@ -1,3 +1,6 @@
+import React from 'react'
+
+import { render } from '@react-email/render'
 const C_API_KEY = process.env.CLOUDINARY_API_KEY
 const C_API_SCR = process.env.CLOUDINARY_API_SECRET
 const C_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET
@@ -9,6 +12,30 @@ const C_LC_URL = `https://api.cloudinary.com/v1_1/${C_CLOUD}/resources/search`
 const KEY_BREVO = process.env.KEY_BREVO
 const APP_NAME = process.env.APP_NAME
 const APP_URL = process.env.APP_URL
+
+import {
+  templateEmailCertificate,
+  templateConfirmEmail,
+} from './emailTemplates'
+// // Sending a confirmation email
+// await sendEmailMessage({
+//   template: 'confirmEmail',
+//   subject: 'Confirm your account',
+//   to: [{ name: 'User Name', email: 'user@example.com' }],
+//   url: 'https://example.com/confirm?token=123'
+// })
+
+// // Default certificate email (backward compatible)
+// await sendEmailMessage({
+//   subject: 'Your Certificate',
+//   messages: 'Congratulations on completing the course!',
+//   to: [{ name: 'User Name', email: 'user@example.com' }]
+// })
+
+const templateEmails = {
+  confirmEmail: templateConfirmEmail,
+  emailCertificate: templateEmailCertificate,
+}
 
 export function uploadCloud(file: any, folder: string) {
   return new Promise((resolve, reject) => {
@@ -70,36 +97,60 @@ export function listCloud() {
 }
 
 export async function sendEmailMessage({
+  template = 'emailCertificate',
   subject = 'Hello World',
   sender = { name: APP_NAME as string, email: 'defrian.yarfi@gmail.com' },
   to = [{ name: 'John Doe', email: 'defrian.yarfi@gmail.com' }],
   messages = 'This is a test email sent from the application.',
+  url = '',
+  attachment = [
+    {
+      content: '',
+      name: '',
+      url: '',
+    },
+  ],
+  sandbox = false,
 }: {
+  template?: keyof typeof templateEmails
   subject: string
   sender?: { name: string; email: string }
-  to?: [{ name: string; email: string }]
+  to?: { name: string; email: string }[]
   phone?: number
   messages?: string
+  url?: string
+  attachment?: {
+    content: string // Base64-encoded attachment data
+    name: string // Attachment filename. Required when content is provided.
+    url?: string // Absolute URL of the attachment. Local file paths are not supported.
+  }[]
+  sandbox?: boolean
 }) {
   // Brevo API endpoint and payload construction
-  const url = 'https://api.brevo.com/v3/smtp/email'
-  const htmlContent = `<!DOCTYPE html><html><body><h3>${subject}</h3><p>Hello ${to[0]?.email || 'there'},</p>${messages}</p<hr><p style="font-size: 12px; color: #888;">This email was sent by ${APP_NAME} website: ${APP_URL}.</p></body></html>`
+  const urlBrevo = 'https://api.brevo.com/v3/smtp/email'
+  const selectedTemplate =
+    templateEmails[template] || templateEmails.emailCertificate
+  const htmlContent = await render(
+    selectedTemplate({ subject, to, messages, url }) as React.ReactElement
+  )
   // Construct the payload for Brevo API
   const payload = {
     sender,
     to,
     subject,
     htmlContent,
+    attachment,
   }
   // Set up headers for the API request
   const headers = {
     'api-key': KEY_BREVO as string,
     accept: 'application/json',
     'Content-Type': 'application/json',
+    ...(sandbox && { 'X-Sib-Sandbox': 'drop' }),
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(urlBrevo, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),

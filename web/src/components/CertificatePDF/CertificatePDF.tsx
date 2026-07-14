@@ -30,11 +30,21 @@ interface CertificateData {
   verifiedAt?: string
   pdfUrl?: string
   templateId?: string
-  isDark?: boolean
 }
 
-type NextPage = {
-  nextPage?: string[]
+interface SkillAssessmentPdfData {
+  shooting?: string | number
+  dribbling?: string | number
+  defense?: string | number
+  basketballIQ?: string | number
+  athleticism?: string | number
+  overallScore?: string | number
+  assessedBy?: string
+  feedback?: string
+}
+
+export type CertificatePDFProps = CertificateData & {
+  nextPage?: SkillAssessmentPdfData | null
 }
 
 const styles = StyleSheet.create({
@@ -240,30 +250,20 @@ export const CertificatePDF = ({
   verifiedAt,
   pdfUrl: _pdfUrl,
   templateId,
-  isDark = false,
   nextPage,
-}: CertificateData & NextPage) => {
-  const pageStyle = isDark ? styles.pageDark : styles.page
-  const titleStyle = isDark ? styles.titleDark : styles.title
-  const subtitleStyle = isDark ? styles.subtitleDark : styles.subtitle
-  const recipientLabelStyle = isDark
-    ? styles.recipientLabelDark
-    : styles.recipientLabel
-  const recipientNameStyle = isDark
-    ? styles.recipientNameDark
-    : styles.recipientName
-  const descriptionStyle = isDark ? styles.descriptionDark : styles.description
-  const detailLabelStyle = isDark ? styles.detailLabelDark : styles.detailLabel
-  const detailValueStyle = isDark ? styles.detailValueDark : styles.detailValue
-  const footerStyle = isDark ? styles.footerDark : styles.footer
-  const signatureLineStyle = isDark
-    ? styles.signatureLineDark
-    : styles.signatureLine
-  const signatureTextStyle = isDark
-    ? styles.signatureTextDark
-    : styles.signatureText
-  const certNumberStyle = isDark ? styles.certNumberDark : styles.certNumber
-  console.log({})
+}: CertificatePDFProps) => {
+  const pageStyle = styles.page
+  const titleStyle = styles.title
+  const subtitleStyle = styles.subtitle
+  const recipientLabelStyle = styles.recipientLabel
+  const recipientNameStyle = styles.recipientName
+  const descriptionStyle = styles.description
+  const detailLabelStyle = styles.detailLabel
+  const detailValueStyle = styles.detailValue
+  const footerStyle = styles.footer
+  const signatureLineStyle = styles.signatureLine
+  const signatureTextStyle = styles.signatureText
+  const certNumberStyle = styles.certNumber
 
   return (
     <Document>

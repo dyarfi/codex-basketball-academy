@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type {
   QueryResolvers,
   MutationResolvers,
@@ -12,6 +13,60 @@ export const publicGallery: QueryResolvers['publicGallery'] = () => {
 
 export const galleries: QueryResolvers['galleries'] = () => {
   return db.gallery.findMany({ orderBy: { createdAt: 'asc' } })
+}
+
+export const paginatedGalleries: QueryResolvers['paginatedGalleries'] = async ({
+  page = 1,
+  pageSize = 10,
+  search,
+}) => {
+  const conditions: Prisma.GalleryWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          name: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+      ],
+    })
+  }
+
+  const where: Prisma.GalleryWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+  const safePageSize = Math.max(1, pageSize)
+  const totalCount = await db.gallery.count({ where })
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize))
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const skip = (currentPage - 1) * safePageSize
+
+  const items = await db.gallery.findMany({
+    where,
+    include: { user: true, images: true },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip,
+    take: safePageSize,
+  })
+
+  return {
+    items,
+    totalCount,
+    currentPage,
+    pageSize: safePageSize,
+    totalPages,
+    hasNextPage: currentPage < totalPages,
+    hasPreviousPage: currentPage > 1,
+  }
 }
 
 export const gallery: QueryResolvers['gallery'] = ({ id }) => {

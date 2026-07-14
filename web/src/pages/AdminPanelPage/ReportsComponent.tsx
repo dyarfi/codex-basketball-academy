@@ -11,6 +11,7 @@ import {
   Loader,
   Button,
   Badge,
+  Table,
 } from '@mantine/core'
 import { DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import gql from 'graphql-tag'
@@ -33,7 +34,6 @@ import { GetReportData } from 'types/graphql'
 
 import { useQuery } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const GET_REPORT_DATA = gql`
@@ -71,6 +71,20 @@ const GET_REPORT_DATA = gql`
         id
       }
     }
+    topPerformers {
+      # userId
+      shooting
+      dribbling
+      defense
+      basketballIQ
+      athleticism
+      overallScore
+      user {
+        profile {
+          firstName
+        }
+      }
+    }
   }
 `
 
@@ -97,6 +111,15 @@ interface ReportData {
     id: string
     program: { name: string }
     enrollments: Array<{ id: string }>
+  }>
+  topPerformers?: Array<{
+    user: Record<string, string>
+    shooting: number
+    dribbling: number
+    defense: number
+    basketballIQ: number
+    athleticism: number
+    overallScore: number
   }>
 }
 
@@ -214,6 +237,12 @@ const ReportsPage = () => {
     return stats
   }, [reportData])
 
+  // Top Performer statistics
+  const topPerformers = useMemo(() => {
+    if (!reportData?.topPerformers) return
+    return reportData?.topPerformers
+  }, [reportData])
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
   const handleExportData = () => {
@@ -224,320 +253,349 @@ const ReportsPage = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <div className="flex min-h-96 items-center justify-center">
-            <Loader size="sm" />
-          </div>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <div className="flex min-h-96 items-center justify-center">
+          <Loader size="sm" />
+        </div>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<WarningCircle size={16} weight="bold" />}
-            title="Error"
-            color="red"
-            className="mb-6"
-          >
-            Failed to load reports: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<WarningCircle size={16} weight="bold" />}
+          title="Error"
+          color="red"
+          className="mb-6"
+        >
+          Failed to load reports: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
-  console.log({ data, reportData })
-
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Group justify="space-between" mb="lg" grow={true} align="flex-start">
-          <Text size="lg" fw={700}>
-            Reports & Analytics
-          </Text>
-          <Button
-            leftSection={<DownloadSimple size={16} weight="bold" />}
-            onClick={handleExportData}
-            variant="light"
-          >
-            Export Data
-          </Button>
-        </Group>
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <Text size="lg" fw={700}>
+          Reports & Analytics
+        </Text>
+        <Button
+          leftSection={<DownloadSimple size={16} weight="bold" />}
+          onClick={handleExportData}
+          variant="light"
+        >
+          Export Data
+        </Button>
+      </Group>
 
-        {/* Key Metrics */}
-        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
-          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Total Revenue
-                </Text>
-                <Text size="xl" fw={700}>
-                  ${paymentStats.total.toFixed(2)}
-                </Text>
-                <Badge color="green" variant="light">
-                  {reportData?.payments?.length || 0} transactions
-                </Badge>
-              </Stack>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Completed Payments
-                </Text>
-                <Text size="xl" fw={700}>
-                  ${paymentStats.completed.toFixed(2)}
-                </Text>
-                <Badge color="blue" variant="light">
-                  Verified
-                </Badge>
-              </Stack>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Pending Payments
-                </Text>
-                <Text size="xl" fw={700}>
-                  ${paymentStats.pending.toFixed(2)}
-                </Text>
-                <Badge color="yellow" variant="light">
-                  {reportData?.payments?.filter((p) => p.status === 'PENDING')
-                    .length || 0}{' '}
-                  items
-                </Badge>
-              </Stack>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Total Users
-                </Text>
-                <Text size="xl" fw={700}>
-                  {reportData?.users?.length || 0}
-                </Text>
-                <Badge color="purple" variant="light">
-                  Active accounts
-                </Badge>
-              </Stack>
-            </Card>
-          </Grid.Col>
-        </Grid>
-
-        {/* Charts */}
-        <Grid gutter="md" mb="xl">
-          {/* Enrollment Trends */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Text fw={600} mb="md">
-                Enrollment Trends
+      {/* Key Metrics */}
+      <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
+        <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Total Revenue
               </Text>
-              {enrollmentTrends.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={enrollmentTrends}>
-                    <CartesianGrid
-                      stroke={chartGridColor}
-                      strokeDasharray="3 3"
-                    />
-                    <XAxis dataKey="month" stroke={chartAxisColor} />
-                    <YAxis stroke={chartAxisColor} />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="enrollments"
-                      stroke={chartPrimary}
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <Text size="sm" className={mutedClass}>
-                  No enrollment data available
-                </Text>
-              )}
-            </Card>
-          </Grid.Col>
-
-          {/* Revenue by Status */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Text fw={600} mb="md">
-                Revenue Breakdown
+              <Text size="xl" fw={700}>
+                ${paymentStats.total.toFixed(2)}
               </Text>
-              {revenueByStatus.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={revenueByStatus}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: $${value}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {revenueByStatus.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `$${value}`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <Text size="sm" className={mutedClass}>
-                  No payment data available
-                </Text>
-              )}
-            </Card>
-          </Grid.Col>
-        </Grid>
+              <Badge color="green" variant="light">
+                {reportData?.payments?.length || 0} transactions
+              </Badge>
+            </Stack>
+          </Card>
+        </Grid.Col>
 
-        <Grid gutter="md" mb="xl">
-          {/* Top Performing Programs */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Text fw={600} mb="md">
-                Top Performing Programs
+        <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Completed Payments
               </Text>
-              {topPrograms.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={topPrograms}>
-                    <CartesianGrid
-                      stroke={chartGridColor}
-                      strokeDasharray="3 3"
-                    />
-                    <XAxis dataKey="name" stroke={chartAxisColor} />
-                    <YAxis stroke={chartAxisColor} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="enrollment"
-                      fill="#8884d8"
-                      name="Enrollments"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <Text size="sm" className={mutedClass}>
-                  No program data available
-                </Text>
-              )}
-            </Card>
-          </Grid.Col>
+              <Text size="xl" fw={700}>
+                ${paymentStats.completed.toFixed(2)}
+              </Text>
+              <Badge color="blue" variant="light">
+                Verified
+              </Badge>
+            </Stack>
+          </Card>
+        </Grid.Col>
 
-          {/* User Distribution */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Text fw={600} mb="md">
-                User Distribution by Role
+        <Grid.Col span={{ base: 12, xs: 6, sm: 6, md: 3 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Pending Payments
               </Text>
-              <Stack gap="sm">
-                {Object.entries(userStats).map(([role, count], index) => (
-                  <Group key={role} justify="space-between">
-                    <Badge
-                      color={COLORS[index % COLORS.length]}
-                      variant="light"
-                    >
-                      {role}
-                    </Badge>
-                    <Text fw={500}>{count} users</Text>
-                  </Group>
+              <Text size="xl" fw={700}>
+                ${paymentStats.pending.toFixed(2)}
+              </Text>
+              <Badge color="yellow" variant="light">
+                {reportData?.payments?.filter((p) => p.status === 'PENDING')
+                  .length || 0}{' '}
+                items
+              </Badge>
+            </Stack>
+          </Card>
+        </Grid.Col>
+
+        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Total Users
+              </Text>
+              <Text size="xl" fw={700}>
+                {reportData?.users?.length || 0}
+              </Text>
+              <Badge color="purple" variant="light">
+                Active accounts
+              </Badge>
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
+
+      {/* Charts */}
+      <Grid gutter="md" mb="xl">
+        {/* Enrollment Trends */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              Enrollment Trends
+            </Text>
+            {enrollmentTrends.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={enrollmentTrends}>
+                  <CartesianGrid
+                    stroke={chartGridColor}
+                    strokeDasharray="3 3"
+                  />
+                  <XAxis dataKey="month" stroke={chartAxisColor} />
+                  <YAxis stroke={chartAxisColor} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="enrollments"
+                    stroke={chartPrimary}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <Text size="sm" className={mutedClass}>
+                No enrollment data available
+              </Text>
+            )}
+          </Card>
+        </Grid.Col>
+
+        {/* Revenue by Status */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              Revenue Breakdown
+            </Text>
+            {revenueByStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={revenueByStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: $${value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {revenueByStatus.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `$${value}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Text size="sm" className={mutedClass}>
+                No payment data available
+              </Text>
+            )}
+          </Card>
+        </Grid.Col>
+      </Grid>
+
+      <Grid gutter="md" mb="xl">
+        {/* Top Performing Programs */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              Top Performing Programs
+            </Text>
+            {topPrograms.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topPrograms}>
+                  <CartesianGrid
+                    stroke={chartGridColor}
+                    strokeDasharray="3 3"
+                  />
+                  <XAxis dataKey="name" stroke={chartAxisColor} />
+                  <YAxis stroke={chartAxisColor} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="enrollment" fill="#8884d8" name="Enrollments" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Text size="sm" className={mutedClass}>
+                No program data available
+              </Text>
+            )}
+          </Card>
+        </Grid.Col>
+
+        {/* User Distribution */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              User Distribution by Role
+            </Text>
+            <Stack gap="sm">
+              {Object.entries(userStats).map(([role, count], index) => (
+                <Group key={role} justify="space-between">
+                  <Badge color={COLORS[index % COLORS.length]} variant="light">
+                    {role}
+                  </Badge>
+                  <Text fw={500}>{count} users</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Card>
+        </Grid.Col>
+
+        {/* User Distribution */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              Top Performers
+            </Text>
+            <Table withRowBorders={false} fz={'xs'}>
+              <Table.Tr fw={'normal'}>
+                <Table.Th>Name</Table.Th>
+                <Table.Th>Athleticism</Table.Th>
+                <Table.Th>Basketball IQ</Table.Th>
+                <Table.Th>Defense</Table.Th>
+                <Table.Th>Dribbling</Table.Th>
+                <Table.Th>Shooting</Table.Th>
+                <Table.Th>Overall</Table.Th>
+              </Table.Tr>
+              <Table.Tbody>
+                {topPerformers.map((performer, index) => (
+                  <Table.Tr key={performer.id} justify="space-between">
+                    <Table.Td>
+                      <Badge
+                        color={COLORS[index % COLORS.length]}
+                        variant="light"
+                      >
+                        {performer.user.profile.firstName}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>{performer.athleticism}</Table.Td>
+                    <Table.Td>{performer.basketballIQ}</Table.Td>
+                    <Table.Td>{performer.defense}</Table.Td>
+                    <Table.Td>{performer.dribbling}</Table.Td>
+                    <Table.Td>{performer.shooting}</Table.Td>
+                    <Table.Td>{performer.overallScore}/100</Table.Td>
+                  </Table.Tr>
                 ))}
-              </Stack>
-            </Card>
+              </Table.Tbody>
+            </Table>
+          </Card>
+        </Grid.Col>
+      </Grid>
+
+      {/* Summary Stats */}
+      <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+        <Text fw={600} mb="md">
+          Summary Statistics
+        </Text>
+        <Grid gutter="md">
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Total Programs
+              </Text>
+              <Text size="lg" fw={700}>
+                {reportData?.programs?.length || 0}
+              </Text>
+              <Text size="xs" className={mutedSoftClass}>
+                {reportData?.programs?.filter((p) => p.isActive).length || 0}{' '}
+                active
+              </Text>
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Total Enrollments
+              </Text>
+              <Text size="lg" fw={700}>
+                {reportData?.enrollments?.length || 0}
+              </Text>
+              <Text size="xs" className={mutedSoftClass}>
+                Across all programs
+              </Text>
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Total Classes
+              </Text>
+              <Text size="lg" fw={700}>
+                {reportData?.classes?.length || 0}
+              </Text>
+              <Text size="xs" className={mutedSoftClass}>
+                Active classes
+              </Text>
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Stack gap="xs">
+              <Text size="sm" className={mutedClass}>
+                Payment Success Rate
+              </Text>
+              <Text size="lg" fw={700}>
+                {reportData?.payments && reportData.payments.length > 0
+                  ? Math.round(
+                      (reportData.payments.filter(
+                        (p) => p.status === 'COMPLETED'
+                      ).length /
+                        reportData.payments.length) *
+                        100
+                    )
+                  : 0}
+                %
+              </Text>
+              <Text size="xs" className={mutedSoftClass}>
+                Completed transactions
+              </Text>
+            </Stack>
           </Grid.Col>
         </Grid>
-
-        {/* Summary Stats */}
-        <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-          <Text fw={600} mb="md">
-            Summary Statistics
-          </Text>
-          <Grid gutter="md">
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Total Programs
-                </Text>
-                <Text size="lg" fw={700}>
-                  {reportData?.programs?.length || 0}
-                </Text>
-                <Text size="xs" className={mutedSoftClass}>
-                  {reportData?.programs?.filter((p) => p.isActive).length || 0}{' '}
-                  active
-                </Text>
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Total Enrollments
-                </Text>
-                <Text size="lg" fw={700}>
-                  {reportData?.enrollments?.length || 0}
-                </Text>
-                <Text size="xs" className={mutedSoftClass}>
-                  Across all programs
-                </Text>
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Total Classes
-                </Text>
-                <Text size="lg" fw={700}>
-                  {reportData?.classes?.length || 0}
-                </Text>
-                <Text size="xs" className={mutedSoftClass}>
-                  Active classes
-                </Text>
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Stack gap="xs">
-                <Text size="sm" className={mutedClass}>
-                  Payment Success Rate
-                </Text>
-                <Text size="lg" fw={700}>
-                  {reportData?.payments && reportData.payments.length > 0
-                    ? Math.round(
-                        (reportData.payments.filter(
-                          (p) => p.status === 'COMPLETED'
-                        ).length /
-                          reportData.payments.length) *
-                          100
-                      )
-                    : 0}
-                  %
-                </Text>
-                <Text size="xs" className={mutedSoftClass}>
-                  Completed transactions
-                </Text>
-              </Stack>
-            </Grid.Col>
-          </Grid>
-        </Card>
-      </Container>
-    </AdminLayout>
+      </Card>
+    </Container>
   )
 }
 

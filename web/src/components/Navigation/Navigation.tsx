@@ -35,6 +35,30 @@ const Navigation = () => {
               Programs
             </Link>
             <Link
+              to="/teams"
+              className={`font-medium hover:text-blue-600 ${
+                isDark ? 'text-slate-200' : 'text-gray-700'
+              }`}
+            >
+              Teams
+            </Link>
+            <Link
+              to="/about"
+              className={`font-medium hover:text-blue-600 ${
+                isDark ? 'text-slate-200' : 'text-gray-700'
+              }`}
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className={`font-medium hover:text-blue-600 ${
+                isDark ? 'text-slate-200' : 'text-gray-700'
+              }`}
+            >
+              Contact
+            </Link>
+            <Link
               to="/login"
               className={`font-medium hover:text-blue-600 ${
                 isDark ? 'text-slate-200' : 'text-gray-700'

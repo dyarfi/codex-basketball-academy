@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { Router, Route, PrivateSet, Set } from '@redwoodjs/router'
 
 import RequireRole from 'src/components/RequireRole/RequireRole'
+import AboutPage from 'src/pages/AboutPage/AboutPage'
+import AdminAgeGroupTeamsPage from 'src/pages/AdminAgeGroupTeamsPage/AdminAgeGroupTeamsPage'
 import AdminAnnouncementPage from 'src/pages/AdminAnnouncementPage/AdminAnnouncementPage'
 import AdminAttendancePage from 'src/pages/AdminAttendancePage/AdminAttendancePage'
 import AdminCertificatesPage from 'src/pages/AdminCertificatesPage/AdminCertificatesPage'
@@ -15,15 +17,19 @@ import AdminMediaPage from 'src/pages/AdminMediaPage/AdminMediaPage'
 import AdminMessagesPage from 'src/pages/AdminMessagesPage/AdminMessagesPage'
 import AdminPaymentsPage from 'src/pages/AdminPaymentsPage/AdminPaymentsPage'
 import AdminPlayerStatsPage from 'src/pages/AdminPlayerStatsPage/AdminPlayerStatsPage'
+import AdminPlayerStatsLivePage from 'src/pages/AdminPlayerStatsLivePage/AdminPlayerStatsLivePage'
 import AdminProgramsPage from 'src/pages/AdminProgramsPage/AdminProgramsPage'
 import AdminReportsPage from 'src/pages/AdminReportsPage/AdminReportsPage'
 import AdminSettingsPage from 'src/pages/AdminSettingsPage/AdminSettingsPage'
 import AdminSkillAssessment from 'src/pages/AdminSkillAssessment/AdminSkillAssessment'
 import AdminUsersPage from 'src/pages/AdminUsersPage/AdminUsersPage'
+import CheckinPage from 'src/pages/CheckinPage/CheckinPage'
 import CoachPage from 'src/pages/CoachPage/CoachPage'
+import ContactPage from 'src/pages/ContactPage/ContactPage'
 import DashboardPage from 'src/pages/DashboardPage/DashboardPage'
 import EnrollmentPage from 'src/pages/EnrollmentPage/EnrollmentPage'
 import ForgotPasswordPage from 'src/pages/ForgotPasswordPage/ForgotPasswordPage'
+import GalleryPage from 'src/pages/GalleryPage/GalleryPage'
 import HomePage from 'src/pages/HomePage/HomePage'
 import InvitePage from 'src/pages/InvitePage/InvitePage'
 import LoginPage from 'src/pages/LoginPage/LoginPage'
@@ -33,6 +39,7 @@ import ProgramDetailsPage from 'src/pages/ProgramDetailsPage/ProgramDetailsPage'
 import ProgramsListPage from 'src/pages/ProgramsListPage/ProgramsListPage'
 import ResetPasswordPage from 'src/pages/ResetPasswordPage/ResetPasswordPage'
 import SignupPage from 'src/pages/SignupPage/SignupPage'
+import TeamsPage from 'src/pages/TeamsPage/TeamsPage'
 import UserProfilePage from 'src/pages/UserProfilePage/UserProfilePage'
 import VerifyCertificatePage from 'src/pages/VerifyCertificatePage/VerifyCertificatePage'
 
@@ -57,10 +64,15 @@ const Routes = () => {
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
         <Route path="/enrollment" page={EnrollmentPage} name="EnrollmentPage" />
+        <Route path="/gallery" page={GalleryPage} name="GalleryPage" />
+        <Route path="/about" page={AboutPage} name="AboutPage" />
+        <Route path="/contact" page={ContactPage} name="ContactPage" />
         <Route path="/programs" page={ProgramsListPage} name="ProgramsListPage" />
+        <Route path="/teams" page={TeamsPage} name="teams" />
         <Route path="/programs/{id}" page={ProgramDetailsPage} name="ProgramsDetailPage" />
         <Route path="/invite/{code}" page={InvitePage} name="InvitePage" />
-        <Route path="/verify-certificate/{code}" page={VerifyCertificatePage} name="verifyCertificate" />
+        <Route path="/verify-certificate/{code}" page={VerifyCertificatePage} name="VerifyCertificate" />
+        <Route path="/checkin" page={CheckinPage} name="CheckInPage" />
         <Route path="/" page={HomePage} name="home" />
 
         <PrivateSet unauthenticated="login">
@@ -73,6 +85,7 @@ const Routes = () => {
             <Route path="/admin-panel/users" page={AdminUsersPage} name="adminUsers" />
             <Route path="/admin-panel/programs" page={AdminProgramsPage} name="programs" />
             <Route path="/admin-panel/classes" page={AdminClassesPage} name="adminClasses" />
+            <Route path="/admin-panel/age-group-teams" page={AdminAgeGroupTeamsPage} name="adminAgeGroupTeams" />
             <Route path="/admin-panel/enrollments" page={AdminEnrollmentsPage} name="adminEnrollments" />
             <Route path="/admin-panel/payments" page={AdminPaymentsPage} name="adminPayments" />
             <Route path="/admin-panel/announcements" page={AdminAnnouncementPage} name="adminAnnouncements" />
@@ -83,6 +96,7 @@ const Routes = () => {
             <Route path="/admin-panel/invitation-links" page={AdminInvitationLinksPage} name="adminInvitationLinks" />
             <Route path="/admin-panel/skill-assessment" page={AdminSkillAssessment} name="adminSkillAssessment" />
             <Route path="/admin-panel/player-stats" page={AdminPlayerStatsPage} name="adminPlayerStats" />
+            <Route path="/admin-panel/player-stats/live" page={AdminPlayerStatsLivePage} name="adminPlayerStatsLive" />
             <Route path="/admin-panel/messages" page={AdminMessagesPage} name="adminMessages" />
             <Route path="/admin-panel/reports" page={AdminReportsPage} name="adminReports" />
             <Route path="/admin-panel/settings" page={AdminSettingsPage} name="adminSettings" />

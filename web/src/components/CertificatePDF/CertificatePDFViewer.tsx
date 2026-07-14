@@ -1,18 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { useLazyQuery } from '@apollo/client'
 import { Modal, Button, Group, Loader, Center } from '@mantine/core'
 import { FileArrowDown, FileArrowUp } from '@phosphor-icons/react'
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer'
-import { format } from 'date-fns'
+import { IconMailForward } from '@tabler/icons-react'
+
+import { toast } from '@redwoodjs/web/toast'
+
+import { sendEmailMessage } from 'src/lib/fetch'
 
 import { ASSESSMENT_QUERY } from '../../graphql/certificates-queries'
 
 import { CertificatePDF } from './CertificatePDF'
+import {
+  buildCertificatePdfProps,
+  getCertificatePdfBase64,
+  getCertificatePdfFileName,
+  getCertificateProgramName,
+  getCertificateUserName,
+} from './certificatePdfUtils'
 
 interface CertificatePDFViewerProps {
   certificate: any
-  isDark?: boolean
   isNextPage?: boolean
   size?: string
   buttonText?: string
@@ -21,7 +31,6 @@ interface CertificatePDFViewerProps {
 
 export const CertificatePDFViewer = ({
   certificate,
-  isDark = false,
   isNextPage = false,
   size = 'xs',
   buttonText = 'View PDF',
@@ -30,16 +39,16 @@ export const CertificatePDFViewer = ({
   const [opened, setOpened] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   // Use lazy query instead of regular query
-  const [
-    getSkillsAssessment,
-    { data: { skillsAssessmentsByProgram } = '', loading: loadingAssessment },
-  ] = useLazyQuery(ASSESSMENT_QUERY)
+  const [getSkillsAssessment, { data }] = useLazyQuery(ASSESSMENT_QUERY)
+  const skillsAssessmentsByProgram = data?.skillsAssessmentsByProgram
 
-  const userName = certificate.user?.profile
-    ? `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`
-    : certificate.user?.email || 'Certificate Recipient'
-
-  const programName = certificate.program?.name || 'Program'
+  const userName = getCertificateUserName(certificate)
+  const programName = getCertificateProgramName(certificate)
+  const certificatePdfProps = buildCertificatePdfProps({
+    certificate,
+    nextPage: skillsAssessmentsByProgram,
+  })
+  const pdfFileName = getCertificatePdfFileName(certificate)
 
   const handleOpen = async () => {
     try {
@@ -49,13 +58,13 @@ export const CertificatePDFViewer = ({
           variables: { id: certificate.programId },
         })
       }
-
       // Simulate generation delay for better UX
       setTimeout(() => {
         setIsGenerating(false)
         setOpened(true)
       }, 500)
     } catch (error) {
+      toast.error('Error fetching assessment')
       console.error('Error fetching assessment:', error)
       setIsGenerating(false)
     }
@@ -66,7 +75,33 @@ export const CertificatePDFViewer = ({
     onClose?.()
   }
 
-  const pdfFileName = `Certificate-${certificate.certificateNumber}-${Date.now()}.pdf`
+  const handleSendEmail = async () => {
+    const base64Data = await getCertificatePdfBase64(certificatePdfProps)
+    console.log({ base64Data })
+    await sendEmailMessage({
+      subject: programName,
+      sender: {
+        name: 'Defrian',
+        email: 'defrian.yarfi@gmail.com',
+      },
+      to: [
+        {
+          name: 'Defrian',
+          email: 'defrian.yarfi@gmail.com',
+        },
+      ],
+      messages: 'test',
+      attachment: [
+        {
+          content: base64Data as string,
+          name: pdfFileName,
+        },
+      ],
+    }).then((result) => {
+      toast.success(`Message sent to: ${userName}`)
+      console.log({ result })
+    })
+  }
 
   return (
     <>
@@ -99,49 +134,15 @@ export const CertificatePDFViewer = ({
               height={600}
               style={{ width: '100%' }}
             >
-              <CertificatePDF
-                certificateNumber={certificate.certificateNumber}
-                title={certificate.title}
-                description={certificate.description}
-                userName={userName}
-                programName={programName}
-                achievementDate={certificate.achievementDate}
-                graduationClass={certificate.graduationClass}
-                ageGroupTeam={certificate.ageGroupTeam}
-                issuedBy={certificate.issuedBy}
-                expiryDate={certificate.expiryDate}
-                // verifiedAt={format(certificate.verifiedAt, 'DD-MM-YYYY')}
-                verifiedAt={certificate.verifiedAt}
-                signatureUrl={certificate.signatureUrl}
-                templateId={certificate.templateId}
-                nextPage={skillsAssessmentsByProgram}
-                isDark={isDark}
-              />
+              <CertificatePDF {...certificatePdfProps} />
             </PDFViewer>
 
             <Group justify="flex-end" mt="md">
               <PDFDownloadLink
-                document={
-                  <CertificatePDF
-                    certificateNumber={certificate.certificateNumber}
-                    title={certificate.title}
-                    description={certificate.description}
-                    userName={userName}
-                    programName={programName}
-                    achievementDate={certificate.achievementDate}
-                    graduationClass={certificate.graduationClass}
-                    ageGroupTeam={certificate.ageGroupTeam}
-                    issuedBy={certificate.issuedBy}
-                    expiryDate={certificate.expiryDate}
-                    signatureUrl={certificate.signatureUrl}
-                    templateId={certificate.templateId}
-                    nextPage={skillsAssessmentsByProgram}
-                    isDark={isDark}
-                  />
-                }
+                document={<CertificatePDF {...certificatePdfProps} />}
                 fileName={pdfFileName}
               >
-                {({ loading }) => (
+                {({ loading, blob }) => (
                   <Button
                     leftSection={<FileArrowDown size={14} />}
                     disabled={loading}
@@ -150,6 +151,12 @@ export const CertificatePDFViewer = ({
                   </Button>
                 )}
               </PDFDownloadLink>
+              <Button
+                leftSection={<IconMailForward size={14} />}
+                onClick={handleSendEmail}
+              >
+                Send Email
+              </Button>
             </Group>
           </div>
         )}

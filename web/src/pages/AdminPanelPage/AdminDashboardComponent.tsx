@@ -12,17 +12,17 @@ import {
   Alert,
 } from '@mantine/core'
 import {
-  Books,
-  CalendarDots,
-  Receipt,
-  Users,
-  WarningCircle,
+  BooksIcon,
+  CalendarDotsIcon,
+  ReceiptIcon,
+  UsersIcon,
+  WarningCircleIcon,
 } from '@phosphor-icons/react'
 import gql from 'graphql-tag'
 
 import { useQuery } from '@redwoodjs/web'
 
-import AdminLayout from 'src/components/AdminLayout/AdminLayout'
+import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const GET_DASHBOARD_STATS = gql`
@@ -82,6 +82,10 @@ const AdminDashboardPage = () => {
     GetDashboardStats: DashboardStats
   }>(GET_DASHBOARD_STATS)
   const { isDark } = useAppTheme()
+  const { getSetting } = useSettings()
+  const enablePayments: boolean = getSetting('enable_payments') === 'true'
+  const enableEnrollment: boolean = getSetting('enable_enrollment') === 'true'
+
   const cardClass = isDark
     ? 'border border-slate-800 bg-slate-900 text-slate-100'
     : 'border border-gray-200 bg-white text-gray-900'
@@ -91,30 +95,26 @@ const AdminDashboardPage = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <div className="flex min-h-96 items-center justify-center">
-            <Loader size="sm" />
-          </div>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <div className="flex min-h-96 items-center justify-center">
+          <Loader size="sm" />
+        </div>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<WarningCircle size={16} weight="bold" />}
-            title="Error"
-            color="red"
-            className="mb-6"
-          >
-            Failed to load dashboard statistics: {error.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<WarningCircleIcon size={16} />}
+          title="Error"
+          color="red"
+          className="mb-6"
+        >
+          Failed to load dashboard statistics: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
@@ -122,18 +122,16 @@ const AdminDashboardPage = () => {
 
   if (!stats) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<WarningCircle size={16} weight="bold" />}
-            title="No Data"
-            color="yellow"
-            className="mb-6"
-          >
-            No dashboard data available
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<WarningCircleIcon size={16} />}
+          title="No Data"
+          color="yellow"
+          className="mb-6"
+        >
+          No dashboard data available
+        </Alert>
+      </Container>
     )
   }
 
@@ -177,90 +175,87 @@ const AdminDashboardPage = () => {
     .slice(0, 5)
 
   return (
-    <AdminLayout>
-      <Container size="xl" py={{ base: 'sm', sm: 'md', md: 'xl' }} px={{ base: 'xs', sm: 'md' }}>
-        <Text size="lg" fw={700} mb="md">
-          Dashboard Overview
-        </Text>
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Text size="lg" fw={700} mb="md">
+        Dashboard Overview
+      </Text>
 
-        {/* Stats Grid */}
-        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
-          {/* Users Card */}
-          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Group justify="space-between" mb="md">
-                <Text fw={500} size="sm">
-                  Total Users
-                </Text>
-                <Users
-                  size={24}
-                  weight="bold"
-                  className={statIconClass('text-blue-500')}
-                />
-              </Group>
-              <Text size="xl" fw={700}>
-                {totalUsers}
+      {/* Stats Grid */}
+      <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
+        {/* Users Card */}
+        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Group justify="space-between" mb="md">
+              <Text fw={500} size="sm">
+                Total Users
               </Text>
-              <Text size="xs" className={`mt-1 ${mutedClass}`}>
-                {activeUsers} active
-              </Text>
-            </Card>
-          </Grid.Col>
+              <UsersIcon size={24} className={statIconClass('text-blue-500')} />
+            </Group>
+            <Text size="xl" fw={700}>
+              {totalUsers}
+            </Text>
+            <Text size="xs" className={`mt-1 ${mutedClass}`}>
+              {activeUsers} active
+            </Text>
+          </Card>
+        </Grid.Col>
 
-          {/* Programs Card */}
-          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Group justify="space-between" mb="md">
-                <Text fw={500} size="sm">
-                  Programs
-                </Text>
-                <Books
-                  size={24}
-                  weight="bold"
-                  className={statIconClass('text-green-500')}
-                />
-              </Group>
-              <Text size="xl" fw={700}>
-                {activePrograms}
+        {/* Programs Card */}
+        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Group justify="space-between" mb="md">
+              <Text fw={500} size="sm">
+                Programs
               </Text>
-              <Text size="xs" className={`mt-1 ${mutedClass}`}>
-                {totalPrograms} total
-              </Text>
-            </Card>
-          </Grid.Col>
+              <BooksIcon
+                size={24}
+                className={statIconClass('text-green-500')}
+              />
+            </Group>
+            <Text size="xl" fw={700}>
+              {activePrograms}
+            </Text>
+            <Text size="xs" className={`mt-1 ${mutedClass}`}>
+              {totalPrograms} total
+            </Text>
+          </Card>
+        </Grid.Col>
 
-          {/* Classes Card */}
-          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Group justify="space-between" mb="md">
-                <Text fw={500} size="sm">
-                  Classes
-                </Text>
-                <CalendarDots
-                  size={24}
-                  weight="bold"
-                  className={statIconClass('text-purple-500')}
-                />
-              </Group>
-              <Text size="xl" fw={700}>
-                {activeClasses}
+        {/* Classes Card */}
+        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Group justify="space-between" mb="md">
+              <Text fw={500} size="sm">
+                Classes
               </Text>
-              <Text size="xs" className={`mt-1 ${mutedClass}`}>
-                {totalClasses} total
-              </Text>
-            </Card>
-          </Grid.Col>
+              <CalendarDotsIcon
+                size={24}
+                className={statIconClass('text-purple-500')}
+              />
+            </Group>
+            <Text size="xl" fw={700}>
+              {activeClasses}
+            </Text>
+            <Text size="xs" className={`mt-1 ${mutedClass}`}>
+              {totalClasses} total
+            </Text>
+          </Card>
+        </Grid.Col>
 
-          {/* Revenue Card */}
+        {/* Revenue Card */}
+        {enablePayments && (
           <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
                 <Text fw={500} size="sm">
                   Revenue
                 </Text>
-                <Receipt
+                <ReceiptIcon
                   size={24}
-                  weight="bold"
                   className={statIconClass('text-yellow-500')}
                 />
               </Group>
@@ -272,8 +267,10 @@ const AdminDashboardPage = () => {
               </Text>
             </Card>
           </Grid.Col>
+        )}
 
-          {/* Pending Invoices Card */}
+        {/* Pending Invoices Card */}
+        {enablePayments && (
           <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card
               shadow="sm"
@@ -301,8 +298,10 @@ const AdminDashboardPage = () => {
               </Text>
             </Card>
           </Grid.Col>
+        )}
 
-          {/* Total Revenue Card */}
+        {/* Total Revenue Card */}
+        {enablePayments && (
           <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Group justify="space-between" mb="md">
@@ -316,37 +315,39 @@ const AdminDashboardPage = () => {
               </Text>
             </Card>
           </Grid.Col>
-        </Grid>
+        )}
+      </Grid>
 
-        {/* User Breakdown */}
-        <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-              <Text fw={600} mb="md">
-                User Breakdown
-              </Text>
-              <Stack gap="sm">
-                <Group justify="space-between">
-                  <Text size="sm">Admins</Text>
-                  <Badge color="red">{admins}</Badge>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Coaches</Text>
-                  <Badge color="blue">{coaches}</Badge>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Players</Text>
-                  <Badge color="green">{players}</Badge>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Parents</Text>
-                  <Badge color="purple">{parents}</Badge>
-                </Group>
-              </Stack>
-            </Card>
-          </Grid.Col>
+      {/* User Breakdown */}
+      <Grid gutter={{ base: 'xs', sm: 'md' }} mb="xl">
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              User Breakdown
+            </Text>
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Text size="sm">Admins</Text>
+                <Badge color="red">{admins}</Badge>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm">Coaches</Text>
+                <Badge color="blue">{coaches}</Badge>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm">Players</Text>
+                <Badge color="green">{players}</Badge>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm">Parents</Text>
+                <Badge color="purple">{parents}</Badge>
+              </Group>
+            </Stack>
+          </Card>
+        </Grid.Col>
 
-          {/* Recent Enrollments */}
+        {/* Recent Enrollments */}
+        {enableEnrollment && (
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
               <Text fw={600} mb="md">
@@ -381,9 +382,9 @@ const AdminDashboardPage = () => {
               </Stack>
             </Card>
           </Grid.Col>
-        </Grid>
-      </Container>
-    </AdminLayout>
+        )}
+      </Grid>
+    </Container>
   )
 }
 

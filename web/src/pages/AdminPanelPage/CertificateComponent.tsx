@@ -34,7 +34,6 @@ import {
 } from '@phosphor-icons/react'
 import { format, parseISO } from 'date-fns'
 
-import { AdminLayout } from 'src/components/AdminLayout'
 import { CertificatePDFViewer } from 'src/components/CertificatePDF/CertificatePDFViewer'
 import {
   generateCertificateQR,
@@ -49,11 +48,30 @@ import {
   DELETE_CERTIFICATE_MUTATION,
   VERIFY_CERTIFICATE_MUTATION,
   REVOKE_CERTIFICATE_MUTATION,
-  ASSESSMENT_QUERY,
 } from '../../graphql/certificates-queries'
 import { GET_CLASSES } from '../../graphql/classes-queries'
 import { GET_PROGRAMS } from '../../graphql/programs-queries'
 import { GET_USERS } from '../../graphql/users-queries'
+
+/*
+Done. I extracted the reusable PDF logic into certificatePdfUtils.tsx and updated CertificatePDFViewer.tsx to use it.
+You can now reuse it in other pages like:
+
+import {
+  buildCertificatePdfProps,
+  getCertificatePdfBase64,
+  getCertificatePdfFileName,
+} from 'src/components/CertificatePDF/certificatePdfUtils'
+
+const pdfProps = buildCertificatePdfProps({
+  certificate,
+  nextPage: skillsAssessmentsByProgram,
+  isDark,
+})
+
+const base64 = await getCertificatePdfBase64(pdfProps)
+const fileName = getCertificatePdfFileName(certificate)
+*/
 
 const CertificateComponent = () => {
   const { isDark } = useAppTheme()
@@ -151,8 +169,6 @@ const CertificateComponent = () => {
     }
   }, []) // Only run on mount
 
-  // Queries
-
   // Mutations
   const [createCertificate] = useMutation(CREATE_CERTIFICATE_MUTATION, {
     onCompleted: () => {
@@ -212,6 +228,7 @@ const CertificateComponent = () => {
       label: `${c.name} - ${c.scheduleDay} ${c.scheduleTime}`,
     }))
 
+  // Functions
   const handleOpenModal = (certificate?: any) => {
     if (certificate) {
       setEditingId(certificate.id)
@@ -309,6 +326,7 @@ const CertificateComponent = () => {
       qrCode: formData.qrCode || null,
       issuedBy: formData.issuedBy || null,
       templateId: formData.templateId || null,
+      withAssessment: formData.withAssessment || null,
       signatureUrl: formData.signatureUrl || null,
       expiryDate: formData.expiryDate
         ? new Date(formData.expiryDate).toISOString()
@@ -384,447 +402,443 @@ const CertificateComponent = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container
-        size="xl"
-        py={{ base: 'sm', sm: 'md', md: 'xl' }}
-        px={{ base: 'xs', sm: 'md' }}
-      >
-        <Stack gap="lg">
-          <Card withBorder p="lg">
-            <Card.Section withBorder inheritPadding py="md">
-              <Group justify="space-between">
-                <Text fw={500} size="lg">
-                  Certificates
-                </Text>
-                <Button
-                  leftSection={<Plus size={16} />}
-                  onClick={() => handleOpenModal()}
-                >
-                  Add Certificate
-                </Button>
-              </Group>
-            </Card.Section>
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Stack gap="lg">
+        <Card withBorder p="lg" shadow="none">
+          <Card.Section withBorder inheritPadding py="md">
+            <Group justify="space-between">
+              <Text fw={500} size="lg">
+                Certificates
+              </Text>
+              <Button
+                leftSection={<Plus size={16} />}
+                onClick={() => handleOpenModal()}
+              >
+                Add Certificate
+              </Button>
+            </Group>
+          </Card.Section>
 
-            <Card.Section>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Certificate #</Table.Th>
-                    <Table.Th>Title</Table.Th>
-                    <Table.Th>User</Table.Th>
-                    <Table.Th>Program</Table.Th>
-                    <Table.Th>Achievement Date</Table.Th>
-                    <Table.Th w="74">Status</Table.Th>
-                    <Table.Th w="388">Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {certificates.length > 0 ? (
-                    certificates.map((certificate) => (
-                      <Table.Tr key={certificate.id}>
-                        <Table.Td>{certificate.certificateNumber}</Table.Td>
-                        <Table.Td>{certificate.title}</Table.Td>
-                        <Table.Td>
-                          {certificate.user?.profile
-                            ? `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`
-                            : certificate.user?.email}
-                        </Table.Td>
-                        <Table.Td>{certificate.program?.name}</Table.Td>
-                        <Table.Td>
-                          {format(
-                            parseISO(certificate.achievementDate),
-                            'MMM dd, yyyy'
+          <Card.Section>
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Certificate #</Table.Th>
+                  <Table.Th>User</Table.Th>
+                  <Table.Th>Title</Table.Th>
+                  <Table.Th>Program</Table.Th>
+                  <Table.Th>Achievement Date</Table.Th>
+                  <Table.Th w="74">Status</Table.Th>
+                  <Table.Th w="388">Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {certificates.length > 0 ? (
+                  certificates.map((certificate) => (
+                    <Table.Tr key={certificate.id}>
+                      <Table.Td>{certificate.certificateNumber}</Table.Td>
+                      <Table.Td>
+                        {certificate.user?.profile &&
+                          `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`}
+                        {certificate.user?.email && (
+                          <Text size="xs" c="dimmed">
+                            {certificate.user?.email}
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>{certificate.title}</Table.Td>
+                      <Table.Td>{certificate.program?.name}</Table.Td>
+                      <Table.Td>
+                        {format(
+                          parseISO(certificate.achievementDate),
+                          'MMM dd, yyyy'
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge
+                          color={getStatusBadgeColor(certificate.status)}
+                          variant="light"
+                          size="xs"
+                        >
+                          {certificate.status}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs" wrap="wrap">
+                          {certificate.status === 'ISSUED' && (
+                            <CertificatePDFViewer
+                              certificate={certificate}
+                              isNextPage={certificate.withAssessment}
+                              buttonText="View"
+                            />
                           )}
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={getStatusBadgeColor(certificate.status)}
-                            variant="light"
+                          <Button
                             size="xs"
+                            color="blue"
+                            variant="light"
+                            leftSection={<PencilIcon size={16} />}
+                            onClick={() => handleOpenModal(certificate)}
+                            title="Edit"
                           >
-                            {certificate.status}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap="xs" wrap="wrap">
-                            {certificate.status === 'ISSUED' && (
-                              <CertificatePDFViewer
-                                certificate={certificate}
-                                isNextPage={certificate.withAssessment}
-                                isDark={isDark}
-                                buttonText="View"
-                              />
-                            )}
+                            Edit
+                          </Button>
+                          {certificate.status === 'DRAFT' && (
+                            <ActionIcon
+                              size="sm"
+                              color="green"
+                              variant="subtle"
+                              onClick={() => handleVerify(certificate.id)}
+                              title="Issue/Verify"
+                            >
+                              <Eye size={16} />
+                            </ActionIcon>
+                          )}
+                          {certificate.status === 'ISSUED' && (
                             <Button
                               size="xs"
-                              color="blue"
+                              color="orange"
                               variant="light"
-                              leftSection={<PencilIcon size={16} />}
-                              onClick={() => handleOpenModal(certificate)}
-                              title="Edit"
+                              leftSection={<XIcon size={16} />}
+                              onClick={() => handleRevokeClick(certificate.id)}
+                              title="Revoke"
                             >
-                              Edit
+                              Revoke
                             </Button>
-                            {certificate.status === 'DRAFT' && (
-                              <ActionIcon
-                                size="sm"
-                                color="green"
-                                variant="subtle"
-                                onClick={() => handleVerify(certificate.id)}
-                                title="Issue/Verify"
-                              >
-                                <Eye size={16} />
-                              </ActionIcon>
-                            )}
-                            {certificate.status === 'ISSUED' && (
-                              <Button
-                                size="xs"
-                                color="orange"
-                                variant="light"
-                                leftSection={<XIcon size={16} />}
-                                onClick={() =>
-                                  handleRevokeClick(certificate.id)
-                                }
-                                title="Revoke"
-                              >
-                                Revoke
-                              </Button>
-                            )}
-                            {certificate.pdfUrl && (
-                              <ActionIcon
-                                size="sm"
-                                color="purple"
-                                variant="subtle"
-                                component="a"
-                                href={certificate.pdfUrl}
-                                target="_blank"
-                                title="Download PDF"
-                              >
-                                <Download size={16} />
-                              </ActionIcon>
-                            )}
-                            <Button
-                              size="xs"
-                              color="red"
-                              variant="light"
-                              leftSection={<TrashIcon size={16} />}
-                              onClick={() => handleDelete(certificate.id)}
-                              title="Delete"
+                          )}
+                          {certificate.pdfUrl && (
+                            <ActionIcon
+                              size="sm"
+                              color="purple"
+                              variant="subtle"
+                              component="a"
+                              href={certificate.pdfUrl}
+                              target="_blank"
+                              title="Download PDF"
                             >
-                              Delete
-                            </Button>
-                          </Group>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))
-                  ) : (
-                    <Table.Tr>
-                      <Table.Td colSpan={7}>
-                        <Center py="xl">
-                          <Text c="dimmed">No certificates found</Text>
-                        </Center>
+                              <Download size={16} />
+                            </ActionIcon>
+                          )}
+                          <Button
+                            size="xs"
+                            color="red"
+                            variant="light"
+                            leftSection={<TrashIcon size={16} />}
+                            onClick={() => handleDelete(certificate.id)}
+                            title="Delete"
+                          >
+                            Delete
+                          </Button>
+                        </Group>
                       </Table.Td>
                     </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </Card.Section>
-          </Card>
+                  ))
+                ) : (
+                  <Table.Tr>
+                    <Table.Td colSpan={7}>
+                      <Center py="xl">
+                        <Text c="dimmed">No certificates found</Text>
+                      </Center>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </Table>
+          </Card.Section>
+        </Card>
 
-          {/* Create/Edit Modal */}
-          <Modal
-            opened={opened}
-            onClose={handleCloseModal}
-            title={editingId ? 'Edit Certificate' : 'Add Certificate'}
-            centered
-            size="lg"
-          >
-            <Stack gap="md">
-              <Group grow>
-                <Select
-                  label="Player"
-                  placeholder="Select player"
-                  searchable
-                  clearable
-                  data={userOptions}
-                  value={formData.userId}
-                  onChange={(value) =>
-                    setFormData({ ...formData, userId: value || '' })
-                  }
-                  required
-                />
-                <Select
-                  label="Program"
-                  placeholder="Select program"
-                  searchable
-                  data={programOptions}
-                  value={formData.programId}
-                  onChange={(value) =>
-                    setFormData({ ...formData, programId: value || '' })
-                  }
-                  required
-                />
-              </Group>
+        {/* Create/Edit Modal */}
+        <Modal
+          opened={opened}
+          onClose={handleCloseModal}
+          title={editingId ? 'Edit Certificate' : 'Add Certificate'}
+          centered
+          size="lg"
+        >
+          <Stack gap="md">
+            <Group grow>
               <Select
-                label="Class (Optional)"
-                placeholder="Select class"
+                label="Player"
+                placeholder="Select player"
                 searchable
                 clearable
-                data={classOptions}
-                value={formData.classId}
+                data={userOptions}
+                value={formData.userId}
                 onChange={(value) =>
-                  setFormData({ ...formData, classId: value || '' })
-                }
-                disabled={!formData.programId}
-              />
-              <TextInput
-                label="Title"
-                placeholder="Certificate title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.currentTarget.value })
+                  setFormData({ ...formData, userId: value || '' })
                 }
                 required
               />
-              <TextInput
-                label="Certificate Number"
-                placeholder="e.g., CERT-2026-001"
-                value={formData.certificateNumber}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    certificateNumber: e.currentTarget.value,
-                  })
-                }
-                required
-              />
-              <Textarea
-                label="Description"
-                placeholder="Certificate description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    description: e.currentTarget.value,
-                  })
-                }
-              />
-              <Group grow>
-                <TextInput
-                  label="Graduation Class"
-                  placeholder="e.g., Class of 2026"
-                  value={formData.graduationClass}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      graduationClass: e.currentTarget.value,
-                    })
-                  }
-                />
-                <TextInput
-                  label="Age Group/Team"
-                  placeholder="e.g., U-12 Team A"
-                  value={formData.ageGroupTeam}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      ageGroupTeam: e.currentTarget.value,
-                    })
-                  }
-                />
-              </Group>
-              <Group grow>
-                <TextInput
-                  type="date"
-                  label="Achievement Date"
-                  value={formData.achievementDate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      achievementDate: e.currentTarget.value,
-                    })
-                  }
-                  required
-                />
-                <TextInput
-                  type="date"
-                  label="Expiry Date (Optional)"
-                  value={formData.expiryDate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      expiryDate: e.currentTarget.value,
-                    })
-                  }
-                />
-              </Group>
-              <Group grow>
-                <TextInput
-                  label="Issued By"
-                  placeholder="Name/ID of issuer"
-                  value={formData.issuedBy}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      issuedBy: e.currentTarget.value,
-                    })
-                  }
-                />
-                <TextInput
-                  label="Template ID"
-                  placeholder="Template ID"
-                  value={formData.templateId}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      templateId: e.currentTarget.value,
-                    })
-                  }
-                />
-              </Group>
-              <Group grow>
-                <TextInput
-                  label="PDF URL"
-                  placeholder="https://..."
-                  value={formData.pdfUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pdfUrl: e.currentTarget.value })
-                  }
-                />
-                <TextInput
-                  label="Signature URL"
-                  placeholder="https://..."
-                  value={formData.signatureUrl}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      signatureUrl: e.currentTarget.value,
-                    })
-                  }
-                />
-              </Group>
-              <Divider my="sm" />
-              <Stack gap="sm">
-                <Group justify="space-between" align="center">
-                  <Text fw={500} size="sm">
-                    QR Code
-                  </Text>
-                  <Button
-                    size="xs"
-                    variant="light"
-                    leftSection={<QrCode size={16} />}
-                    onClick={handleGenerateQRCode}
-                    loading={qrCodeLoading}
-                    disabled={
-                      !formData.certificateNumber ||
-                      !formData.userId ||
-                      !formData.programId
-                    }
-                  >
-                    {formData.qrCode ? 'Regenerate' : 'Generate'} QR Code
-                  </Button>
-                </Group>
-                {qrCodePreview && (
-                  <Paper p="md" withBorder>
-                    <Stack align="center">
-                      <Image
-                        src={qrCodePreview}
-                        alt="QR Code Preview"
-                        width={200}
-                        height={200}
-                        fit="contain"
-                      />
-                      <Text size="xs" c="dimmed">
-                        Certificate #: {formData.certificateNumber}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        Verification:{' '}
-                        {formData.verificationCode?.substring(0, 8)}
-                        ...
-                      </Text>
-                    </Stack>
-                  </Paper>
-                )}
-                {!qrCodePreview && (
-                  <Paper p="md" withBorder bg={isDark ? 'dark.7' : 'gray.0'}>
-                    <Center p="xl">
-                      <Text size="sm" c="dimmed">
-                        QR code will be generated when you fill in Certificate
-                        Number, Player, and Program
-                      </Text>
-                    </Center>
-                  </Paper>
-                )}
-              </Stack>
               <Select
-                label="Status"
-                placeholder="Select status"
-                data={['DRAFT', 'ISSUED', 'REVOKED', 'EXPIRED']}
-                value={formData.status}
+                label="Program"
+                placeholder="Select program"
+                searchable
+                data={programOptions}
+                value={formData.programId}
                 onChange={(value) =>
-                  setFormData({ ...formData, status: value || 'DRAFT' })
+                  setFormData({ ...formData, programId: value || '' })
                 }
                 required
               />
-              <Switch
-                label="With Assessment"
-                type="checkbox"
-                defaultChecked={formData.withAssessment}
-                onChange={(value) =>
-                  setFormData({ ...formData, withAssessment: value })
+            </Group>
+            <Select
+              label="Class (Optional)"
+              placeholder="Select class"
+              searchable
+              clearable
+              data={classOptions}
+              value={formData.classId}
+              onChange={(value) =>
+                setFormData({ ...formData, classId: value || '' })
+              }
+              disabled={!formData.programId}
+            />
+            <TextInput
+              label="Title"
+              placeholder="Certificate title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.currentTarget.value })
+              }
+              required
+            />
+            <TextInput
+              label="Certificate Number"
+              placeholder="e.g., CERT-2026-001"
+              value={formData.certificateNumber}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  certificateNumber: e.currentTarget.value,
+                })
+              }
+              required
+            />
+            <Textarea
+              label="Description"
+              placeholder="Certificate description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  description: e.currentTarget.value,
+                })
+              }
+            />
+            <Group grow>
+              <TextInput
+                label="Graduation Class"
+                placeholder="e.g., Class of 2026"
+                value={formData.graduationClass}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    graduationClass: e.currentTarget.value,
+                  })
                 }
               />
-              <Group justify="flex-end">
-                <Button variant="light" onClick={handleCloseModal}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>
-                  {editingId ? 'Update' : 'Create'}
+              <TextInput
+                label="Age Group/Team"
+                placeholder="e.g., U-12 Team A"
+                value={formData.ageGroupTeam}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    ageGroupTeam: e.currentTarget.value,
+                  })
+                }
+              />
+            </Group>
+            <Group grow>
+              <TextInput
+                type="date"
+                label="Achievement Date"
+                value={formData.achievementDate}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    achievementDate: e.currentTarget.value,
+                  })
+                }
+                required
+              />
+              <TextInput
+                type="date"
+                label="Expiry Date (Optional)"
+                value={formData.expiryDate}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    expiryDate: e.currentTarget.value,
+                  })
+                }
+              />
+            </Group>
+            <Group grow>
+              <TextInput
+                label="Issued By"
+                placeholder="Name/ID of issuer"
+                value={formData.issuedBy}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    issuedBy: e.currentTarget.value,
+                  })
+                }
+              />
+              <TextInput
+                label="Template ID"
+                placeholder="Template ID"
+                value={formData.templateId}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    templateId: e.currentTarget.value,
+                  })
+                }
+              />
+            </Group>
+            <Group grow>
+              <TextInput
+                label="PDF URL"
+                placeholder="https://..."
+                value={formData.pdfUrl}
+                onChange={(e) =>
+                  setFormData({ ...formData, pdfUrl: e.currentTarget.value })
+                }
+              />
+              <TextInput
+                label="Signature URL"
+                placeholder="https://..."
+                value={formData.signatureUrl}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    signatureUrl: e.currentTarget.value,
+                  })
+                }
+              />
+            </Group>
+            <Divider my="sm" />
+            <Stack gap="sm">
+              <Group justify="space-between" align="center">
+                <Text fw={500} size="sm">
+                  QR Code
+                </Text>
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<QrCode size={16} />}
+                  onClick={handleGenerateQRCode}
+                  loading={qrCodeLoading}
+                  disabled={
+                    !formData.certificateNumber ||
+                    !formData.userId ||
+                    !formData.programId
+                  }
+                >
+                  {formData.qrCode ? 'Regenerate' : 'Generate'} QR Code
                 </Button>
               </Group>
+              {qrCodePreview && (
+                <Paper p="md" withBorder>
+                  <Stack align="center">
+                    <Image
+                      src={qrCodePreview}
+                      alt="QR Code Preview"
+                      width={200}
+                      height={200}
+                      fit="contain"
+                    />
+                    <Text size="xs" c="dimmed">
+                      Certificate #: {formData.certificateNumber}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Verification: {formData.verificationCode?.substring(0, 8)}
+                      ...
+                    </Text>
+                  </Stack>
+                </Paper>
+              )}
+              {!qrCodePreview && (
+                <Paper p="md" withBorder bg={isDark ? 'dark.7' : 'gray.0'}>
+                  <Center p="xl">
+                    <Text size="sm" c="dimmed">
+                      QR code will be generated when you fill in Certificate
+                      Number, Player, and Program
+                    </Text>
+                  </Center>
+                </Paper>
+              )}
             </Stack>
-          </Modal>
+            <Select
+              label="Status"
+              placeholder="Select status"
+              data={['DRAFT', 'ISSUED', 'REVOKED', 'EXPIRED']}
+              value={formData.status}
+              onChange={(value) =>
+                setFormData({ ...formData, status: value || 'DRAFT' })
+              }
+              required
+            />
+            <Switch
+              label="With Assessment"
+              type="checkbox"
+              defaultChecked={formData.withAssessment}
+              onChange={(e) =>
+                setFormData({ ...formData, withAssessment: e.target.checked })
+              }
+            />
+            <Group justify="flex-end">
+              <Button variant="light" onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                {editingId ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
-          {/* Revoke Modal */}
-          <Modal
-            opened={revokeModalOpened}
-            onClose={handleCloseRevokeModal}
-            title="Revoke Certificate"
-            centered
-          >
-            <Stack gap="md">
-              <Textarea
-                label="Reason for Revocation"
-                placeholder="Enter reason..."
-                value={revokeReason}
-                onChange={(e) => setRevokeReason(e.currentTarget.value)}
-                required
-              />
-              <Group justify="flex-end">
-                <Button variant="light" onClick={handleCloseRevokeModal}>
-                  Cancel
-                </Button>
-                <Button color="red" onClick={handleRevokeSubmit}>
-                  Revoke
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
-        </Stack>
-      </Container>
-    </AdminLayout>
+        {/* Revoke Modal */}
+        <Modal
+          opened={revokeModalOpened}
+          onClose={handleCloseRevokeModal}
+          title="Revoke Certificate"
+          centered
+        >
+          <Stack gap="md">
+            <Textarea
+              label="Reason for Revocation"
+              placeholder="Enter reason..."
+              value={revokeReason}
+              onChange={(e) => setRevokeReason(e.currentTarget.value)}
+              required
+            />
+            <Group justify="flex-end">
+              <Button variant="light" onClick={handleCloseRevokeModal}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleRevokeSubmit}>
+                Revoke
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+      </Stack>
+    </Container>
   )
 }
 

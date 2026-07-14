@@ -312,7 +312,6 @@ const VerifyCertificatePage = () => {
                     issuedBy={certificate.issuedBy}
                     expiryDate={certificate.expiryDate}
                     signatureUrl={certificate.signatureUrl}
-                    // isDark={isDark}
                   />
                 }
                 fileName={`${certificate.certificateNumber}.pdf`}

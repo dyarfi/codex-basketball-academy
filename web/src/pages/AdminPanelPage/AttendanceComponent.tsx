@@ -2,21 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 
 import {
   Alert,
-  Table,
   Button,
-  Modal,
   TextInput,
   Select,
   Group,
-  Stack,
   Loader,
-  Center,
-  ActionIcon,
   Text,
   Badge,
-  Card,
   Grid,
-  Textarea,
   Container,
 } from '@mantine/core'
 import { DateTimePicker } from '@mantine/dates'
@@ -27,9 +20,11 @@ import { format, parseISO } from 'date-fns'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useMutation, useQuery } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
-import { AdminLayout } from 'src/components/AdminLayout'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
+import { CrudTable } from 'src/components/CrudTable'
+import AttendanceModal from 'src/components/Modals/AttendanceModal'
 
 import {
   GET_PAGINATED_ATTENDANCES,
@@ -39,6 +34,7 @@ import {
 } from '../../graphql/attendances-queries'
 import { CLASSES_QUERY } from '../../graphql/classes-queries'
 import { USERS_QUERY } from '../../graphql/users-queries'
+
 import '@mantine/dates/styles.css'
 
 type AttendanceFormData = {
@@ -87,7 +83,7 @@ export const AttendanceComponent = () => {
   const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
   const hasMountedFilters = useRef(false)
   const [opened, setOpened] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [attendance, setAttendance] = useState<Record<string, any>>({})
   const [formData, setFormData] = useState<AttendanceFormData>({
     classId: '',
     userId: '',
@@ -121,41 +117,42 @@ export const AttendanceComponent = () => {
   }
 
   // Queries
-  const {
-    data: attendancesData,
-    loading: attendancesLoading,
-    error: attendancesError,
-    refetch,
-  } = useQuery(GET_PAGINATED_ATTENDANCES, { variables })
+  const { data, loading, error, refetch } = useQuery(
+    GET_PAGINATED_ATTENDANCES,
+    { variables }
+  )
   const { data: classesData = [] } = useQuery(CLASSES_QUERY) || []
-  const { data: usersData = [] } = useQuery(USERS_QUERY) || []
+  const { data: usersData = [] } =
+    useQuery(USERS_QUERY, { variables: { role: 'PLAYER' } }) || []
 
   // Mutations
   const [createAttendance] = useMutation(CREATE_ATTENDANCE_MUTATION, {
     onCompleted: () => {
       refetch()
       handleCloseModal()
+      toast.success('Attendance Created Successfully')
     },
   })
   const [updateAttendance] = useMutation(UPDATE_ATTENDANCE_MUTATION, {
     onCompleted: () => {
       refetch()
       handleCloseModal()
+      toast.success('Attendance Updated Successfully')
     },
   })
   const [deleteAttendance] = useMutation(DELETE_ATTENDANCE_MUTATION, {
     onCompleted: () => {
       refetch()
+      toast.success('Attendance Deleted Successfully')
     },
   })
 
   const classes = classesData?.classes || []
-  const users = usersData?.users || []
-  const attendances = attendancesData?.paginatedAttendances?.items || []
-  const totalAttendances =
-    attendancesData?.paginatedAttendances?.totalCount || 0
+  const users = usersData?.usersQuery || []
+  const attendances = data?.paginatedAttendances?.items || []
+  const totalAttendances = data?.paginatedAttendances?.totalCount || 0
   const totalPages =
-    attendancesData?.paginatedAttendances?.totalPages ??
+    attendances?.paginatedAttendances?.totalPages ??
     Math.max(1, Math.ceil(totalAttendances / PAGE_SIZE))
 
   useEffect(() => {
@@ -165,17 +162,11 @@ export const AttendanceComponent = () => {
     }
 
     setCurrentPage(1)
-  }, [
-    debouncedSearchQuery,
-    filterClass,
-    filterUser,
-    filterDate,
-    filterStatus,
-  ])
+  }, [debouncedSearchQuery, filterClass, filterUser, filterDate, filterStatus])
 
-  const handleOpenModal = (attendance?: any) => {
+  const handleEdit = (attendance?: any) => {
     if (attendance) {
-      setEditingId(attendance.id)
+      setAttendance(attendance)
       setFormData({
         classId: attendance.classId,
         userId: attendance.userId,
@@ -187,7 +178,7 @@ export const AttendanceComponent = () => {
         notes: attendance.notes || '',
       })
     } else {
-      setEditingId(null)
+      setAttendance(null)
       setFormData({
         classId: '',
         userId: '',
@@ -201,7 +192,7 @@ export const AttendanceComponent = () => {
 
   const handleCloseModal = () => {
     setOpened(false)
-    setEditingId(null)
+    setAttendance(null)
   }
 
   const handleSave = async () => {
@@ -218,10 +209,10 @@ export const AttendanceComponent = () => {
       notes: formData.notes || null,
     }
 
-    if (editingId) {
+    if (attendance) {
       await updateAttendance({
         variables: {
-          id: editingId,
+          id: attendance?.id,
           input,
         },
       })
@@ -234,7 +225,7 @@ export const AttendanceComponent = () => {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = async (id: any) => {
     if (confirm('Are you sure you want to delete this attendance record?')) {
       await deleteAttendance({
         variables: { id },
@@ -242,314 +233,194 @@ export const AttendanceComponent = () => {
     }
   }
 
-  if (attendancesLoading && !attendancesData) {
+  const columns = [
+    {
+      key: 'attendanceDate',
+      header: 'Date',
+      render: (val: string) => format(parseISO(val), 'MMM dd, yyyy HH:mm'),
+    },
+    {
+      key: 'class',
+      header: 'Class',
+      render: (val: Record<string, string>) => val.name,
+    },
+    {
+      key: 'user',
+      header: 'User',
+      render: (val: Record<string, string[]>) => (
+        <Text size="sm">
+          {val.profile?.firstName} {val.profile?.lastName}
+          <Text size="xs" c="gray">
+            {val.email}
+          </Text>
+        </Text>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (val: string) => (
+        <Badge color={ATTENDANCE_STATUS_COLORS[val]} variant="light" size="sm">
+          {val}
+        </Badge>
+      ),
+    },
+    { key: 'notes', header: 'Notes' },
+  ]
+
+  if (loading && !data) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Group justify="center" p="xl">
-            <Loader size="sm" />
-          </Group>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Group justify="center" p="xl">
+          <Loader size="sm" />
+        </Group>
+      </Container>
     )
   }
 
-  if (attendancesError) {
+  if (error) {
     return (
-      <AdminLayout>
-        <Container size="xl" py="xl">
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
-            color="red"
-            variant="filled"
-          >
-            Failed to load attendance records: {attendancesError.message}
-          </Alert>
-        </Container>
-      </AdminLayout>
+      <Container size="xl" py="xl">
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Error"
+          color="red"
+          variant="filled"
+        >
+          Failed to load attendance records: {error.message}
+        </Alert>
+      </Container>
     )
   }
 
   return (
-    <AdminLayout>
-      <Container
-        size="xl"
-        py={{ base: 'sm', sm: 'md', md: 'xl' }}
-        px={{ base: 'xs', sm: 'md' }}
+    <Container
+      size="xl"
+      py={{ base: 'sm', sm: 'md', md: 'xl' }}
+      px={{ base: 'xs', sm: 'md' }}
+    >
+      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+        <div>
+          <Text size="lg" fw={700}>
+            Attendance Records
+          </Text>
+          <Text size="sm" color="dimmed">
+            Manage users attendance and others
+          </Text>
+        </div>
+        <Button leftSection={<Plus size={16} />} onClick={() => handleEdit()}>
+          Add Attendance
+        </Button>
+      </Group>
+
+      <Group
+        gap="sm"
+        mb="lg"
+        className="rounded-lg border border-gray-200 bg-white p-1 sm:p-2"
+        grow={true}
       >
-        <Stack gap="lg">
-          <Card withBorder p="lg">
-            <Card.Section withBorder inheritPadding py="md">
-              <Group justify="space-between">
-                <Text fw={800} size="lg">
-                  Attendance Records
-                </Text>
-                <Button
-                  leftSection={<Plus size={16} />}
-                  onClick={() => handleOpenModal()}
-                >
-                  Add Attendance
-                </Button>
-              </Group>
-            </Card.Section>
-
-            <Card.Section>
-              <Grid p="md" gutter="md">
-                <Grid.Col span={{ base: 12 }}>
-                  <TextInput
-                    label="Search"
-                    placeholder="Search by player, email, class, or notes"
-                    leftSection={<IconSearch size={16} />}
-                    value={searchQuery}
-                    onChange={(event) =>
-                      setSearchQuery(event.currentTarget.value)
-                    }
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <Select
-                    label="Filter by Class"
-                    placeholder="All Classes"
-                    data={classes.map((c) => ({
-                      value: c.id,
-                      label: c.name,
-                    }))}
-                    value={filterClass}
-                    onChange={setFilterClass}
-                    clearable
-                    searchable
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <Select
-                    label="Filter by User"
-                    placeholder="All Users"
-                    data={users.map((u) => ({
-                      value: u.id,
-                      label:
-                        `${u.profile?.firstName} ${u.profile?.lastName}` ||
-                        u.email,
-                    }))}
-                    value={filterUser}
-                    onChange={setFilterUser}
-                    clearable
-                    searchable
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <DateTimePicker
-                    clearable
-                    valueFormat="YYYY-MM-DD HH:mm"
-                    label="Filter by Date"
-                    placeholder="Attendance Date"
-                    value={filterDate || ''}
-                    onChange={setFilterDate}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                  <Select
-                    label="Filter by Status"
-                    placeholder="All Status"
-                    data={[
-                      { value: 'PRESENT', label: 'Present' },
-                      { value: 'ABSENT', label: 'Absent' },
-                      { value: 'LATE', label: 'Late' },
-                      { value: 'EXCUSED', label: 'Excused' },
-                    ]}
-                    value={filterStatus}
-                    onChange={setFilterStatus}
-                    clearable
-                  />
-                </Grid.Col>
-              </Grid>
-            </Card.Section>
-
-            <Card.Section>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Date</Table.Th>
-                    <Table.Th>Class</Table.Th>
-                    <Table.Th>User</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Notes</Table.Th>
-                    <Table.Th>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {attendances.length > 0 ? (
-                    attendances.map((attendance) => (
-                      <Table.Tr key={attendance.id}>
-                        <Table.Td>
-                          {format(
-                            parseISO(attendance.attendanceDate),
-                            'MMM dd, yyyy HH:mm'
-                          )}
-                          {/* {JSON.stringify(attendance.attendanceDate)} */}
-                        </Table.Td>
-                        <Table.Td>{attendance.class?.name}</Table.Td>
-                        <Table.Td>
-                          {attendance.user?.profile?.firstName}{' '}
-                          {attendance.user?.profile?.lastName ||
-                            attendance.user?.email}
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={ATTENDANCE_STATUS_COLORS[attendance.status]}
-                            variant="light"
-                            size="sm"
-                          >
-                            {attendance.status}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>{attendance.notes}</Table.Td>
-                        <Table.Td>
-                          <Group gap={0}>
-                            <ActionIcon
-                              size="sm"
-                              color="blue"
-                              variant="subtle"
-                              onClick={() => handleOpenModal(attendance)}
-                            >
-                              <Pencil size={16} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              color="red"
-                              variant="subtle"
-                              onClick={() => handleDelete(attendance.id)}
-                            >
-                              <Trash size={16} />
-                            </ActionIcon>
-                          </Group>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))
-                  ) : (
-                    <Table.Tr>
-                      <Table.Td colSpan={6}>
-                        <Center py="xl">
-                          <Text c="dimmed">No attendance records found</Text>
-                        </Center>
-                      </Table.Td>
-                    </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </Card.Section>
-
-            <AdminPagination
-              label="attendance records"
-              totalItems={totalAttendances}
-              page={currentPage}
-              totalPages={totalPages}
-              route={routes.adminAttendances as RouteBuilder}
-              query={{
-                search: debouncedSearchQuery || undefined,
-                classId: filterClass || undefined,
-                userId: filterUser || undefined,
-                date: filterDate || undefined,
-                status: filterStatus || undefined,
-              }}
-              onPageChange={setCurrentPage}
-              pageSize={PAGE_SIZE}
+        <Grid p="md" gutter="md">
+          <Grid.Col span={{ base: 12 }}>
+            <TextInput
+              label="Search"
+              placeholder="Search by player, email, class, or notes"
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
             />
-          </Card>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              label="Filter by Class"
+              placeholder="All Classes"
+              data={classes.map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
+              value={filterClass}
+              onChange={setFilterClass}
+              clearable
+              searchable
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              label="Filter by User"
+              placeholder="All Users"
+              data={users.map((u) => ({
+                value: u.id,
+                label:
+                  `${u.profile?.firstName} ${u.profile?.lastName}` || u.email,
+              }))}
+              value={filterUser}
+              onChange={setFilterUser}
+              clearable
+              searchable
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <DateTimePicker
+              clearable
+              valueFormat="YYYY-MM-DD HH:mm"
+              label="Filter by Date"
+              placeholder="Attendance Date"
+              value={filterDate || ''}
+              onChange={setFilterDate}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Select
+              label="Filter by Status"
+              placeholder="All Status"
+              data={[
+                { value: 'PRESENT', label: 'Present' },
+                { value: 'ABSENT', label: 'Absent' },
+                { value: 'LATE', label: 'Late' },
+                { value: 'EXCUSED', label: 'Excused' },
+              ]}
+              value={filterStatus}
+              onChange={setFilterStatus}
+              clearable
+            />
+          </Grid.Col>
+        </Grid>
+      </Group>
 
-          <Modal
-            opened={opened}
-            onClose={handleCloseModal}
-            title={editingId ? 'Edit Attendance' : 'Add Attendance'}
-            centered
-          >
-            <Stack gap="md">
-              <Select
-                label="Class"
-                placeholder="Select a class"
-                data={classes.map((c) => ({
-                  value: c.id,
-                  label: c.name,
-                }))}
-                value={formData.classId}
-                onChange={(value) =>
-                  setFormData({ ...formData, classId: value || '' })
-                }
-                searchable
-                required
-              />
+      <CrudTable
+        data={attendances}
+        columns={columns as any}
+        isLoading={loading && !data}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-              <Select
-                label="User"
-                placeholder="Select a user"
-                data={users.map((u) => ({
-                  value: u.id,
-                  label:
-                    `${u.profile?.firstName} ${u.profile?.lastName}` || u.email,
-                }))}
-                value={formData.userId}
-                onChange={(value) =>
-                  setFormData({ ...formData, userId: value || '' })
-                }
-                searchable
-                required
-              />
+      {attendances.length > 0 && totalPages > 1 && (
+        <AdminPagination
+          label="attendance records"
+          totalItems={totalAttendances}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.adminAttendances as RouteBuilder}
+          query={{
+            search: debouncedSearchQuery || undefined,
+            classId: filterClass || undefined,
+            userId: filterUser || undefined,
+            date: filterDate || undefined,
+            status: filterStatus || undefined,
+          }}
+          onPageChange={setCurrentPage}
+          pageSize={PAGE_SIZE}
+        />
+      )}
 
-              <DateTimePicker
-                clearable
-                valueFormat="YYYY-MM-DD HH:mm"
-                label="Attendance Date"
-                placeholder="Attendance Date"
-                value={formData.attendanceDate}
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    attendanceDate: e as string,
-                  })
-                }}
-                required
-              />
-
-              <Select
-                label="Status"
-                placeholder="Select status"
-                data={[
-                  { value: 'PRESENT', label: 'Present' },
-                  { value: 'ABSENT', label: 'Absent' },
-                  { value: 'LATE', label: 'Late' },
-                  { value: 'EXCUSED', label: 'Excused' },
-                ]}
-                value={formData.status}
-                onChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    status: (value as any) || 'PRESENT',
-                  })
-                }
-                required
-              />
-
-              <Textarea
-                label="Notes"
-                placeholder="Optional notes about attendance"
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.currentTarget.value })
-                }
-              />
-
-              <Group justify="flex-end">
-                <Button variant="default" onClick={handleCloseModal}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>
-                  {editingId ? 'Update' : 'Create'}
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
-        </Stack>
-      </Container>
-    </AdminLayout>
+      <AttendanceModal
+        isOpen={opened}
+        onClose={handleCloseModal}
+        onSave={handleSave}
+        attendanceData={attendance}
+        classes={classes}
+        users={users}
+      />
+    </Container>
   )
 }

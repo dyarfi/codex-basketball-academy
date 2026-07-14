@@ -87,6 +87,9 @@ model User {
   // Site assets relation
   gallery             Gallery[] @relation("CreatedBy")
   invitations         InvitationLink[] @relation("CreatedBy") // 👈 One-to-many relationship
+  teamId              String?
+  team                AgeGroupTeam?  @relation("TeamPlayers", fields: [teamId], references: [id], onDelete: SetNull)
+  teamsAsCoach        AgeGroupTeam[] @relation("TeamCoach")
 
   @@index([email])
   @@index([role])
@@ -465,5 +468,22 @@ model InvitationLink {
   updatedAt    DateTime @updatedAt
 
   @@index(fields: [code, url, createdById])
+}
+
+// AgeGroupTeam Model
+model AgeGroupTeam {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  ageGroup    String   // e.g. "U-12", "U-14", "U-16", "U-18"
+  description String?
+  coachId     String?
+  coach       User?    @relation("TeamCoach", fields: [coachId], references: [id], onDelete: SetNull)
+  players     User[]   @relation("TeamPlayers")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ageGroup])
+  @@index([isActive])
 }
 

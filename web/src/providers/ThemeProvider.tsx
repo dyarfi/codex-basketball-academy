@@ -1,4 +1,9 @@
-import React, { createContext, useContext, useMemo, type ReactNode } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  type ReactNode,
+} from 'react'
 
 import { useLocalStorage } from '@mantine/hooks'
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import {
   Modal,
@@ -6,13 +6,20 @@ import {
   Select,
   Switch,
   Button,
+  Image,
   Group,
   Stack,
   Text,
   Tabs,
   NumberInput,
+  FileButton,
+  Box,
+  Avatar,
+  Tooltip,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+
+import { uploadCloud } from 'src/lib/fetch'
 
 interface UserModalProps {
   isOpen: boolean
@@ -21,6 +28,12 @@ interface UserModalProps {
   onSave: (data: Record<string, any>) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userData?: Record<string, any> // If present, it's an edit
+  teams?: Array<{
+    id: string
+    name: string
+    ageGroup?: string
+    isActive?: boolean
+  }>
   isLoading?: boolean
 }
 
@@ -29,13 +42,17 @@ const UserModal: React.FC<UserModalProps> = ({
   onClose,
   onSave,
   userData,
+  teams = [],
   isLoading = false,
 }) => {
+  const [fileUpload, setFileUpload] = useState<File | null>(null)
+  const [prepareSave, setPrepareSave] = useState<boolean | false>(false)
   const form = useForm({
     initialValues: {
       email: '',
       role: 'PLAYER',
       isActive: true,
+      teamId: '',
       profile: {
         firstName: '',
         lastName: '',
@@ -69,6 +86,7 @@ const UserModal: React.FC<UserModalProps> = ({
         email: userData.email || '',
         role: userData.role || 'PLAYER',
         isActive: userData.isActive !== undefined ? userData.isActive : true,
+        teamId: userData.teamId || '',
         profile: {
           firstName: userData.profile?.firstName || '',
           lastName: userData.profile?.lastName || '',
@@ -98,7 +116,9 @@ const UserModal: React.FC<UserModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, isOpen])
 
-  const handleSubmit = (values: typeof form.values) => {
+  const handleSubmit = async (values: typeof form.values) => {
+    // Set prepared submit
+    setPrepareSave(true)
     // Validate required profile fields
     if (!values.profile.firstName) {
       form.setFieldError('profile.firstName', 'First name is required')
@@ -108,7 +128,21 @@ const UserModal: React.FC<UserModalProps> = ({
       form.setFieldError('profile.lastName', 'Last name is required')
       return
     }
-
+    // Prepare upload
+    let uploaded: unknown = null
+    if (fileUpload) {
+      try {
+        // Upload to cloud folder
+        uploaded = await uploadCloud(fileUpload, 'profile')
+        form.setFieldValue('profile.profilePhoto', uploaded?.secure_url)
+      } catch (e) {
+        console.log(e)
+        form.setFieldError(
+          'profile.profilePhoto',
+          'Upload Profile Photo failed!'
+        )
+      }
+    }
     // Convert string numbers to actual numbers
     const processedValues = {
       ...values,
@@ -123,9 +157,23 @@ const UserModal: React.FC<UserModalProps> = ({
         weightKg: values.profile.weightKg
           ? parseFloat(values.profile.weightKg)
           : undefined,
+        profilePhoto: fileUpload
+          ? uploaded?.secure_url
+          : values.profile.profilePhoto,
       },
     }
-    onSave(processedValues)
+    // Process submit
+    try {
+      onSave(processedValues)
+    } catch (e) {
+      console.log(e)
+    }
+    setPrepareSave(false)
+  }
+
+  const onChangeFile = (value: any) => {
+    setFileUpload(value)
+    form.setFieldValue('profile.profilePhoto', value?.name)
   }
 
   return (
@@ -190,6 +238,52 @@ const UserModal: React.FC<UserModalProps> = ({
                 {...form.getInputProps('profile.dateOfBirth')}
               />
 
+              {/* <Group align="self-end" preventGrowOverflow={false} wrap="nowrap"> */}
+              <TextInput
+                // w={'100%'}
+                label="Profile Photo"
+                disabled
+                leftSection={
+                  userData?.profile.profilePhoto && (
+                    <Box>
+                      <Tooltip
+                        label={
+                          <Image src={userData?.profile.profilePhoto} h={400} />
+                        }
+                      >
+                        <Avatar
+                          // m={0}
+                          // p={0}
+                          radius={'none'}
+                          style={{ cursor: 'pointer' }}
+                          bd={'1px solid grey'}
+                          src={userData?.profile.profilePhoto}
+                          h={28}
+                          w={22}
+                        />
+                      </Tooltip>
+                    </Box>
+                  )
+                }
+                leftSectionWidth={48}
+                // leftSectionProps={{ padding: 'xs' }}
+                rightSection={
+                  <FileButton
+                    onChange={onChangeFile}
+                    accept="image/png,image/jpeg"
+                  >
+                    {(props) => (
+                      <Button {...props} size="xs">
+                        {userData?.profile.profilePhoto ? 'CHANGE' : 'SELECT'}
+                      </Button>
+                    )}
+                  </FileButton>
+                }
+                rightSectionWidth={87}
+                {...form.getInputProps('profile.profilePhoto')}
+              />
+              {/* </Group> */}
+
               <Select
                 label="Role"
                 placeholder="System role"
@@ -208,6 +302,22 @@ const UserModal: React.FC<UserModalProps> = ({
                 label="User is Active"
                 {...form.getInputProps('isActive', { type: 'checkbox' })}
               />
+
+              {form.values.role === 'PLAYER' && (
+                <Select
+                  label="Age Group Team"
+                  placeholder="No team assigned"
+                  data={teams
+                    .filter((team) => team.isActive !== false)
+                    .map((team) => ({
+                      value: team.id,
+                      label: `${team.name}${team.ageGroup ? ` (${team.ageGroup})` : ''}`,
+                    }))}
+                  searchable
+                  clearable
+                  {...form.getInputProps('teamId')}
+                />
+              )}
 
               {!userData && (
                 <Text size="xs" color="dimmed">
@@ -312,10 +422,20 @@ const UserModal: React.FC<UserModalProps> = ({
         </Tabs>
 
         <Group justify="flex-end" mt="xl">
-          <Button variant="default" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="default"
+            onClick={onClose}
+            // disabled={isLoading}
+            disabled={prepareSave}
+          >
             Cancel
           </Button>
-          <Button type="submit" loading={isLoading}>
+          <Button
+            type="submit"
+            loading={prepareSave}
+            disabled={isLoading}
+            loaderProps={{ type: 'dots' }}
+          >
             {userData ? 'Save Changes' : 'Create User'}
           </Button>
         </Group>

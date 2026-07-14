@@ -41,7 +41,7 @@ import { ModalSuccess } from '../Modal/ModalSuccess'
 
 import classes from './RadioCard.module.css'
 
-const SITE_NAME = process.env.SITE_NAME
+const APP_NAME = process.env.APP_NAME
 // const URL_API = process.env.URL_API
 
 // import { ImageCheckboxes, ImageRadioInputs } from "./ImageCheckBox";
@@ -391,7 +391,7 @@ export function FormTrial({
             src="images/half_logo.png"
             width={'100%'}
             height={'230'}
-            alt={SITE_NAME}
+            alt={APP_NAME}
           />
           <Box my={{ base: 0, md: 30 }} mx={{ base: 0, md: 10 }} c="dimmed">
             <b style={{ textTransform: 'uppercase' }}>Jadwal waktu & tempat</b>{' '}

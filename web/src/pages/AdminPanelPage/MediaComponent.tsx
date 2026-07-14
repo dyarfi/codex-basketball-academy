@@ -18,6 +18,7 @@ import {
   Input,
   Checkbox,
   CopyButton,
+  Center,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import {
@@ -32,11 +33,11 @@ import { IconAlertCircle, IconCopy, IconCopyCheck } from '@tabler/icons-react'
 
 import { useParams, routes } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import MediaForm from 'src/components/Common/MediaForm/MediaForm'
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
+import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import {
   GET_MEDIA_LISTS,
   CREATE_MEDIA,
@@ -74,12 +75,12 @@ export const MediaComponent = () => {
   )
   const [modalContent, setModalContent] = useState('')
 
-  const { toasts, success, error: toastError, removeToast } = useToast()
-
   // const [page, setPage] = useState(1)
-  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 500)
 
   const [editingMedia, setEditingMedia] = useState<any>(null)
+  const [isDeleteMediaModalOpen, setIsDeleteMediaModalOpen] = useState(false)
+  const [mediaIdToDelete, setMediaIdToDelete] = useState<number | null>(null)
   const hasMountedSearch = useRef(false)
 
   useEffect(() => {
@@ -118,31 +119,31 @@ export const MediaComponent = () => {
 
   const [createMediaMutation] = useMutation(CREATE_MEDIA, {
     onCompleted: () => {
-      success('Media created successfully')
+      toast.success('Media created successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create Media')
+      toast.error(err.message || 'Failed to create Media')
     },
   })
 
   const [updateMediaMutation] = useMutation(UPDATE_MEDIA, {
     onCompleted: () => {
-      success('Media updated successfully')
+      toast.success('Media updated successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update Media')
+      toast.error(err.message || 'Failed to update Media')
     },
   })
 
   const [deleteMediaMutation] = useMutation(DELETE_MEDIA, {
     onCompleted: () => {
-      success('Media deleted successfully')
+      toast.success('Media deleted successfully')
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete Media')
+      toast.error(err.message || 'Failed to delete Media')
     },
   })
 
@@ -179,7 +180,7 @@ export const MediaComponent = () => {
 
   const handleSaveMedia = async () => {
     if (!formData.name.trim() || !formData.url.trim()) {
-      toastError('Media name and URL are required')
+      toast.error('Media name and URL are required')
       return
     }
 
@@ -221,20 +222,25 @@ export const MediaComponent = () => {
       }
       close()
     } catch (error) {
-      toastError('Error saving media')
+      toast.error('Error saving media')
       console.error(error)
     }
   }
 
-  const handleDeleteMedia = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this media?')) {
-      return
-    }
+  const handleDeleteMedia = (id: number) => {
+    setMediaIdToDelete(id)
+    setIsDeleteMediaModalOpen(true)
+  }
+
+  const handleConfirmDeleteMedia = async () => {
+    if (!mediaIdToDelete) return
 
     try {
-      await deleteMediaMutation({ variables: { id } })
+      await deleteMediaMutation({ variables: { id: mediaIdToDelete } })
+      setIsDeleteMediaModalOpen(false)
+      setMediaIdToDelete(null)
     } catch (error) {
-      toastError('Error deleting media')
+      toast.error('Error deleting media')
       console.error(error)
     }
   }
@@ -307,7 +313,6 @@ export const MediaComponent = () => {
           Upload Media
         </Button>
       </Group>
-
       {/* Search Bar */}
       <Input
         placeholder="Search media by name, URL, or path..."
@@ -319,7 +324,6 @@ export const MediaComponent = () => {
         mb="lg"
         leftSection={<Upload size={16} />}
       />
-
       {medias.length === 0 ? (
         <Alert color="blue" icon={<Cloud />}>
           No media yet. Upload your first image to get started.
@@ -342,7 +346,7 @@ export const MediaComponent = () => {
                 <Table.Tr key={media.id}>
                   <Table.Td>
                     {isImageFile(media.mimeType) ? (
-                      <div className="relative h-12 w-12 overflow-hidden rounded border">
+                      <div className="relative h-12 w-12 overflow-hidden rounded border object-contain">
                         <Image
                           src={media.url}
                           alt={media.name}
@@ -410,7 +414,6 @@ export const MediaComponent = () => {
           </Table>
         </Box>
       )}
-
       {/* Pagination */}
       {totalPages > 1 && (
         <AdminPagination
@@ -426,16 +429,15 @@ export const MediaComponent = () => {
           pageSize={PAGE_SIZE}
         />
       )}
-
       {/* Upload Modal */}
       <Modal
         opened={opened}
         onClose={close}
         title="Upload Media"
-        size="lg"
-        h="full"
+        size="xl"
+        centered
       >
-        <Stack gap="md">
+        <Stack gap="md" h="full">
           {editingMedia ? (
             <>
               <TextInput
@@ -521,12 +523,11 @@ export const MediaComponent = () => {
           ) : (
             <>
               {/* Dropzone Form */}
-              <MediaForm />
+              <MediaForm size="xl" />
             </>
           )}
         </Stack>
       </Modal>
-
       {/* Preview Image Modal */}
       {modalOpened && modalContent && (
         <Modal
@@ -540,9 +541,16 @@ export const MediaComponent = () => {
           <Image src={modalContent} w={'100%'} alt={modalContent} />
         </Modal>
       )}
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <ConfirmDelete
+        isOpen={isDeleteMediaModalOpen}
+        title="Delete Media"
+        message="Are you sure you want to delete this media? This action cannot be undone."
+        onConfirm={handleConfirmDeleteMedia}
+        onCancel={() => {
+          setIsDeleteMediaModalOpen(false)
+          setMediaIdToDelete(null)
+        }}
+      />{' '}
     </Container>
   )
 }

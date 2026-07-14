@@ -14,20 +14,20 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPlus, IconSearch } from '@tabler/icons-react'
 
-import { routes, useParams } from '@redwoodjs/router'
+import { routes, useParams, navigate } from '@redwoodjs/router'
 import { useMutation, useQuery } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import PlayerStatsModal from 'src/components/Modals/PlayerStatsModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
 import {
   CREATE_PLAYER_STAT,
   DELETE_PLAYER_STAT,
   GET_PAGINATED_PLAYER_STATS,
   UPDATE_PLAYER_STAT,
+  GET_UNIQUE_GAME_NAME,
 } from 'src/graphql/player-stats-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
 
@@ -70,7 +70,7 @@ const toEndOfDayIso = (value: string) =>
 const PlayerStatsComponent = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, userId } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -78,6 +78,7 @@ const PlayerStatsComponent = () => {
   const [playerFilter, setPlayerFilter] = useState<string | null>(
     typeof userId === 'string' ? userId : null
   )
+  const [gameNameFilter, setGameNameFilter] = useState<string | null>()
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
@@ -90,6 +91,7 @@ const PlayerStatsComponent = () => {
     pageSize: PAGE_SIZE,
     search: debouncedSearchQuery || undefined,
     userId: playerFilter || undefined,
+    gameName: gameNameFilter || undefined,
     dateFrom: dateFrom ? toStartOfDayIso(dateFrom) : undefined,
     dateTo: dateTo ? toEndOfDayIso(dateTo) : undefined,
   }
@@ -101,6 +103,10 @@ const PlayerStatsComponent = () => {
     }
   )
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
+  const { data: { playerStatsByGameName } = [], loading: gameNameLoading } =
+    useQuery(GET_UNIQUE_GAME_NAME)
+  // console.log({ gameNameLoading })
+  // return false
 
   // const totalItems = usersData?.totalCount || 0
   // const totalPages =
@@ -110,12 +116,12 @@ const PlayerStatsComponent = () => {
     CREATE_PLAYER_STAT,
     {
       onCompleted: () => {
-        success('Player stats created successfully')
+        toast.success('Player stats created successfully')
         setIsModalOpen(false)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to create player stats')
+        toast.error(err.message || 'Failed to create player stats')
       },
       refetchQueries: [{ query: GET_PAGINATED_PLAYER_STATS, variables }],
       awaitRefetchQueries: true,
@@ -126,13 +132,13 @@ const PlayerStatsComponent = () => {
     UPDATE_PLAYER_STAT,
     {
       onCompleted: () => {
-        success('Player stats updated successfully')
+        toast.success('Player stats updated successfully')
         setIsModalOpen(false)
         setSelectedStat(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to update player stats')
+        toast.error(err.message || 'Failed to update player stats')
       },
       refetchQueries: [{ query: GET_PAGINATED_PLAYER_STATS, variables }],
       awaitRefetchQueries: true,
@@ -143,13 +149,13 @@ const PlayerStatsComponent = () => {
     DELETE_PLAYER_STAT,
     {
       onCompleted: () => {
-        success('Player stats deleted successfully')
+        toast.success('Player stats deleted successfully')
         setIsDeleteModalOpen(false)
         setSelectedStat(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to delete player stats')
+        toast.error(err.message || 'Failed to delete player stats')
       },
       refetchQueries: [{ query: GET_PAGINATED_PLAYER_STATS, variables }],
       awaitRefetchQueries: true,
@@ -164,6 +170,15 @@ const PlayerStatsComponent = () => {
   const players = useMemo(() => {
     return (usersData?.users || []).filter((u: any) => u.role === 'PLAYER')
   }, [usersData])
+
+  const gameOptions = useMemo(() => {
+    return (playerStatsByGameName || [{ value: '', label: '' }])
+      .filter(({ gameName }: any) => gameName != null && gameName !== '')
+      .map(({ gameName }: any) => ({
+        value: gameName,
+        label: gameName,
+      }))
+  }, [playerStatsByGameName])
 
   const playerOptions = useMemo(() => {
     return players.map((player: any) => ({
@@ -318,13 +333,23 @@ const PlayerStatsComponent = () => {
             Track and manage player game performance
           </Text>
         </div>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          onClick={handleCreate}
-          color="blue"
-        >
-          Add Player Stats
-        </Button>
+        <Group gap="xs">
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={() => navigate(routes.adminPlayerStatsLive())}
+            color="teal"
+            variant="light"
+          >
+            Add Live Stats
+          </Button>
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={handleCreate}
+            color="blue"
+          >
+            Add Player Stats
+          </Button>
+        </Group>
       </Group>
 
       <Group
@@ -339,6 +364,15 @@ const PlayerStatsComponent = () => {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.currentTarget.value)}
           className="flex-1"
+        />
+
+        <Select
+          placeholder="Filter by game name"
+          data={[{ value: '', label: 'All Game' }, ...gameOptions]}
+          value={gameNameFilter || ''}
+          onChange={(value) => setGameNameFilter(value || null)}
+          clearable
+          searchable
         />
 
         <Select
@@ -413,8 +447,6 @@ const PlayerStatsComponent = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }

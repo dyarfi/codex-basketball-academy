@@ -29,6 +29,43 @@ export const GET_GALLERIES = gql`
   }
 `
 
+export const GET_PAGINATED_GALLERIES = gql`
+  query GetPaginatedGalleries($page: Int!, $pageSize: Int!, $search: String) {
+    paginatedGalleries(page: $page, pageSize: $pageSize, search: $search) {
+      items {
+        id
+        name
+        slug
+        description
+        status
+        userId
+        user {
+          id
+          email
+          profile {
+            firstName
+            lastName
+          }
+        }
+        images {
+          id
+          name
+          description
+          image
+        }
+        createdAt
+        updatedAt
+      }
+      totalCount
+      currentPage
+      pageSize
+      totalPages
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+`
+
 export const GET_GALLERY = gql`
   query GetGallery($id: Int!) {
     gallery(id: $id) {

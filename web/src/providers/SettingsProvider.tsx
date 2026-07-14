@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
-import { useQuery } from '@apollo/client'
+import { useQuery } from '@redwoodjs/web'
 
 import { SITE_SETTINGS_QUERY } from 'src/graphql/mutations'
 
@@ -22,7 +22,9 @@ interface SettingsContextType {
   refetch: () => void
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined
+)
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -30,10 +32,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({})
   const [settingsList, setSettingsList] = useState<SiteSetting[]>([])
 
-  const { data, loading, error, refetch } = useQuery(SITE_SETTINGS_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 30000, // Refetch every 30 seconds
-  })
+  const { data, loading, error, refetch } = useQuery(
+    SITE_SETTINGS_QUERY
+    // , {
+    //   fetchPolicy: 'cache-and-network',
+    //   pollInterval: 30000, // Refetch every 30 seconds
+    // }
+  )
 
   useEffect(() => {
     if (data?.siteSettings) {

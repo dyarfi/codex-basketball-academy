@@ -33,6 +33,7 @@ export const GET_PAGINATED_PLAYER_STATS = gql`
     $pageSize: Int!
     $search: String
     $userId: String
+    $gameName: String
     $dateFrom: DateTime
     $dateTo: DateTime
   ) {
@@ -41,6 +42,7 @@ export const GET_PAGINATED_PLAYER_STATS = gql`
       pageSize: $pageSize
       search: $search
       userId: $userId
+      gameName: $gameName
       dateFrom: $dateFrom
       dateTo: $dateTo
     ) {
@@ -145,6 +147,34 @@ export const DELETE_PLAYER_STAT = gql`
   mutation DeletePlayerStat($id: String!) {
     deletePlayerStat(id: $id) {
       id
+    }
+  }
+`
+
+export const CREATE_BULK_PLAYER_STATS = gql`
+  mutation CreateBulkPlayerStats($inputs: [CreateBulkPlayerStatsInput!]!) {
+    createBulkPlayerStats(inputs: $inputs) {
+      id
+      userId
+      gameDate
+      gameName
+      points
+      rebounds
+      assists
+      steals
+      blocks
+      minutesPlayed
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+export const GET_UNIQUE_GAME_NAME = gql`
+  query GetPlayerStatsByGameName {
+    playerStatsByGameName {
+      id
+      gameName
     }
   }
 `

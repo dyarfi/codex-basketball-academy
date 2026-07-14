@@ -50,8 +50,25 @@ export const announcementLists: QueryResolvers['announcementLists'] = async ({
   }
 }
 
-export const publicAnnouncement: QueryResolvers['publicAnnouncement'] = () => {
-  return db.announcement.findFirst({ where: { isActive: true } })
+export const publicAnnouncement: QueryResolvers['publicAnnouncement'] = ({
+  notIn,
+}) => {
+  const now = new Date()
+  // logger.info('Fetching public announcement with notIn:', notIn)
+  console.log('Fetching public announcement with notIn:', notIn)
+  return db.announcement.findFirst({
+    where: {
+      ...(notIn && { id: { notIn: [...notIn] } }),
+      isActive: true,
+      OR: [{ showFrom: null }, { showFrom: { lte: now } }],
+      AND: [
+        {
+          OR: [{ showUntil: null }, { showUntil: { gte: now } }],
+        },
+      ],
+    },
+    orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+  })
 }
 
 export const announcements: QueryResolvers['announcements'] = () => {

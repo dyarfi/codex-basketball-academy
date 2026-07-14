@@ -8,7 +8,68 @@ import type {
 import { db } from 'src/lib/db'
 
 export const users: QueryResolvers['users'] = () => {
-  return db.user.findMany()
+  return db.user.findMany({
+    where: { isActive: true },
+    orderBy: { email: 'asc' },
+  })
+}
+
+export const usersQuery: QueryResolvers['usersQuery'] = async ({
+  search,
+  role,
+  isActive,
+}) => {
+  const conditions: Prisma.UserWhereInput[] = []
+  const searchTerm = search?.trim()
+
+  if (searchTerm) {
+    conditions.push({
+      OR: [
+        {
+          email: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          profile: {
+            is: {
+              firstName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          profile: {
+            is: {
+              lastName: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  if (role) {
+    conditions.push({ role })
+  }
+
+  if (typeof isActive === 'boolean') {
+    conditions.push({ isActive })
+  }
+
+  const where: Prisma.UserWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
+
+  return db.user.findMany({
+    where,
+    orderBy: { email: 'asc' },
+  })
 }
 
 export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
@@ -95,12 +156,13 @@ export const user: QueryResolvers['user'] = ({ id }) => {
 }
 
 export const createUser: MutationResolvers['createUser'] = ({ input }) => {
-  const { email, role, isActive, profile } = input
+  const { email, role, isActive, profile, teamId } = input
   return db.user.create({
     data: {
       email,
       role,
       isActive,
+      teamId: teamId || null,
       hashedPassword: '', // Placeholder - should be set via password reset or invitation email
       salt: '', // Placeholder - should be set via password reset or invitation email
       profile: {
@@ -138,6 +200,9 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
   const { profile, ...userInput } = input
 
   const updateData: Record<string, any> = { ...userInput }
+  if ('teamId' in updateData) {
+    updateData.teamId = updateData.teamId || null
+  }
 
   if (profile) {
     const {
@@ -242,5 +307,11 @@ export const User: UserRelationResolvers = {
   },
   classesAsTutor: (_obj, { root }) => {
     return db.user.findUnique({ where: { id: root?.id } }).classesAsTutor()
+  },
+  team: (_obj, { root }) => {
+    return db.user.findUnique({ where: { id: root?.id } }).team()
+  },
+  teamsAsCoach: (_obj, { root }) => {
+    return db.user.findUnique({ where: { id: root?.id } }).teamsAsCoach()
   },
 }

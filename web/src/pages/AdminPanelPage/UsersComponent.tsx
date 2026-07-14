@@ -11,14 +11,9 @@ import {
   Loader,
   Alert,
   ActionIcon,
+  Avatar,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  PDFDownloadLink,
-  Document,
-  Page,
-  Text as TextPdf,
-} from '@react-pdf/renderer'
 import {
   IconSearch,
   IconPlus,
@@ -29,21 +24,21 @@ import {
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import { useAuth } from 'src/auth'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import UserModal from 'src/components/Modals/UserModal'
-import { ToastContainer } from 'src/components/Toast/Toast'
-import { useToast } from 'src/components/Toast/useToast'
+import { GET_AGE_GROUP_TEAMS } from 'src/graphql/age-group-teams-queries'
 import {
   GET_PAGINATED_USERS,
   UPDATE_USER,
   DELETE_USER,
   CREATE_USER,
 } from 'src/graphql/users-queries'
-import { sendEmailMessage } from 'src/lib/fetch'
+// import { sendEmailMessage } from 'src/lib/fetch'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
 type RouteBuilder = (params?: RouteQuery) => string
@@ -57,7 +52,7 @@ const getPageFromParam = (value: unknown) => {
 const UsersPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, role } = useParams()
-  const { toasts, success, error: toastError, removeToast } = useToast()
+
   const { currentUser } = useAuth()
 
   const [searchQuery, setSearchQuery] = useState(
@@ -80,16 +75,23 @@ const UsersPage = () => {
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_USERS, {
     variables,
   })
+  const { data: teamsData } = useQuery(GET_AGE_GROUP_TEAMS)
+
+  const users = data?.paginatedUsers?.items || []
+  const totalUsers = data?.paginatedUsers?.totalCount || 0
+  const totalPages =
+    data?.paginatedUsers?.totalPages ??
+    Math.max(1, Math.ceil(totalUsers / PAGE_SIZE))
 
   const [updateUser, { loading: isUpdating }] = useMutation(UPDATE_USER, {
     onCompleted: () => {
-      success('User updated successfully')
+      toast.success('User updated successfully')
       setIsModalOpen(false)
       setSelectedUser(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update user')
+      toast.error(err.message || 'Failed to update user')
     },
     refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
     awaitRefetchQueries: true,
@@ -97,13 +99,13 @@ const UsersPage = () => {
 
   const [createUser, { loading: isCreating }] = useMutation(CREATE_USER, {
     onCompleted: () => {
-      success('User created successfully')
+      toast.success('User created successfully')
       setIsModalOpen(false)
       setSelectedUser(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create user')
+      toast.error(err.message || 'Failed to create user')
     },
     refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
     awaitRefetchQueries: true,
@@ -111,23 +113,17 @@ const UsersPage = () => {
 
   const [deleteUser, { loading: isDeleting }] = useMutation(DELETE_USER, {
     onCompleted: () => {
-      success('User deleted successfully')
+      toast.success('User deleted successfully')
       setIsDeleteModalOpen(false)
       setSelectedUser(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete user')
+      toast.error(err.message || 'Failed to delete user')
     },
     refetchQueries: [{ query: GET_PAGINATED_USERS, variables }],
     awaitRefetchQueries: true,
   })
-
-  const users = data?.paginatedUsers?.items || []
-  const totalUsers = data?.paginatedUsers?.totalCount || 0
-  const totalPages =
-    data?.paginatedUsers?.totalPages ??
-    Math.max(1, Math.ceil(totalUsers / PAGE_SIZE))
 
   const handleCreate = () => {
     setSelectedUser(null)
@@ -153,6 +149,7 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
+            teamId: values.role === 'PLAYER' ? values.teamId || null : null,
             profile: {
               firstName: values.profile.firstName,
               lastName: values.profile.lastName,
@@ -186,6 +183,7 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
+            teamId: values.role === 'PLAYER' ? values.teamId || null : null,
             profile: {
               firstName: values.profile.firstName,
               lastName: values.profile.lastName,
@@ -238,35 +236,15 @@ const UsersPage = () => {
       header: 'Name',
       render: (val: any, user: any) => (
         <Group>
+          <Avatar
+            src={user.profile.profilePhoto}
+            name={val?.firstName + ' ' + val?.lastName}
+            alt={val?.firstName + ' ' + val?.lastName}
+            variant="light"
+          />
           <Text size="sm">
             {val?.firstName} {val?.lastName}
           </Text>
-          {user.role === 'PLAYER' && (
-            <ActionIcon
-              size="sm"
-              onClick={() => {
-                setSelectedUser(val)
-              }}
-            >
-              <PDFDownloadLink
-                document={
-                  <Document>
-                    <Page>
-                      <TextPdf>First Name: {val?.firstName}</TextPdf>
-                      <TextPdf>Last Name: {val?.lastName}</TextPdf>
-                      <TextPdf>Birthdate: {val?.dateOfBirth}</TextPdf>
-                      <TextPdf>Position: {val?.position}</TextPdf>
-                      <TextPdf>Number:{val?.jerseyNumber}</TextPdf>
-                      <TextPdf>JSON:{JSON.stringify(val)}</TextPdf>
-                    </Page>
-                  </Document>
-                }
-                fileName={`${val?.firstName}-${val?.dateOfBirth}.pdf`}
-              >
-                <IconCloudDownload size="14" />
-              </PDFDownloadLink>
-            </ActionIcon>
-          )}
           {currentUser?.role === 'ADMIN'}
           <Button
             title="Reset Password"
@@ -295,6 +273,15 @@ const UsersPage = () => {
         }
         return <Badge color={colors[val] || 'gray'}>{val}</Badge>
       },
+    },
+    {
+      key: 'team',
+      header: 'Team',
+      render: (team: any) => (
+        <Text size="sm" c={team?.name ? undefined : 'dimmed'}>
+          {team?.name || 'Unassigned'}
+        </Text>
+      ),
     },
     {
       key: 'isActive',
@@ -422,6 +409,7 @@ const UsersPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         userData={selectedUser}
+        teams={teamsData?.ageGroupTeams || []}
         isLoading={selectedUser ? isUpdating : isCreating}
       />
 
@@ -433,8 +421,6 @@ const UsersPage = () => {
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </Container>
   )
 }
