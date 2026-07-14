@@ -24,6 +24,7 @@ import { format, parseISO } from 'date-fns'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useMutation, useQuery } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import { useAuth } from 'src/auth'
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
@@ -85,17 +86,20 @@ const AnnouncementComponent = () => {
     onCompleted: () => {
       refetch()
       handleCloseModal()
+      toast.success('Announcement Created Successfully')
     },
   })
   const [updateAnnouncement] = useMutation(UPDATE_ANNOUNCEMENT_MUTATION, {
     onCompleted: () => {
       refetch()
       handleCloseModal()
+      toast.success('Announcement Updated Successfully')
     },
   })
   const [deleteAnnouncement] = useMutation(DELETE_ANNOUNCEMENT_MUTATION, {
     onCompleted: () => {
       refetch()
+      toast.success('Announcement Deleted Successfully')
     },
   })
 
@@ -265,159 +269,159 @@ const AnnouncementComponent = () => {
       py={{ base: 'sm', sm: 'md', md: 'xl' }}
       px={{ base: 'xs', sm: 'md' }}
     >
-      <Stack gap="lg">
-        <Card bg="transparent">
-          <Card.Section py="md">
-            <Group justify="space-between">
-              <Text fw={500} size="lg">
-                Announcements
-              </Text>
-              <Button
-                leftSection={<Plus size={16} />}
-                onClick={() => handleOpenModal()}
-              >
-                Add Announcement
-              </Button>
-            </Group>
-          </Card.Section>
-
-          <Card.Section pb="md">
-            <Group
-              gap="md"
-              className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
-              grow={true}
+      {/* <Stack gap="lg"> */}
+      <Card bg="transparent" shadow="none">
+        <Card.Section py="md">
+          <Group justify="space-between">
+            <Text fw={500} size="lg">
+              Announcements
+            </Text>
+            <Button
+              leftSection={<Plus size={16} />}
+              onClick={() => handleOpenModal()}
             >
-              <TextInput
-                placeholder="Search by title or message..."
-                leftSection={<IconSearch size={16} />}
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.currentTarget.value)}
-                className="flex-1"
-              />
-            </Group>
-          </Card.Section>
+              Add Announcement
+            </Button>
+          </Group>
+        </Card.Section>
 
-          <Card.Section>
-            <CrudTable
-              data={announcements}
-              columns={columns as any}
-              isLoading={loading && !data}
-              onEdit={handleOpenModal}
-              onDelete={handleDelete}
+        <Card.Section pb="md">
+          <Group
+            gap="md"
+            className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
+            grow={true}
+          >
+            <TextInput
+              placeholder="Search by title or message..."
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              className="flex-1"
             />
-          </Card.Section>
+          </Group>
+        </Card.Section>
 
-          <AdminPagination
-            label="announcements"
-            totalItems={totalAnnouncements}
-            page={currentPage}
-            totalPages={totalPages}
-            route={routes.adminAnnouncements as RouteBuilder}
-            query={{
-              search: debouncedSearchQuery || undefined,
-            }}
-            onPageChange={setCurrentPage}
-            pageSize={PAGE_SIZE}
+        <Card.Section>
+          <CrudTable
+            data={announcements}
+            columns={columns as any}
+            isLoading={loading && !data}
+            onEdit={handleOpenModal}
+            onDelete={handleDelete}
           />
-        </Card>
+        </Card.Section>
 
-        <Modal
-          opened={opened}
-          onClose={handleCloseModal}
-          title={editingId ? 'Edit Announcement' : 'Add Announcement'}
-          centered
-        >
-          <Stack gap="md">
-            <TextInput
-              label="Title"
-              placeholder="Announcement title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.currentTarget.value })
-              }
-              required
-            />
-            <Textarea
-              label="Message"
-              placeholder="Announcement message"
-              value={formData.message}
-              onChange={(e) =>
-                setFormData({ ...formData, message: e.currentTarget.value })
-              }
-              required
-            />
-            <NumberInput
-              label="Priority"
-              placeholder="1"
-              min={0}
-              value={formData.priority}
-              onChange={(value) =>
-                setFormData({
-                  ...formData,
-                  priority:
-                    typeof value === 'number' ? value : Number(value) || 0,
-                })
-              }
-            />
-            <TextInput
-              label="Action Label"
-              placeholder="Join.."
-              value={formData.actionLabel}
-              onChange={(e) =>
-                setFormData({ ...formData, actionLabel: e.currentTarget.value })
-              }
-            />
-            <TextInput
-              label="Action URL"
-              placeholder="https://..."
-              value={formData.actionUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, actionUrl: e.currentTarget.value })
-              }
-            />
-            <Select
-              label="Type"
-              placeholder="Select type"
-              data={['INFO', 'SUCCESS', 'WARNING', 'ERROR']}
-              value={formData.type}
-              required
-              onChange={(value) =>
-                setFormData({ ...formData, type: value || 'INFO' })
-              }
-            />
-            <Switch
-              label="Dismissible"
-              checked={formData.isDismissible}
-              onChange={(event) =>
-                setFormData({
-                  ...formData,
-                  isDismissible: event.currentTarget.checked,
-                })
-              }
-              description="Dismiss not showing on user"
-            />
-            <Switch
-              label="Active"
-              checked={formData.isActive}
-              onChange={(event) =>
-                setFormData({
-                  ...formData,
-                  isActive: event.currentTarget.checked,
-                })
-              }
-              description="Not displayed on user"
-            />
-            <Group justify="flex-end">
-              <Button variant="default" onClick={handleCloseModal}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                {editingId ? 'Update' : 'Create'}
-              </Button>
-            </Group>
-          </Stack>
-        </Modal>
-      </Stack>
+        <AdminPagination
+          label="announcements"
+          totalItems={totalAnnouncements}
+          page={currentPage}
+          totalPages={totalPages}
+          route={routes.adminAnnouncements as RouteBuilder}
+          query={{
+            search: debouncedSearchQuery || undefined,
+          }}
+          onPageChange={setCurrentPage}
+          pageSize={PAGE_SIZE}
+        />
+      </Card>
+
+      <Modal
+        opened={opened}
+        onClose={handleCloseModal}
+        title={editingId ? 'Edit Announcement' : 'Add Announcement'}
+        centered
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Title"
+            placeholder="Announcement title"
+            value={formData.title}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.currentTarget.value })
+            }
+            required
+          />
+          <Textarea
+            label="Message"
+            placeholder="Announcement message"
+            value={formData.message}
+            onChange={(e) =>
+              setFormData({ ...formData, message: e.currentTarget.value })
+            }
+            required
+          />
+          <NumberInput
+            label="Priority"
+            placeholder="1"
+            min={0}
+            value={formData.priority}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                priority:
+                  typeof value === 'number' ? value : Number(value) || 0,
+              })
+            }
+          />
+          <TextInput
+            label="Action Label"
+            placeholder="Join.."
+            value={formData.actionLabel}
+            onChange={(e) =>
+              setFormData({ ...formData, actionLabel: e.currentTarget.value })
+            }
+          />
+          <TextInput
+            label="Action URL"
+            placeholder="https://..."
+            value={formData.actionUrl}
+            onChange={(e) =>
+              setFormData({ ...formData, actionUrl: e.currentTarget.value })
+            }
+          />
+          <Select
+            label="Type"
+            placeholder="Select type"
+            data={['INFO', 'SUCCESS', 'WARNING', 'ERROR']}
+            value={formData.type}
+            required
+            onChange={(value) =>
+              setFormData({ ...formData, type: value || 'INFO' })
+            }
+          />
+          <Switch
+            label="Dismissible"
+            checked={formData.isDismissible}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                isDismissible: event.currentTarget.checked,
+              })
+            }
+            description="Dismiss not showing on user"
+          />
+          <Switch
+            label="Active"
+            checked={formData.isActive}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                isActive: event.currentTarget.checked,
+              })
+            }
+            description="Not displayed on user"
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              {editingId ? 'Update' : 'Create'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      {/* </Stack> */}
     </Container>
   )
 }

@@ -21,7 +21,7 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import ProgramModal from 'src/components/Modals/ProgramModal'
-import { useToast } from 'src/components/Toast/useToast'
+import { toast } from '@redwoodjs/web/toast'
 import {
   GET_PAGINATED_PROGRAMS,
   CREATE_PROGRAM,
@@ -38,7 +38,7 @@ const getPageFromParam = (value: unknown) => {
 const ProgramsPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, level } = useParams()
-  const { success, error: toastError } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -64,12 +64,12 @@ const ProgramsPage = () => {
 
   const [createProgram, { loading: isCreating }] = useMutation(CREATE_PROGRAM, {
     onCompleted: () => {
-      success('Program created successfully')
+      toast.success('Program created successfully')
       setIsModalOpen(false)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create program')
+      toast.error(err.message || 'Failed to create program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,
@@ -77,13 +77,13 @@ const ProgramsPage = () => {
 
   const [updateProgram, { loading: isUpdating }] = useMutation(UPDATE_PROGRAM, {
     onCompleted: () => {
-      success('Program updated successfully')
+      toast.success('Program updated successfully')
       setIsModalOpen(false)
       setSelectedProgram(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update program')
+      toast.error(err.message || 'Failed to update program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,
@@ -91,13 +91,13 @@ const ProgramsPage = () => {
 
   const [deleteProgram, { loading: isDeleting }] = useMutation(DELETE_PROGRAM, {
     onCompleted: () => {
-      success('Program deleted successfully')
+      toast.success('Program deleted successfully')
       setIsDeleteModalOpen(false)
       setSelectedProgram(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete program')
+      toast.error(err.message || 'Failed to delete program')
     },
     refetchQueries: [{ query: GET_PAGINATED_PROGRAMS, variables }],
     awaitRefetchQueries: true,

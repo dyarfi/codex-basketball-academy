@@ -9,8 +9,9 @@ import { RedwoodApolloProvider } from '@redwoodjs/web/apollo'
 import FatalErrorPage from 'src/pages/FatalErrorPage'
 import { SettingsProvider } from 'src/providers/SettingsProvider'
 import { ThemeProvider, useAppTheme } from 'src/providers/ThemeProvider'
-import { ToastProvider } from 'src/providers/ToastProvider'
 import Routes from 'src/Routes'
+
+import theme from '../config/mantine.config'
 
 import './index.css'
 
@@ -24,12 +25,17 @@ const AppShell = () => {
           defaultColorScheme="light"
           forceColorScheme={colorScheme}
         />
-        <MantineProvider forceColorScheme={colorScheme}>
+        <MantineProvider forceColorScheme={colorScheme} theme={theme}>
           <RedwoodApolloProvider>
+            {/* <RedwoodApolloProvider
+            graphQLClientConfig={{
+              cacheConfig: {
+                addTypename: false, // Disables __typename generation globally
+              },
+            }}
+          > */}
             <SettingsProvider>
-              <ToastProvider>
-                <Routes />
-              </ToastProvider>
+              <Routes />
             </SettingsProvider>
           </RedwoodApolloProvider>
         </MantineProvider>

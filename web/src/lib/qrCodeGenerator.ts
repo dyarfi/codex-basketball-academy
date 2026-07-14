@@ -20,7 +20,7 @@ export async function generateCertificateQR(
     const baseUrl =
       typeof window !== 'undefined'
         ? window.location.origin
-        : process.env.PUBLIC_URL || 'https://example.com'
+        : process.env.APP_URL || 'https://example.com'
 
     // Build the public certificate verification URL
     const verificationUrl = `${baseUrl}/verify-certificate/${data.verificationCode}`

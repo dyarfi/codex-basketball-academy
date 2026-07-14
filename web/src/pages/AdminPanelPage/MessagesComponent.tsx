@@ -17,7 +17,7 @@ import { useQuery, useMutation } from '@redwoodjs/web'
 
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
-import { useToast } from 'src/components/Toast/useToast'
+import { toast } from '@redwoodjs/web/toast'
 import {
   GET_MESSAGES,
   CREATE_MESSAGE,
@@ -26,20 +26,20 @@ import {
 } from 'src/graphql/messages-queries'
 
 const MessagesComponent = () => {
-  const { success, error: toastError } = useToast()
+
   const { data, loading, error, refetch } = useQuery(GET_MESSAGES)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedMessage, setSelectedMessage] = useState<any>(null)
 
   const [deleteMessage, { loading: isDeleting }] = useMutation(DELETE_MESSAGE, {
     onCompleted: () => {
-      success('Message deleted successfully')
+      toast.success('Message deleted successfully')
       setIsDeleteModalOpen(false)
       setSelectedMessage(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete message')
+      toast.error(err.message || 'Failed to delete message')
     },
     refetchQueries: [{ query: GET_MESSAGES }],
     awaitRefetchQueries: true,

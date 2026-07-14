@@ -21,7 +21,7 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import ClassModal from 'src/components/Modals/ClassModal'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
-import { useToast } from 'src/components/Toast/useToast'
+import { toast } from '@redwoodjs/web/toast'
 import {
   GET_PAGINATED_CLASSES,
   CREATE_CLASS,
@@ -40,7 +40,7 @@ const getPageFromParam = (value: unknown) => {
 const ClassesPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId } = useParams()
-  const { success, error: toastError } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -69,12 +69,12 @@ const ClassesPage = () => {
 
   const [createClass, { loading: isCreating }] = useMutation(CREATE_CLASS, {
     onCompleted: () => {
-      success('Class created successfully')
+      toast.success('Class created successfully')
       setIsModalOpen(false)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create class')
+      toast.error(err.message || 'Failed to create class')
     },
     refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
     awaitRefetchQueries: true,
@@ -82,13 +82,13 @@ const ClassesPage = () => {
 
   const [updateClass, { loading: isUpdating }] = useMutation(UPDATE_CLASS, {
     onCompleted: () => {
-      success('Class updated successfully')
+      toast.success('Class updated successfully')
       setIsModalOpen(false)
       setSelectedClass(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update class')
+      toast.error(err.message || 'Failed to update class')
     },
     refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
     awaitRefetchQueries: true,
@@ -96,13 +96,13 @@ const ClassesPage = () => {
 
   const [deleteClass, { loading: isDeleting }] = useMutation(DELETE_CLASS, {
     onCompleted: () => {
-      success('Class deleted successfully')
+      toast.success('Class deleted successfully')
       setIsDeleteModalOpen(false)
       setSelectedClass(null)
       refetch()
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete class')
+      toast.error(err.message || 'Failed to delete class')
     },
     refetchQueries: [{ query: GET_PAGINATED_CLASSES, variables }],
     awaitRefetchQueries: true,

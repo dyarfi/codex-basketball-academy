@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import {
   Container,
@@ -20,12 +20,7 @@ import {
   Flex,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
-import {
-  Trash,
-  PencilSimple,
-  Plus,
-  Images as ImagesIcon,
-} from '@phosphor-icons/react'
+import { Plus, Images as ImagesIcon } from '@phosphor-icons/react'
 import {
   IconAdjustments,
   IconAlertCircle,
@@ -37,12 +32,13 @@ import {
 
 import { useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import FileLibraryPicker from 'src/components/Common/FileLibraryPicker/FileLibraryPicker'
-import { useToast } from 'src/components/Toast/useToast'
+import MediaForm from 'src/components/Common/MediaForm/MediaForm'
+import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import {
-  GET_GALLERIES,
   GET_PAGINATED_GALLERIES,
   CREATE_GALLERY,
   UPDATE_GALLERY,
@@ -67,13 +63,20 @@ export const GalleryComponent = () => {
   const { page = 1, search } = useParams()
 
   const [opened, { open, close }] = useDisclosure(false)
-  const { success, error: toastError } = useToast()
+
   const [mediaOpened, { open: openMedia, close: closeMedia }] =
     useDisclosure(false)
   const [editingGallery, setEditingGallery] = useState<any>(null)
   const [selectedGalleryId, setSelectedGalleryId] = useState<number | null>(
     null
   )
+  const [isDeleteGalleryModalOpen, setIsDeleteGalleryModalOpen] =
+    useState(false)
+  const [galleryIdToDelete, setGalleryIdToDelete] = useState<number | null>(
+    null
+  )
+  const [isDeleteMediaModalOpen, setIsDeleteMediaModalOpen] = useState(false)
+  const [mediaIdToDelete, setMediaIdToDelete] = useState<number | null>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(() => getPageFromParam(page))
@@ -93,6 +96,8 @@ export const GalleryComponent = () => {
     description: '',
     image: '',
   })
+  // Medias Uploaded
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({})
 
   // Pagination variables
   const variables = {
@@ -112,7 +117,14 @@ export const GalleryComponent = () => {
     if (file?.url) {
       setMediaFormData({ ...mediaFormData, image: file?.url })
     }
-  }, [file?.url])
+  }, [file?.url, mediaFormData])
+
+  useEffect(() => {
+    if (uploadedFiles?.length) {
+      setMediaFormData({ ...mediaFormData, image: uploadedFiles[0]?.url })
+      setUploadedFiles({})
+    }
+  }, [mediaFormData, uploadedFiles])
 
   const { data: galleryData } = useQuery(GET_GALLERY, {
     variables: { id: selectedGalleryId },
@@ -122,10 +134,10 @@ export const GalleryComponent = () => {
   const [createGalleryMutation] = useMutation(CREATE_GALLERY, {
     refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     onCompleted: () => {
-      success('Gallery created successfully')
+      toast.success('Gallery created successfully')
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create Gallery')
+      toast.error(err.message || 'Failed to create Gallery')
     },
     awaitRefetchQueries: true,
   })
@@ -134,10 +146,10 @@ export const GalleryComponent = () => {
     refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      success('Gallery updated successfully')
+      toast.success('Gallery updated successfully')
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to update Gallery')
+      toast.error(err.message || 'Failed to update Gallery')
     },
   })
 
@@ -145,10 +157,10 @@ export const GalleryComponent = () => {
     refetchQueries: [{ query: GET_PAGINATED_GALLERIES, variables }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      success('Gallery deleted successfully')
+      toast.success('Gallery deleted successfully')
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete Gallery')
+      toast.error(err.message || 'Failed to delete Gallery')
     },
   })
 
@@ -158,10 +170,10 @@ export const GalleryComponent = () => {
       { query: GET_PAGINATED_GALLERIES, variables },
     ],
     onCompleted: () => {
-      success('Gallery Media created successfully')
+      toast.success('Gallery Media created successfully')
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to create Gallery')
+      toast.error(err.message || 'Failed to create Gallery')
     },
   })
 
@@ -171,10 +183,10 @@ export const GalleryComponent = () => {
       { query: GET_PAGINATED_GALLERIES, variables },
     ],
     onCompleted: () => {
-      success('Gallery Media deleted successfully')
+      toast.success('Gallery Media deleted successfully')
     },
     onError: (err) => {
-      toastError(err.message || 'Failed to delete Gallery')
+      toast.error(err.message || 'Failed to delete Gallery')
     },
   })
 
@@ -204,7 +216,7 @@ export const GalleryComponent = () => {
 
   const handleSaveGallery = async () => {
     if (!formData.name.trim()) {
-      toastError('Gallery name is required')
+      toast.error('Gallery name is required')
       return
     }
 
@@ -232,20 +244,25 @@ export const GalleryComponent = () => {
       }
       close()
     } catch (error) {
-      toastError('Error saving gallery')
+      toast.error('Error saving gallery')
       console.error(error)
     }
   }
 
-  const handleDeleteGallery = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this gallery?')) {
-      return
-    }
+  const handleDeleteGallery = (id: number) => {
+    setGalleryIdToDelete(id)
+    setIsDeleteGalleryModalOpen(true)
+  }
+
+  const handleConfirmDeleteGallery = async () => {
+    if (!galleryIdToDelete) return
 
     try {
-      await deleteGalleryMutation({ variables: { id } })
+      await deleteGalleryMutation({ variables: { id: galleryIdToDelete } })
+      setIsDeleteGalleryModalOpen(false)
+      setGalleryIdToDelete(null)
     } catch (error) {
-      toastError('Error deleting gallery')
+      toast.error('Error deleting gallery')
       console.error(error)
     }
   }
@@ -259,11 +276,11 @@ export const GalleryComponent = () => {
 
   const handleSaveMedia = async () => {
     if (!mediaFormData.image.trim()) {
-      toastError('Select an image first')
+      toast.error('Select an image first')
       return
     }
     if (!mediaFormData.name.trim() || !mediaFormData.description.trim()) {
-      toastError('Image name and Description are required')
+      toast.error('Image name and Description are required')
       return
     }
 
@@ -281,19 +298,25 @@ export const GalleryComponent = () => {
       setMediaFormData({ name: '', description: '', image: '' })
       closeMedia()
     } catch (error) {
-      toastError('Error adding image')
+      toast.error('Error adding image')
       console.error(error)
     }
   }
 
-  const handleDeleteMedia = async (mediaId: number) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) {
-      return
-    }
+  const handleDeleteMedia = (mediaId: number) => {
+    setMediaIdToDelete(mediaId)
+    setIsDeleteMediaModalOpen(true)
+  }
+
+  const handleConfirmDeleteMedia = async () => {
+    if (!mediaIdToDelete) return
+
     try {
-      await deleteGalleryMediaMutation({ variables: { id: mediaId } })
+      await deleteGalleryMediaMutation({ variables: { id: mediaIdToDelete } })
+      setIsDeleteMediaModalOpen(false)
+      setMediaIdToDelete(null)
     } catch (error) {
-      toastError('Error deleting image')
+      toast.error('Error deleting image')
       console.error(error)
     }
   }
@@ -375,7 +398,7 @@ export const GalleryComponent = () => {
             {galleries.map((gallery: any) => (
               <Grid.Col key={gallery.id} span={{ base: 12, sm: 6, md: 4 }}>
                 <Card
-                  shadow="sm"
+                  shadow="none"
                   padding="md"
                   radius="md"
                   className={`${surfaceClass} border`}
@@ -384,23 +407,26 @@ export const GalleryComponent = () => {
                     p="md"
                     className={isDark ? 'bg-slate-800' : 'bg-slate-100'}
                   >
-                    <Group justify="space-between" align="flex-start">
-                      <div>
+                    <Box>
+                      <Group justify="space-between" align="stretch" mb={2}>
                         <Text fw={600} size="sm" lineClamp={1}>
                           {gallery.name}
                         </Text>
-                        <Text
-                          size="xs"
-                          className="text-slate-500"
-                          lineClamp={2}
+                        <Badge
+                          size="sm"
+                          variant="light"
+                          // pos={'absolute'}
+                          // right={4}
+                          // top={4}
                         >
-                          {gallery.description || 'No description'}
-                        </Text>
-                      </div>
-                      <Badge size="sm" variant="light">
-                        {gallery.images?.length || 0} images
-                      </Badge>
-                    </Group>
+                          {gallery.images?.length || 0} images
+                        </Badge>
+                      </Group>
+                      <Text size="xs" className="text-slate-500" lineClamp={2}>
+                        {gallery.description.substring(0, 60) ||
+                          'No description'}
+                      </Text>
+                    </Box>
                   </Card.Section>
 
                   <Stack gap="xs" mt="md">
@@ -432,9 +458,11 @@ export const GalleryComponent = () => {
                         ))}
                       </Group>
                     ) : (
-                      <Text size="xs" c="gray">
-                        Empty, please add your image media first
-                      </Text>
+                      <Box h="full">
+                        <Text size="xs" c="gray">
+                          Empty, please add your image media first
+                        </Text>
+                      </Box>
                     )}
 
                     <Group grow>
@@ -523,20 +551,32 @@ export const GalleryComponent = () => {
         title="Add Image to Gallery"
         size="lg"
       >
-        <Stack gap="md">
-          <Box>
-            <Flex display={'inline'}>
-              <Button
-                onClick={openPicker}
-                radius={4}
-                size="xs"
-                leftSection={<IconAdjustments size={18} />}
-              >
-                Select Image
-              </Button>
-              <PickerModal component={FileLibraryPicker} />
-            </Flex>
-          </Box>
+        <Stack gap="sm">
+          <Group>
+            <Button
+              onClick={openPicker}
+              radius={4}
+              size="xs"
+              leftSection={<IconAdjustments size={18} />}
+            >
+              Select Image
+            </Button>
+            <PickerModal component={FileLibraryPicker} />
+            <MediaForm
+              size="xs"
+              mode="single"
+              type="button"
+              onUploaded={setUploadedFiles}
+            />
+            {/* <MediaForm
+              size="xs"
+              type="default"
+              onUploaded={(files) => {
+                // console.log({ files })
+                handleOnUploaded(files)
+              }}
+            /> */}
+          </Group>
           <Box>
             {mediaFormData.image && (
               <>
@@ -629,6 +669,28 @@ export const GalleryComponent = () => {
           </Group>
         </Stack>
       </Modal>
+
+      <ConfirmDelete
+        isOpen={isDeleteGalleryModalOpen}
+        title="Delete Gallery"
+        message="Are you sure you want to delete this gallery? This action will permanently remove the gallery and all associated images."
+        onConfirm={handleConfirmDeleteGallery}
+        onCancel={() => {
+          setIsDeleteGalleryModalOpen(false)
+          setGalleryIdToDelete(null)
+        }}
+      />
+
+      <ConfirmDelete
+        isOpen={isDeleteMediaModalOpen}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        onConfirm={handleConfirmDeleteMedia}
+        onCancel={() => {
+          setIsDeleteMediaModalOpen(false)
+          setMediaIdToDelete(null)
+        }}
+      />
     </Container>
   )
 }

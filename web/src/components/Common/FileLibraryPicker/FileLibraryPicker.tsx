@@ -40,6 +40,7 @@ export default function FileLibraryPicker({
 
   return (
     <Modal
+      withOverlay={false}
       opened={opened}
       onClose={onClose}
       size="xl"

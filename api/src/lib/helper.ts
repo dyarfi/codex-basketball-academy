@@ -30,7 +30,7 @@ async function generateCertificateQRCode(certificateData: {
 }): Promise<string> {
   try {
     // Get the base URL from environment or use a default
-    const baseUrl = process.env.PUBLIC_URL || 'https://example.com'
+    const baseUrl = process.env.APP_URL || 'https://example.com'
 
     // Build the public certificate verification URL
     const verificationUrl = `${baseUrl}/verify-certificate/${certificateData.verificationCode}`

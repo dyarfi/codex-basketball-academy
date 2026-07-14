@@ -53,7 +53,7 @@ export const mediaLists: QueryResolvers['mediaLists'] = async ({
       take: LIST_PER_PAGE,
       skip: offset,
       ...searchParams,
-      orderBy: { id: 'desc' },
+      orderBy: { uploadedAt: 'desc' },
     }),
   }
 

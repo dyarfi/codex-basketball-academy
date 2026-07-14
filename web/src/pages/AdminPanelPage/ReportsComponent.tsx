@@ -11,6 +11,7 @@ import {
   Loader,
   Button,
   Badge,
+  Table,
 } from '@mantine/core'
 import { DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import gql from 'graphql-tag'
@@ -70,6 +71,20 @@ const GET_REPORT_DATA = gql`
         id
       }
     }
+    topPerformers {
+      # userId
+      shooting
+      dribbling
+      defense
+      basketballIQ
+      athleticism
+      overallScore
+      user {
+        profile {
+          firstName
+        }
+      }
+    }
   }
 `
 
@@ -96,6 +111,15 @@ interface ReportData {
     id: string
     program: { name: string }
     enrollments: Array<{ id: string }>
+  }>
+  topPerformers?: Array<{
+    user: Record<string, string>
+    shooting: number
+    dribbling: number
+    defense: number
+    basketballIQ: number
+    athleticism: number
+    overallScore: number
   }>
 }
 
@@ -213,6 +237,12 @@ const ReportsPage = () => {
     return stats
   }, [reportData])
 
+  // Top Performer statistics
+  const topPerformers = useMemo(() => {
+    if (!reportData?.topPerformers) return
+    return reportData?.topPerformers
+  }, [reportData])
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
   const handleExportData = () => {
@@ -245,8 +275,6 @@ const ReportsPage = () => {
       </Container>
     )
   }
-
-  console.log({ data, reportData })
 
   return (
     <Container
@@ -453,6 +481,46 @@ const ReportsPage = () => {
                 </Group>
               ))}
             </Stack>
+          </Card>
+        </Grid.Col>
+
+        {/* User Distribution */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+            <Text fw={600} mb="md">
+              Top Performers
+            </Text>
+            <Table withRowBorders={false} fz={'xs'}>
+              <Table.Tr fw={'normal'}>
+                <Table.Th>Name</Table.Th>
+                <Table.Th>Athleticism</Table.Th>
+                <Table.Th>Basketball IQ</Table.Th>
+                <Table.Th>Defense</Table.Th>
+                <Table.Th>Dribbling</Table.Th>
+                <Table.Th>Shooting</Table.Th>
+                <Table.Th>Overall</Table.Th>
+              </Table.Tr>
+              <Table.Tbody>
+                {topPerformers.map((performer, index) => (
+                  <Table.Tr key={performer.id} justify="space-between">
+                    <Table.Td>
+                      <Badge
+                        color={COLORS[index % COLORS.length]}
+                        variant="light"
+                      >
+                        {performer.user.profile.firstName}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>{performer.athleticism}</Table.Td>
+                    <Table.Td>{performer.basketballIQ}</Table.Td>
+                    <Table.Td>{performer.defense}</Table.Td>
+                    <Table.Td>{performer.dribbling}</Table.Td>
+                    <Table.Td>{performer.shooting}</Table.Td>
+                    <Table.Td>{performer.overallScore}/100</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
           </Card>
         </Grid.Col>
       </Grid>

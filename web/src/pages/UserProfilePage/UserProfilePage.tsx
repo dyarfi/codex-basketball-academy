@@ -1,8 +1,10 @@
 import { useState } from 'react'
 
 import { Link, navigate } from '@redwoodjs/router'
+import { useMutation } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
+import { UPDATE_USER } from 'src/graphql/users-queries'
 
 type Enrollment = {
   id: string
@@ -37,16 +39,31 @@ const UserProfilePage = () => {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [updateUser, { loading: isUpdating }] = useMutation(UPDATE_USER, {
+    onCompleted: () => {
+      // toast.success('User updated successfully')
+      // setIsModalOpen(false)
+      // setSelectedUser(null)
+      // refetch()
+      console.log('success')
+    },
+    onError: (err) => {
+      // toast.error(err.message || 'Failed to update user')
+      console.log({ err })
+    },
+    // refetchQueries: [{ query: AUTH_GET_CURRENT_USER, variables }],
+    // awaitRefetchQueries: true,
+  })
 
   const [editFormData, setEditFormData] = useState({
     firstName: currentUser?.profile?.firstName || '',
     lastName: currentUser?.profile?.lastName || '',
     email: currentUser?.email || '',
-    phoneNumber: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    phoneNumber: currentUser?.profile?.phoneNumber,
+    address: currentUser?.profile?.address,
+    city: currentUser?.profile?.city,
+    state: currentUser?.profile?.state,
+    zipCode: currentUser?.profile?.zipCode,
   })
 
   // Mock data
@@ -152,6 +169,40 @@ const UserProfilePage = () => {
     setIsEditing(true)
     // Simulate API call
     setTimeout(() => {
+      updateUser({
+        variables: {
+          id: currentUser.id,
+          input: {
+            // email: values.email,
+            // role: values.role,
+            // isActive: values.isActive,
+            // teamId: values.role === 'PLAYER' ? values.teamId || null : null,
+            profile: {
+              firstName: editFormData.firstName,
+              lastName: editFormData.lastName,
+              // dateOfBirth: values.profile.dateOfBirth
+              //   ? new Date(values.profile.dateOfBirth).toISOString()
+              //   : null,
+              phoneNumber: editFormData.phoneNumber || null,
+              address: editFormData.address || null,
+              city: editFormData.city || null,
+              state: editFormData.state || null,
+              // zipCode: values.profile.zipCode || null,
+              // country: values.profile.country || null,
+              // position: values.profile.position || null,
+              // jerseyNumber: values.profile.jerseyNumber || null,
+              // heightCm: values.profile.heightCm || null,
+              // weightKg: values.profile.weightKg || null,
+              // medicalInfo: values.profile.medicalInfo || null,
+              // emergencyContactName: values.profile.emergencyContactName || null,
+              // emergencyContactPhone:
+              // values.profile.emergencyContactPhone || null,
+              // relationshipToPlayer: values.profile.relationshipToPlayer || null,
+              // profilePhoto: values.profile.profilePhoto || null,
+            },
+          },
+        },
+      })
       setIsEditing(false)
       setShowEditModal(false)
     }, 1000)

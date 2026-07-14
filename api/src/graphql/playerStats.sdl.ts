@@ -28,11 +28,13 @@ export const schema = gql`
   type Query {
     playerStats: [PlayerStats!]! @requireAuth
     playerStat(id: String!): PlayerStats @requireAuth
+    playerStatsByGameName: [PlayerStats!]! @requireAuth
     paginatedPlayerStats(
       page: Int = 1
       pageSize: Int = 10
       search: String
       userId: String
+      gameName: String
       dateFrom: DateTime
       dateTo: DateTime
     ): PaginatedPlayerStats! @requireAuth
@@ -67,5 +69,20 @@ export const schema = gql`
     updatePlayerStat(id: String!, input: UpdatePlayerStatInput!): PlayerStats!
       @requireAuth
     deletePlayerStat(id: String!): PlayerStats! @requireAuth
+    createBulkPlayerStats(
+      inputs: [CreateBulkPlayerStatsInput!]!
+    ): [PlayerStats!]! @requireAuth
+  }
+
+  input CreateBulkPlayerStatsInput {
+    userId: String!
+    gameDate: DateTime!
+    gameName: String!
+    points: Int!
+    rebounds: Int!
+    assists: Int!
+    steals: Int!
+    blocks: Int!
+    minutesPlayed: Int!
   }
 `

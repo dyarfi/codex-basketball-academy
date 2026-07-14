@@ -1,3 +1,6 @@
+import React from 'react'
+
+import { render } from '@react-email/render'
 const C_API_KEY = process.env.CLOUDINARY_API_KEY
 const C_API_SCR = process.env.CLOUDINARY_API_SECRET
 const C_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET
@@ -9,6 +12,30 @@ const C_LC_URL = `https://api.cloudinary.com/v1_1/${C_CLOUD}/resources/search`
 const KEY_BREVO = process.env.KEY_BREVO
 const APP_NAME = process.env.APP_NAME
 const APP_URL = process.env.APP_URL
+
+import {
+  templateEmailCertificate,
+  templateConfirmEmail,
+} from './emailTemplates'
+// // Sending a confirmation email
+// await sendEmailMessage({
+//   template: 'confirmEmail',
+//   subject: 'Confirm your account',
+//   to: [{ name: 'User Name', email: 'user@example.com' }],
+//   url: 'https://example.com/confirm?token=123'
+// })
+
+// // Default certificate email (backward compatible)
+// await sendEmailMessage({
+//   subject: 'Your Certificate',
+//   messages: 'Congratulations on completing the course!',
+//   to: [{ name: 'User Name', email: 'user@example.com' }]
+// })
+
+const templateEmails = {
+  confirmEmail: templateConfirmEmail,
+  emailCertificate: templateEmailCertificate,
+}
 
 export function uploadCloud(file: any, folder: string) {
   return new Promise((resolve, reject) => {
@@ -70,10 +97,12 @@ export function listCloud() {
 }
 
 export async function sendEmailMessage({
+  template = 'emailCertificate',
   subject = 'Hello World',
   sender = { name: APP_NAME as string, email: 'defrian.yarfi@gmail.com' },
   to = [{ name: 'John Doe', email: 'defrian.yarfi@gmail.com' }],
   messages = 'This is a test email sent from the application.',
+  url = '',
   attachment = [
     {
       content: '',
@@ -83,23 +112,27 @@ export async function sendEmailMessage({
   ],
   sandbox = false,
 }: {
+  template?: keyof typeof templateEmails
   subject: string
   sender?: { name: string; email: string }
-  to?: [{ name: string; email: string }]
+  to?: { name: string; email: string }[]
   phone?: number
   messages?: string
-  attachment?: [
-    {
-      content: string // Base64-encoded attachment data
-      name: string // Attachment filename. Required when content is provided.
-      url?: string // Absolute URL of the attachment. Local file paths are not supported.
-    },
-  ]
+  url?: string
+  attachment?: {
+    content: string // Base64-encoded attachment data
+    name: string // Attachment filename. Required when content is provided.
+    url?: string // Absolute URL of the attachment. Local file paths are not supported.
+  }[]
   sandbox?: boolean
 }) {
   // Brevo API endpoint and payload construction
-  const url = 'https://api.brevo.com/v3/smtp/email'
-  const htmlContent = templateEmailCertificate({ subject, to, messages })
+  const urlBrevo = 'https://api.brevo.com/v3/smtp/email'
+  const selectedTemplate =
+    templateEmails[template] || templateEmails.emailCertificate
+  const htmlContent = await render(
+    selectedTemplate({ subject, to, messages, url }) as React.ReactElement
+  )
   // Construct the payload for Brevo API
   const payload = {
     sender,
@@ -117,7 +150,7 @@ export async function sendEmailMessage({
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(urlBrevo, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
@@ -133,40 +166,4 @@ export async function sendEmailMessage({
   } catch (error) {
     console.error('Network or fetch error:', error)
   }
-}
-
-export function templateEmailCertificate({
-  subject = 'Hello World',
-  to = [{ name: 'John Doe', email: '' }],
-  messages = 'This is a test email sent from the application.',
-}) {
-  return `<!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <title>Certificate</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <!-- Tailwind CSS v4 -->
-            <script src="https://cdn.tailwindcss.com"></script>
-          </head>
-          <body class="bg-gray-100">
-            <div class="max-w-md mx-auto bg-white shadow-lg p-4 rounded-lg mt-10">
-              <!-- Header -->
-              <header class="mb-4">
-                <h1 class="text-2xl font-bold text-center">${subject}</h1>
-              </header>
-              <!-- Certificate Details -->
-              <main>
-                <p>Dear ${to[0]?.name || 'Customer'},</p>
-                <p class="text-gray-700 mb-2">Thank you for your participation. Below are your certificate details:</p>
-                <p class="text-gray-700 mb-2">${messages}</p>
-                <a href="#" class="block bg-red-900 text-white text-center px-4 py-2 rounded mt-4">View Details</a>
-              </main>
-              <!-- Footer -->
-              <footer class="mt-4 text-center text-gray-600">
-                <p>For any questions, contact support. <a href="${APP_URL}" target="_blank">${APP_NAME}</a></p>
-              </footer>
-            </div>
-          </body>
-          </html>`
 }

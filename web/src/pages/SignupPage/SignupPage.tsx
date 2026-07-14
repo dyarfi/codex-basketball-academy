@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import { Link, navigate } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
-import { useToast } from 'src/components/Toast/useToast'
+import { toast } from '@redwoodjs/web/toast'
 
 const SignupPage = () => {
-  const { success, error: toastError } = useToast()
+
   const { isAuthenticated, loading: isLoading, signUp } = useAuth()
   const [loading, setLoading] = useState(false)
 
@@ -102,14 +102,14 @@ const SignupPage = () => {
       if (response.message) {
         success(response.message)
       } else if (response.error) {
-        toastError(response.error)
+        toast.error(response.error)
       } else {
         // user is signed in automatically
-        success('Welcome!')
+        toast.success('Welcome!')
       }
       setLoading(false)
     } catch (err: any) {
-      toastError(err.message || 'Signup failed')
+      toast.error(err.message || 'Signup failed')
       setLoading(false)
     }
   }

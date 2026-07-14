@@ -32,6 +32,7 @@ import {
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
 import { useRoutePath } from '@redwoodjs/router'
+import { Toaster } from '@redwoodjs/web/toast'
 
 import { useAuth } from 'src/auth'
 import ThemeToggle from 'src/components/ThemeToggle/ThemeToggle'
@@ -88,7 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             Access Denied
           </h1>
           <p className={`mb-4 ${textMutedClass}`}>
-            You don't have permission to access this page.
+            {`You don't have permission to access this page.`}
           </p>
           <button
             onClick={() => navigate('/dashboard')}
@@ -128,6 +129,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       label: 'Classes Management',
       icon: <CalendarDotsIcon size={16} weight="bold" />,
       href: '/admin-panel/classes',
+    },
+    {
+      label: 'Age Group Teams',
+      icon: <UsersIcon size={16} weight="bold" />,
+      href: '/admin-panel/age-group-teams',
     },
     {
       label: 'Enrollments Management',
@@ -193,6 +199,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const isActive = (href: string) =>
     href !== '/admin-panel' && routePath?.startsWith(href)
+
+  // console.log({ location: location.pathname })
+  // console.log({ location: routes })
 
   return (
     <AppShell
@@ -286,7 +295,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   className="cursor-pointer"
                 />
               </Menu.Target>
-
               <Menu.Dropdown>
                 <Menu.Item>
                   <Link to="/profile">
@@ -306,6 +314,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </Menu>
           </Group>
         </Group>
+        <Toaster position="top-right" />
       </AppShell.Header>
       <AppShell.Main className={panelClass}>{children}</AppShell.Main>
     </AppShell>

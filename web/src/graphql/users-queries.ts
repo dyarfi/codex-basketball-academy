@@ -10,8 +10,13 @@ export const GET_USERS = gql`
       email
       role
       isActive
+      teamId
       createdAt
       updatedAt
+      team {
+        id
+        name
+      }
       profile {
         firstName
         lastName
@@ -40,8 +45,13 @@ export const GET_PAGINATED_USERS = gql`
         email
         role
         isActive
+        teamId
         createdAt
         updatedAt
+        team {
+          id
+          name
+        }
         profile {
           firstName
           lastName
@@ -83,6 +93,11 @@ export const GET_USER = gql`
       email
       role
       isActive
+      teamId
+      team {
+        id
+        name
+      }
       profile {
         firstName
         lastName
@@ -117,6 +132,11 @@ export const UPDATE_USER = gql`
       email
       role
       isActive
+      teamId
+      team {
+        id
+        name
+      }
       profile {
         firstName
         lastName
@@ -151,6 +171,11 @@ export const CREATE_USER = gql`
       email
       role
       isActive
+      teamId
+      team {
+        id
+        name
+      }
       profile {
         firstName
         lastName
@@ -208,15 +233,23 @@ export const GET_COACHES = gql`
   }
 `
 
+/**
+ * Fetch all users by condition (e.g., role, isActive)
+ */
 export const USERS_QUERY = gql`
-  query GetUsers {
-    users {
+  query GetUsersQuery($search: String, $role: Role, $isActive: Boolean) {
+    usersQuery(search: $search, role: $role, isActive: $isActive) {
       id
       email
       role
       isActive
+      teamId
       createdAt
       updatedAt
+      team {
+        id
+        name
+      }
       profile {
         firstName
         lastName

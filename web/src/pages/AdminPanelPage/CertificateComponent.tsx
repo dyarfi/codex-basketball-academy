@@ -53,6 +53,26 @@ import { GET_CLASSES } from '../../graphql/classes-queries'
 import { GET_PROGRAMS } from '../../graphql/programs-queries'
 import { GET_USERS } from '../../graphql/users-queries'
 
+/*
+Done. I extracted the reusable PDF logic into certificatePdfUtils.tsx and updated CertificatePDFViewer.tsx to use it.
+You can now reuse it in other pages like:
+
+import {
+  buildCertificatePdfProps,
+  getCertificatePdfBase64,
+  getCertificatePdfFileName,
+} from 'src/components/CertificatePDF/certificatePdfUtils'
+
+const pdfProps = buildCertificatePdfProps({
+  certificate,
+  nextPage: skillsAssessmentsByProgram,
+  isDark,
+})
+
+const base64 = await getCertificatePdfBase64(pdfProps)
+const fileName = getCertificatePdfFileName(certificate)
+*/
+
 const CertificateComponent = () => {
   const { isDark } = useAppTheme()
   const [opened, setOpened] = useState(false)
@@ -149,8 +169,6 @@ const CertificateComponent = () => {
     }
   }, []) // Only run on mount
 
-  // Queries
-
   // Mutations
   const [createCertificate] = useMutation(CREATE_CERTIFICATE_MUTATION, {
     onCompleted: () => {
@@ -210,6 +228,7 @@ const CertificateComponent = () => {
       label: `${c.name} - ${c.scheduleDay} ${c.scheduleTime}`,
     }))
 
+  // Functions
   const handleOpenModal = (certificate?: any) => {
     if (certificate) {
       setEditingId(certificate.id)
@@ -307,6 +326,7 @@ const CertificateComponent = () => {
       qrCode: formData.qrCode || null,
       issuedBy: formData.issuedBy || null,
       templateId: formData.templateId || null,
+      withAssessment: formData.withAssessment || null,
       signatureUrl: formData.signatureUrl || null,
       expiryDate: formData.expiryDate
         ? new Date(formData.expiryDate).toISOString()
@@ -397,7 +417,7 @@ const CertificateComponent = () => {
       px={{ base: 'xs', sm: 'md' }}
     >
       <Stack gap="lg">
-        <Card withBorder p="lg">
+        <Card withBorder p="lg" shadow="none">
           <Card.Section withBorder inheritPadding py="md">
             <Group justify="space-between">
               <Text fw={500} size="lg">
@@ -417,8 +437,8 @@ const CertificateComponent = () => {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Certificate #</Table.Th>
-                  <Table.Th>Title</Table.Th>
                   <Table.Th>User</Table.Th>
+                  <Table.Th>Title</Table.Th>
                   <Table.Th>Program</Table.Th>
                   <Table.Th>Achievement Date</Table.Th>
                   <Table.Th w="74">Status</Table.Th>
@@ -430,12 +450,16 @@ const CertificateComponent = () => {
                   certificates.map((certificate) => (
                     <Table.Tr key={certificate.id}>
                       <Table.Td>{certificate.certificateNumber}</Table.Td>
-                      <Table.Td>{certificate.title}</Table.Td>
                       <Table.Td>
-                        {certificate.user?.profile
-                          ? `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`
-                          : certificate.user?.email}
+                        {certificate.user?.profile &&
+                          `${certificate.user.profile.firstName} ${certificate.user.profile.lastName}`}
+                        {certificate.user?.email && (
+                          <Text size="xs" c="dimmed">
+                            {certificate.user?.email}
+                          </Text>
+                        )}
                       </Table.Td>
+                      <Table.Td>{certificate.title}</Table.Td>
                       <Table.Td>{certificate.program?.name}</Table.Td>
                       <Table.Td>
                         {format(
@@ -458,7 +482,6 @@ const CertificateComponent = () => {
                             <CertificatePDFViewer
                               certificate={certificate}
                               isNextPage={certificate.withAssessment}
-                              isDark={isDark}
                               buttonText="View"
                             />
                           )}
@@ -774,8 +797,8 @@ const CertificateComponent = () => {
               label="With Assessment"
               type="checkbox"
               defaultChecked={formData.withAssessment}
-              onChange={(value) =>
-                setFormData({ ...formData, withAssessment: value })
+              onChange={(e) =>
+                setFormData({ ...formData, withAssessment: e.target.checked })
               }
             />
             <Group justify="flex-end">

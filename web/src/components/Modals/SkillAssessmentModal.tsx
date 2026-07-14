@@ -70,6 +70,14 @@ const SkillAssessmentModal: React.FC<SkillAssessmentModalProps> = ({
 
   useEffect(() => {
     if (assessmentData && isOpen) {
+      const overallScore = Math.round(
+        (assessmentData.shooting +
+          assessmentData.dribbling +
+          assessmentData.defense +
+          assessmentData.basketballIQ +
+          assessmentData.athleticism) /
+          5
+      )
       form.setValues({
         userId: assessmentData.userId || '',
         programId: assessmentData.programId || '',
@@ -78,13 +86,12 @@ const SkillAssessmentModal: React.FC<SkillAssessmentModalProps> = ({
         defense: assessmentData.defense || 50,
         basketballIQ: assessmentData.basketballIQ || 50,
         athleticism: assessmentData.athleticism || 50,
-        overallScore: assessmentData.overallScore || 50,
+        // overallScore: assessmentData.overallScore || 50,
+        overallScore: overallScore || 50,
         feedback: assessmentData.feedback || '',
         assessedBy: assessmentData.assessedBy || '',
         assessmentDate: assessmentData.assessmentDate
-          ? new Date(assessmentData.assessmentDate)
-              .toISOString()
-              .split('T')[0]
+          ? new Date(assessmentData.assessmentDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
       })
     } else if (!isOpen) {
@@ -114,9 +121,7 @@ const SkillAssessmentModal: React.FC<SkillAssessmentModalProps> = ({
       opened={isOpen}
       onClose={onClose}
       title={
-        assessmentData
-          ? 'Edit Skill Assessment'
-          : 'Create New Skill Assessment'
+        assessmentData ? 'Edit Skill Assessment' : 'Create New Skill Assessment'
       }
       size="lg"
     >
@@ -195,6 +200,7 @@ const SkillAssessmentModal: React.FC<SkillAssessmentModalProps> = ({
                 label="Overall Score (0-100)"
                 min={0}
                 max={100}
+                disabled
                 required
                 {...form.getInputProps('overallScore')}
               />

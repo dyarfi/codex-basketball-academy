@@ -33,6 +33,7 @@ import {
   GET_PAGINATED_INVOICES,
   GET_PAGINATED_PAYMENTS,
 } from 'src/graphql/payments-queries'
+import { useSettings } from 'src/providers/SettingsProvider'
 
 interface Payment {
   id: string
@@ -77,6 +78,9 @@ const getPageFromParam = (value: unknown) => {
 }
 
 const PaymentsPage = () => {
+  const { getSetting } = useSettings()
+  const enablePayments: boolean = getSetting('enable_payments') === 'true'
+
   const PAGE_SIZE = 10
   const { page = 1, search, status } = useParams()
   const initialPage = getPageFromParam(page)
@@ -167,6 +171,18 @@ const PaymentsPage = () => {
         <div className="flex min-h-96 items-center justify-center">
           <Loader size="sm" />
         </div>
+      </Container>
+    )
+  }
+
+  if (!enablePayments) {
+    return (
+      <Container
+        size="xl"
+        py={{ base: 'sm', sm: 'md', md: 'xl' }}
+        px={{ base: 'xs', sm: 'md' }}
+      >
+        Coming soon
       </Container>
     )
   }

@@ -17,12 +17,12 @@ import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import EnrollmentModal from 'src/components/Modals/EnrollmentModal'
-import { useToast } from 'src/components/Toast/useToast'
 import { GET_CLASSES } from 'src/graphql/classes-queries'
 import {
   GET_PAGINATED_ENROLLMENTS,
@@ -44,11 +44,11 @@ const getPageFromParam = (value: unknown) => {
 const EnrollmentsComponent = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId, status } = useParams()
-  const { success, error: toastError } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
-  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 300)
+  const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 400)
   const [programFilter, setProgramFilter] = useState<string | null>(
     typeof programId === 'string' ? programId : null
   )
@@ -85,12 +85,12 @@ const EnrollmentsComponent = () => {
     CREATE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment created successfully')
+        toast.success('Enrollment created successfully')
         setIsModalOpen(false)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to create enrollment')
+        toast.error(err.message || 'Failed to create enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -101,13 +101,13 @@ const EnrollmentsComponent = () => {
     UPDATE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment updated successfully')
+        toast.success('Enrollment updated successfully')
         setIsModalOpen(false)
         setSelectedEnrollment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to update enrollment')
+        toast.error(err.message || 'Failed to update enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -118,13 +118,13 @@ const EnrollmentsComponent = () => {
     DELETE_ENROLLMENT,
     {
       onCompleted: () => {
-        success('Enrollment deleted successfully')
+        toast.success('Enrollment deleted successfully')
         setIsDeleteModalOpen(false)
         setSelectedEnrollment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to delete enrollment')
+        toast.error(err.message || 'Failed to delete enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -141,13 +141,13 @@ const EnrollmentsComponent = () => {
         //   to: [{ name: email, email }],
         //   messages: 'Certificate click here',
         // })
-        success(
+        toast.success(
           `Enrollment completed! Certificate auto-issued${email ? ` for ${email}` : ''}`
         )
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to complete enrollment')
+        toast.error(err.message || 'Failed to complete enrollment')
       },
       refetchQueries: [{ query: GET_PAGINATED_ENROLLMENTS, variables }],
       awaitRefetchQueries: true,
@@ -231,10 +231,16 @@ const EnrollmentsComponent = () => {
       key: 'user',
       header: 'Player',
       render: (val: any) => (
-        <Text size="sm">
-          {val?.profile?.firstName} {val?.profile?.lastName}{' '}
-          {val?.email && <div>({val?.email})</div>}
-        </Text>
+        <>
+          <Text size="sm">
+            {val?.profile?.firstName} {val?.profile?.lastName}
+          </Text>
+          {val?.email && (
+            <Text size="xs" c="dimmed">
+              {val?.email}
+            </Text>
+          )}
+        </>
       ),
     },
     {

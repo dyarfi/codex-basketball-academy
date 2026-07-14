@@ -21,6 +21,7 @@ export async function seed() {
     await db.class.deleteMany({})
     await db.program.deleteMany({})
     await db.profile.deleteMany({})
+    await db.ageGroupTeam.deleteMany({})
     await db.user.deleteMany({})
 
     // Hash password for all users
@@ -127,6 +128,43 @@ export async function seed() {
       },
       include: {
         profile: true,
+      },
+    })
+
+    console.log('Creating age group teams...')
+    const teamU12 = await db.ageGroupTeam.create({
+      data: {
+        name: 'U-12 Thunder',
+        ageGroup: 'U-12',
+        description: 'Under 12 competitive division team.',
+        coachId: coach1.id,
+      },
+    })
+
+    const teamU14 = await db.ageGroupTeam.create({
+      data: {
+        name: 'U-14 Lightning',
+        ageGroup: 'U-14',
+        description: 'Under 14 development division team.',
+        coachId: coach2.id,
+      },
+    })
+
+    const teamU16 = await db.ageGroupTeam.create({
+      data: {
+        name: 'U-16 Warriors',
+        ageGroup: 'U-16',
+        description: 'Under 16 training division team.',
+        coachId: coach3.id,
+      },
+    })
+
+    const teamU18 = await db.ageGroupTeam.create({
+      data: {
+        name: 'U-18 Elite',
+        ageGroup: 'U-18',
+        description: 'Under 18 elite championship team.',
+        coachId: coach1.id,
       },
     })
 
@@ -343,6 +381,15 @@ export async function seed() {
     ]
 
     for (const player of playerData) {
+      let assignedTeamId = null
+      if (player.firstName === 'Kobe') {
+        assignedTeamId = teamU12.id
+      } else if (player.firstName === 'Michael' || player.firstName === 'Stephen') {
+        assignedTeamId = teamU14.id
+      } else {
+        assignedTeamId = teamU16.id
+      }
+
       const playerUser = await db.user.create({
         data: {
           email: `${player.firstName.toLowerCase()}.${player.lastName.toLowerCase()}@basketballacademy.com`,
@@ -350,6 +397,7 @@ export async function seed() {
           salt: passwordSalt,
           role: 'PLAYER',
           isActive: true,
+          teamId: assignedTeamId,
           profile: {
             create: {
               firstName: player.firstName,

@@ -15,7 +15,7 @@ import {
   Container,
   Box,
 } from '@mantine/core'
-import { CheckCircle, IconContext, WarningCircle } from '@phosphor-icons/react'
+import { WarningCircleIcon } from '@phosphor-icons/react'
 import {
   IconBorderBottomPlus,
   IconBorderTopPlus,
@@ -25,6 +25,8 @@ import {
   IconSocial,
   IconTextGrammar,
 } from '@tabler/icons-react'
+
+import { toast } from '@redwoodjs/web/toast'
 
 import {
   SITE_SETTINGS_QUERY,
@@ -46,7 +48,6 @@ const SettingsComponent = () => {
   const { isDark } = useAppTheme()
   const [activeTab, setActiveTab] = useState<string | null>('site_identity')
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
-  const [successMessage, setSuccessMessage] = useState<string>('')
   const [groups, setGroups] = useState<Record<string, SettingValue[]>>({})
 
   const {
@@ -104,11 +105,12 @@ const SettingsComponent = () => {
           value: editedValues[id],
         },
       })
-      setSuccessMessage('Setting updated successfully!')
-      setTimeout(() => setSuccessMessage(''), 3000)
+
       refetch()
+      toast.success(`Success ${id ? 'updating' : 'creating'} setting`)
     } catch (err) {
       console.error('Error updating setting:', err)
+      toast.error('Error updating setting')
     }
   }
 
@@ -182,7 +184,7 @@ const SettingsComponent = () => {
 
   if (error)
     return (
-      <Alert icon={<WarningCircle />} title="Error" color="red">
+      <Alert icon={<WarningCircleIcon />} title="Error" color="red">
         Failed to load settings: {error.message}
       </Alert>
     )
@@ -194,13 +196,7 @@ const SettingsComponent = () => {
       px={{ base: 'xs', sm: 'md' }}
     >
       <Box className="space-y-4" pb="xl">
-        {successMessage && (
-          <Alert icon={<CheckCircle />} title="Success" color="green">
-            {successMessage}
-          </Alert>
-        )}
-
-        <Card className={`${surfaceClass} border`} pb="xl">
+        <Card className={`${surfaceClass} border`} pb="xl" shadow="none">
           <Card.Section inheritPadding py="md">
             <h2 className="text-2xl font-bold">Site Settings</h2>
             <p
@@ -239,6 +235,7 @@ const SettingsComponent = () => {
                         key={setting.id}
                         className={`${surfaceClass} border`}
                         p="md"
+                        shadow="xs"
                       >
                         <div className="mb-3 flex items-center justify-between">
                           <div>

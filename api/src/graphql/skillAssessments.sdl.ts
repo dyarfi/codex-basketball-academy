@@ -26,10 +26,22 @@ export const schema = gql`
     hasNextPage: Boolean!
     hasPreviousPage: Boolean!
   }
+  type TopPerformer {
+    user: User!
+    # assessmentCount: Int!
+    shooting: Float
+    dribbling: Float
+    defense: Float
+    basketballIQ: Float
+    athleticism: Float
+    overallScore: Float
+  }
   type Query {
     skillAssessments: [SkillAssessment!]! @requireAuth
     skillAssessment(id: String!): SkillAssessment @requireAuth
     skillsAssessmentsByProgram(id: String!): SkillAssessment @requireAuth
+    # topPerformers(limit: Int, programId: String): [TopPerformer!]! @requireAuth
+    topPerformers: [TopPerformer!]! @requireAuth
     paginatedSkillAssessments(
       page: Int = 1
       pageSize: Int = 10

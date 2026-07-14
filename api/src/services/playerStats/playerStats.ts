@@ -8,7 +8,15 @@ import type {
 import { db } from 'src/lib/db'
 
 export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
-  async ({ page = 1, pageSize = 10, search, userId, dateFrom, dateTo }) => {
+  async ({
+    page = 1,
+    pageSize = 10,
+    search,
+    userId,
+    gameName,
+    dateFrom,
+    dateTo,
+  }) => {
     const conditions: Prisma.PlayerStatsWhereInput[] = []
     const searchTerm = search?.trim()
 
@@ -66,6 +74,10 @@ export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
 
     if (userId) {
       conditions.push({ userId })
+    }
+
+    if (gameName) {
+      conditions.push({ gameName })
     }
 
     if (dateFrom || dateTo) {
@@ -143,8 +155,54 @@ export const deletePlayerStat: MutationResolvers['deletePlayerStat'] = ({
   })
 }
 
+export const createBulkPlayerStats: MutationResolvers['createBulkPlayerStats'] =
+  async ({ inputs }) => {
+    const results = []
+    for (const input of inputs) {
+      const existing = await db.playerStats.findFirst({
+        where: {
+          userId: input.userId,
+          gameDate: input.gameDate,
+          gameName: input.gameName,
+        },
+      })
+
+      if (existing) {
+        const updated = await db.playerStats.update({
+          where: { id: existing.id },
+          data: {
+            points: input.points,
+            rebounds: input.rebounds,
+            assists: input.assists,
+            steals: input.steals,
+            blocks: input.blocks,
+            minutesPlayed: input.minutesPlayed,
+          },
+        })
+        results.push(updated)
+      } else {
+        const created = await db.playerStats.create({
+          data: input as Prisma.PlayerStatsUncheckedCreateInput,
+        })
+        results.push(created)
+      }
+    }
+    return results
+  }
+
 export const PlayerStats: PlayerStatsRelationResolvers = {
   user: (_obj, { root }) => {
     return db.playerStats.findUniqueOrThrow({ where: { id: root?.id } }).user()
   },
 }
+
+export const playerStatsByGameName: QueryResolvers['playerStatsByGameName'] =
+  () => {
+    return db.playerStats.findMany({
+      distinct: ['gameName'],
+      select: {
+        gameName: true,
+        id: true,
+      },
+    })
+  }

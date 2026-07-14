@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, Fragment } from 'react'
 
 import {
   Container,
@@ -10,18 +10,21 @@ import {
   Text,
   Loader,
   Alert,
+  Tooltip,
+  Box,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch, IconPlus, IconAlertCircle } from '@tabler/icons-react'
 
 import { routes, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
 import AdminPagination from 'src/components/AdminPagination/AdminPagination'
+import GraphSkills from 'src/components/Common/Graph/GraphSkills'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import SkillAssessmentModal from 'src/components/Modals/SkillAssessmentModal'
-import { useToast } from 'src/components/Toast/useToast'
 import { GET_PROGRAMS } from 'src/graphql/programs-queries'
 import {
   GET_PAGINATED_SKILL_ASSESSMENTS,
@@ -29,7 +32,7 @@ import {
   UPDATE_SKILL_ASSESSMENT,
   DELETE_SKILL_ASSESSMENT,
 } from 'src/graphql/skill-assessments-queries'
-import { GET_USERS } from 'src/graphql/users-queries'
+import { USERS_QUERY } from 'src/graphql/users-queries'
 
 const getPageFromParam = (value: unknown) => {
   const parsedPage = Number(value)
@@ -40,7 +43,7 @@ const getPageFromParam = (value: unknown) => {
 const SkillAssessmentsPage = () => {
   const PAGE_SIZE = 10
   const { page = 1, search, programId } = useParams()
-  const { success, error: toastError } = useToast()
+
   const [searchQuery, setSearchQuery] = useState(
     typeof search === 'string' ? search : ''
   )
@@ -70,18 +73,32 @@ const SkillAssessmentsPage = () => {
   // Fetch programs and users for the modal
   const { data: programsData, loading: programsLoading } =
     useQuery(GET_PROGRAMS)
-  const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
+  const { data: usersData, loading: usersLoading } = useQuery(USERS_QUERY, {
+    variables: { role: 'PLAYER', isActive: true },
+  })
+
+  const assessments = data?.paginatedSkillAssessments?.items || []
+  const totalAssessments = data?.paginatedSkillAssessments?.totalCount || 0
+  const programs = programsData?.programs || []
+  const players = usersData?.users || []
+  const totalPages =
+    data?.paginatedSkillAssessments?.totalPages ??
+    Math.max(1, Math.ceil(totalAssessments / PAGE_SIZE))
+
+  const programOptions = useMemo(() => {
+    return programs.map((p: any) => ({ value: p.id, label: p.name }))
+  }, [programs])
 
   const [createAssessment, { loading: isCreating }] = useMutation(
     CREATE_SKILL_ASSESSMENT,
     {
       onCompleted: () => {
-        success('Skill assessment created successfully')
+        toast.success('Skill assessment created successfully')
         setIsModalOpen(false)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to create skill assessment')
+        toast.error(err.message || 'Failed to create skill assessment')
       },
       refetchQueries: [{ query: GET_PAGINATED_SKILL_ASSESSMENTS, variables }],
       awaitRefetchQueries: true,
@@ -92,13 +109,13 @@ const SkillAssessmentsPage = () => {
     UPDATE_SKILL_ASSESSMENT,
     {
       onCompleted: () => {
-        success('Skill assessment updated successfully')
+        toast.success('Skill assessment updated successfully')
         setIsModalOpen(false)
         setSelectedAssessment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to update skill assessment')
+        toast.error(err.message || 'Failed to update skill assessment')
       },
       refetchQueries: [{ query: GET_PAGINATED_SKILL_ASSESSMENTS, variables }],
       awaitRefetchQueries: true,
@@ -109,32 +126,18 @@ const SkillAssessmentsPage = () => {
     DELETE_SKILL_ASSESSMENT,
     {
       onCompleted: () => {
-        success('Skill assessment deleted successfully')
+        toast.success('Skill assessment deleted successfully')
         setIsDeleteModalOpen(false)
         setSelectedAssessment(null)
         refetch()
       },
       onError: (err) => {
-        toastError(err.message || 'Failed to delete skill assessment')
+        toast.error(err.message || 'Failed to delete skill assessment')
       },
       refetchQueries: [{ query: GET_PAGINATED_SKILL_ASSESSMENTS, variables }],
       awaitRefetchQueries: true,
     }
   )
-
-  const assessments = data?.paginatedSkillAssessments?.items || []
-  const totalAssessments = data?.paginatedSkillAssessments?.totalCount || 0
-  const programs = programsData?.programs || []
-  const players = useMemo(() => {
-    return (usersData?.users || []).filter((u: any) => u.role === 'PLAYER')
-  }, [usersData])
-  const totalPages =
-    data?.paginatedSkillAssessments?.totalPages ??
-    Math.max(1, Math.ceil(totalAssessments / PAGE_SIZE))
-
-  const programOptions = useMemo(() => {
-    return programs.map((p: any) => ({ value: p.id, label: p.name }))
-  }, [programs])
 
   const handleCreate = () => {
     setSelectedAssessment(null)
@@ -187,10 +190,47 @@ const SkillAssessmentsPage = () => {
     {
       key: 'user',
       header: 'Player',
-      render: (val: any) => (
-        <Text size="sm">
-          {val?.profile?.firstName} {val?.profile?.lastName}
-        </Text>
+      render: (val: any, user: Record<string, string>) => (
+        <Tooltip
+          withArrow
+          label={
+            <Box pos={'relative'} bg="white" p={'sm'}>
+              <GraphSkills
+                title={val?.profile?.firstName + ' ' + val?.profile?.lastName}
+                graphData={[
+                  {
+                    skill: 'Defense',
+                    value: user?.defense,
+                  },
+                  {
+                    skill: 'Shooting',
+                    value: user?.shooting,
+                  },
+                  {
+                    skill: 'Dribble',
+                    value: user?.dribbling,
+                  },
+                  {
+                    skill: 'BasketballIQ',
+                    value: user?.basketballIQ,
+                  },
+                  {
+                    skill: 'Athleticism',
+                    value: user?.athleticism,
+                  },
+                  {
+                    skill: 'OverallScore',
+                    value: user?.overallScore,
+                  },
+                ]}
+              />
+            </Box>
+          }
+        >
+          <Text size="sm">
+            {val?.profile?.firstName} {val?.profile?.lastName}
+          </Text>
+        </Tooltip>
       ),
     },
     {

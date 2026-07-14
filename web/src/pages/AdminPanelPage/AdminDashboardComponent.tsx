@@ -12,16 +12,17 @@ import {
   Alert,
 } from '@mantine/core'
 import {
-  Books,
-  CalendarDots,
-  Receipt,
-  Users,
-  WarningCircle,
+  BooksIcon,
+  CalendarDotsIcon,
+  ReceiptIcon,
+  UsersIcon,
+  WarningCircleIcon,
 } from '@phosphor-icons/react'
 import gql from 'graphql-tag'
 
 import { useQuery } from '@redwoodjs/web'
 
+import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 const GET_DASHBOARD_STATS = gql`
@@ -81,6 +82,10 @@ const AdminDashboardPage = () => {
     GetDashboardStats: DashboardStats
   }>(GET_DASHBOARD_STATS)
   const { isDark } = useAppTheme()
+  const { getSetting } = useSettings()
+  const enablePayments: boolean = getSetting('enable_payments') === 'true'
+  const enableEnrollment: boolean = getSetting('enable_enrollment') === 'true'
+
   const cardClass = isDark
     ? 'border border-slate-800 bg-slate-900 text-slate-100'
     : 'border border-gray-200 bg-white text-gray-900'
@@ -102,7 +107,7 @@ const AdminDashboardPage = () => {
     return (
       <Container size="xl" py="xl">
         <Alert
-          icon={<WarningCircle size={16} weight="bold" />}
+          icon={<WarningCircleIcon size={16} />}
           title="Error"
           color="red"
           className="mb-6"
@@ -119,7 +124,7 @@ const AdminDashboardPage = () => {
     return (
       <Container size="xl" py="xl">
         <Alert
-          icon={<WarningCircle size={16} weight="bold" />}
+          icon={<WarningCircleIcon size={16} />}
           title="No Data"
           color="yellow"
           className="mb-6"
@@ -188,11 +193,7 @@ const AdminDashboardPage = () => {
               <Text fw={500} size="sm">
                 Total Users
               </Text>
-              <Users
-                size={24}
-                weight="bold"
-                className={statIconClass('text-blue-500')}
-              />
+              <UsersIcon size={24} className={statIconClass('text-blue-500')} />
             </Group>
             <Text size="xl" fw={700}>
               {totalUsers}
@@ -210,9 +211,8 @@ const AdminDashboardPage = () => {
               <Text fw={500} size="sm">
                 Programs
               </Text>
-              <Books
+              <BooksIcon
                 size={24}
-                weight="bold"
                 className={statIconClass('text-green-500')}
               />
             </Group>
@@ -232,9 +232,8 @@ const AdminDashboardPage = () => {
               <Text fw={500} size="sm">
                 Classes
               </Text>
-              <CalendarDots
+              <CalendarDotsIcon
                 size={24}
-                weight="bold"
                 className={statIconClass('text-purple-500')}
               />
             </Group>
@@ -248,70 +247,75 @@ const AdminDashboardPage = () => {
         </Grid.Col>
 
         {/* Revenue Card */}
-        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-            <Group justify="space-between" mb="md">
-              <Text fw={500} size="sm">
-                Revenue
+        {enablePayments && (
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+              <Group justify="space-between" mb="md">
+                <Text fw={500} size="sm">
+                  Revenue
+                </Text>
+                <ReceiptIcon
+                  size={24}
+                  className={statIconClass('text-yellow-500')}
+                />
+              </Group>
+              <Text size="xl" fw={700}>
+                ${totalPaymentsAmount.toFixed(2)}
               </Text>
-              <Receipt
-                size={24}
-                weight="bold"
-                className={statIconClass('text-yellow-500')}
-              />
-            </Group>
-            <Text size="xl" fw={700}>
-              ${totalPaymentsAmount.toFixed(2)}
-            </Text>
-            <Text size="xs" className={`mt-1 ${mutedClass}`}>
-              {completedPayments} completed
-            </Text>
-          </Card>
-        </Grid.Col>
+              <Text size="xs" className={`mt-1 ${mutedClass}`}>
+                {completedPayments} completed
+              </Text>
+            </Card>
+          </Grid.Col>
+        )}
 
         {/* Pending Invoices Card */}
-        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-          <Card
-            shadow="sm"
-            padding="lg"
-            radius="md"
-            className={
-              isDark
-                ? 'border border-orange-900 bg-slate-900 text-slate-100'
-                : 'border border-orange-200 bg-white'
-            }
-          >
-            <Group justify="space-between" mb="md">
-              <Text fw={500} size="sm">
-                Pending
+        {enablePayments && (
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+            <Card
+              shadow="sm"
+              padding="lg"
+              radius="md"
+              className={
+                isDark
+                  ? 'border border-orange-900 bg-slate-900 text-slate-100'
+                  : 'border border-orange-200 bg-white'
+              }
+            >
+              <Group justify="space-between" mb="md">
+                <Text fw={500} size="sm">
+                  Pending
+                </Text>
+                <Badge color="orange" size="lg">
+                  !
+                </Badge>
+              </Group>
+              <Text size="xl" fw={700}>
+                {pendingInvoices}
               </Text>
-              <Badge color="orange" size="lg">
-                !
-              </Badge>
-            </Group>
-            <Text size="xl" fw={700}>
-              {pendingInvoices}
-            </Text>
-            <Text size="xs" className={`mt-1 ${mutedClass}`}>
-              invoices pending
-            </Text>
-          </Card>
-        </Grid.Col>
+              <Text size="xs" className={`mt-1 ${mutedClass}`}>
+                invoices pending
+              </Text>
+            </Card>
+          </Grid.Col>
+        )}
 
         {/* Total Revenue Card */}
-        <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
-          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-            <Group justify="space-between" mb="md">
-              <Text fw={500} size="sm">
-                Total Due
+        {enablePayments && (
+          <Grid.Col span={{ base: 12, xs: 6, sm: 4, md: 3, lg: 2 }}>
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+              <Group justify="space-between" mb="md">
+                <Text fw={500} size="sm">
+                  Total Due
+                </Text>
+                <Badge color="blue">${totalInvoicesAmount.toFixed(0)}</Badge>
+              </Group>
+              <Text size="xs" className={`mt-2 ${mutedClass}`}>
+                from {stats.invoices.length} invoices
               </Text>
-              <Badge color="blue">${totalInvoicesAmount.toFixed(0)}</Badge>
-            </Group>
-            <Text size="xs" className={`mt-2 ${mutedClass}`}>
-              from {stats.invoices.length} invoices
-            </Text>
-          </Card>
-        </Grid.Col>
+            </Card>
+          </Grid.Col>
+        )}
       </Grid>
 
       {/* User Breakdown */}
@@ -343,40 +347,42 @@ const AdminDashboardPage = () => {
         </Grid.Col>
 
         {/* Recent Enrollments */}
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
-            <Text fw={600} mb="md">
-              Recent Enrollments
-            </Text>
-            <Stack gap="md">
-              {recentEnrollments.length > 0 ? (
-                recentEnrollments.map((enrollment) => (
-                  <div key={enrollment.id} className="border-b pb-2">
-                    <Group justify="space-between">
-                      <div>
-                        <Text size="sm" fw={500}>
-                          {enrollment.user.email}
-                        </Text>
+        {enableEnrollment && (
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Card shadow="sm" padding="lg" radius="md" className={cardClass}>
+              <Text fw={600} mb="md">
+                Recent Enrollments
+              </Text>
+              <Stack gap="md">
+                {recentEnrollments.length > 0 ? (
+                  recentEnrollments.map((enrollment) => (
+                    <div key={enrollment.id} className="border-b pb-2">
+                      <Group justify="space-between">
+                        <div>
+                          <Text size="sm" fw={500}>
+                            {enrollment.user.email}
+                          </Text>
+                          <Text size="xs" className={mutedClass}>
+                            {enrollment.program.name}
+                          </Text>
+                        </div>
                         <Text size="xs" className={mutedClass}>
-                          {enrollment.program.name}
+                          {new Date(
+                            enrollment.enrollmentDate
+                          ).toLocaleDateString()}
                         </Text>
-                      </div>
-                      <Text size="xs" className={mutedClass}>
-                        {new Date(
-                          enrollment.enrollmentDate
-                        ).toLocaleDateString()}
-                      </Text>
-                    </Group>
-                  </div>
-                ))
-              ) : (
-                <Text size="sm" className={mutedClass}>
-                  No recent enrollments
-                </Text>
-              )}
-            </Stack>
-          </Card>
-        </Grid.Col>
+                      </Group>
+                    </div>
+                  ))
+                ) : (
+                  <Text size="sm" className={mutedClass}>
+                    No recent enrollments
+                  </Text>
+                )}
+              </Stack>
+            </Card>
+          </Grid.Col>
+        )}
       </Grid>
     </Container>
   )
