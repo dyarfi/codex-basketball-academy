@@ -144,6 +144,19 @@ const AdminPlayerStatsLivePage = () => {
   const [showSubLog, setShowSubLog] = useState(false)
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // Keep the "active button" state separate from your stats
+  const [activeButton, setActiveButton] = useState<{
+    playerId: string
+    statKey: keyof PlayerStatsState
+    amount: number
+  } | null>(null)
+
+  // Track the recently updated stat
+  const [changedStat, setChangedStat] = useState<{
+    playerId: string
+    statKey: keyof PlayerStatsState
+  } | null>(null)
+
   // hasDraft is derived – no extra state needed
   const hasDraft = draft !== null
 
@@ -378,6 +391,16 @@ const AdminPlayerStatsLivePage = () => {
     statKey: keyof PlayerStatsState,
     amount: number
   ) => {
+    // Track the recently updated stat
+    setChangedStat({ playerId, statKey })
+    // Highlight the clicked button
+    setActiveButton({
+      playerId,
+      statKey,
+      amount,
+    })
+
+    // Logic for player stat map
     const currentStats = statsMap[playerId] || {
       points: 0,
       rebounds: 0,
@@ -393,6 +416,11 @@ const AdminPlayerStatsLivePage = () => {
     }
     setStatsMap(newStatsMap)
     persistDraft(buildDraftSnapshot({ statsMap: newStatsMap }))
+
+    // Remove Track highlight after 300ms
+    setTimeout(() => {
+      setChangedStat(null)
+    }, 300)
   }
 
   // Calculate live team totals (all players, including benched)
@@ -458,6 +486,9 @@ const AdminPlayerStatsLivePage = () => {
       },
     })
   }
+
+  // Handle animate class
+  const classNameAnim = 'animate-[scorePop_300ms_ease-in-out]'
 
   if (teamsError) {
     return (
@@ -600,7 +631,9 @@ const AdminPlayerStatsLivePage = () => {
                   size="xl"
                   fw={900}
                   c="blue.8"
-                  className="animate-[bounce_1600ms]"
+                  className={
+                    changedStat?.statKey === 'points' ? classNameAnim : ''
+                  }
                 >
                   {teamTotals.points}
                 </Text>
@@ -613,7 +646,9 @@ const AdminPlayerStatsLivePage = () => {
                   size="xl"
                   fw={900}
                   c="teal.8"
-                  className="animate-[bounce_1600ms]"
+                  className={
+                    changedStat?.statKey === 'rebounds' ? classNameAnim : ''
+                  }
                 >
                   {teamTotals.rebounds}
                 </Text>
@@ -626,7 +661,9 @@ const AdminPlayerStatsLivePage = () => {
                   size="xl"
                   fw={900}
                   c="violet.8"
-                  className="animate-[bounce_1600ms]"
+                  className={
+                    changedStat?.statKey === 'assists' ? classNameAnim : ''
+                  }
                 >
                   {teamTotals.assists}
                 </Text>
@@ -639,7 +676,9 @@ const AdminPlayerStatsLivePage = () => {
                   size="xl"
                   fw={900}
                   c="orange.8"
-                  className="animate-[bounce_1600ms]"
+                  className={
+                    changedStat?.statKey === 'steals' ? classNameAnim : ''
+                  }
                 >
                   {teamTotals.steals}
                 </Text>
@@ -652,7 +691,9 @@ const AdminPlayerStatsLivePage = () => {
                   size="xl"
                   fw={900}
                   c="red.8"
-                  className="animate-[bounce_1600ms]"
+                  className={
+                    changedStat?.statKey === 'blocks' ? classNameAnim : ''
+                  }
                 >
                   {teamTotals.blocks}
                 </Text>
@@ -896,13 +937,25 @@ const AdminPlayerStatsLivePage = () => {
                             size="lg"
                             color="blue"
                             style={{ minWidth: '45px' }}
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'points'
+                                ? classNameAnim
+                                : ''
+                            }
                           >
                             {stats.points} PTS
                           </Badge>
                           <Group gap={4}>
                             <Button
                               size="xs"
-                              variant="light"
+                              variant={
+                                activeButton?.playerId === player.id &&
+                                activeButton?.statKey === 'points' &&
+                                activeButton?.amount === -1
+                                  ? 'light'
+                                  : 'outline'
+                              }
                               color="red"
                               px={6}
                               onClick={() =>
@@ -913,7 +966,13 @@ const AdminPlayerStatsLivePage = () => {
                             </Button>
                             <Button
                               size="xs"
-                              variant="outline"
+                              variant={
+                                activeButton?.playerId === player.id &&
+                                activeButton?.statKey === 'points' &&
+                                activeButton?.amount === 1
+                                  ? 'light'
+                                  : 'outline'
+                              }
                               color="blue"
                               px={6}
                               onClick={() => updateStat(player.id, 'points', 1)}
@@ -922,7 +981,13 @@ const AdminPlayerStatsLivePage = () => {
                             </Button>
                             <Button
                               size="xs"
-                              variant="outline"
+                              variant={
+                                activeButton?.playerId === player.id &&
+                                activeButton?.statKey === 'points' &&
+                                activeButton?.amount === 2
+                                  ? 'light'
+                                  : 'outline'
+                              }
                               color="blue"
                               px={6}
                               onClick={() => updateStat(player.id, 'points', 2)}
@@ -931,7 +996,13 @@ const AdminPlayerStatsLivePage = () => {
                             </Button>
                             <Button
                               size="xs"
-                              variant="outline"
+                              variant={
+                                activeButton?.playerId === player.id &&
+                                activeButton?.statKey === 'points' &&
+                                activeButton?.amount === 3
+                                  ? 'light'
+                                  : 'outline'
+                              }
                               color="blue"
                               px={6}
                               onClick={() => updateStat(player.id, 'points', 3)}
@@ -945,7 +1016,16 @@ const AdminPlayerStatsLivePage = () => {
                       {/* Rebounds Tracker */}
                       <Table.Td>
                         <Stack gap="xs" align="center">
-                          <Text fw={700} size="sm">
+                          <Text
+                            fw={700}
+                            size="sm"
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'rebounds'
+                                ? classNameAnim
+                                : ''
+                            }
+                          >
                             {stats.rebounds}
                           </Text>
                           <Group gap={4}>
@@ -976,7 +1056,16 @@ const AdminPlayerStatsLivePage = () => {
                       {/* Assists Tracker */}
                       <Table.Td>
                         <Stack gap="xs" align="center">
-                          <Text fw={700} size="sm">
+                          <Text
+                            fw={700}
+                            size="sm"
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'assists'
+                                ? classNameAnim
+                                : ''
+                            }
+                          >
                             {stats.assists}
                           </Text>
                           <Group gap={4}>
@@ -1007,7 +1096,16 @@ const AdminPlayerStatsLivePage = () => {
                       {/* Steals Tracker */}
                       <Table.Td>
                         <Stack gap="xs" align="center">
-                          <Text fw={700} size="sm">
+                          <Text
+                            fw={700}
+                            size="sm"
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'steals'
+                                ? classNameAnim
+                                : ''
+                            }
+                          >
                             {stats.steals}
                           </Text>
                           <Group gap={4}>
@@ -1036,7 +1134,16 @@ const AdminPlayerStatsLivePage = () => {
                       {/* Blocks Tracker */}
                       <Table.Td>
                         <Stack gap="xs" align="center">
-                          <Text fw={700} size="sm">
+                          <Text
+                            fw={700}
+                            size="sm"
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'blocks'
+                                ? classNameAnim
+                                : ''
+                            }
+                          >
                             {stats.blocks}
                           </Text>
                           <Group gap={4}>
@@ -1065,7 +1172,17 @@ const AdminPlayerStatsLivePage = () => {
                       {/* Minutes Played (+5, +1, -1, -5) */}
                       <Table.Td>
                         <Stack gap="xs" align="center">
-                          <Badge variant="light" color="gray" size="md">
+                          <Badge
+                            variant="light"
+                            color="gray"
+                            size="md"
+                            className={
+                              changedStat?.playerId === player.id &&
+                              changedStat?.statKey === 'minutesPlayed'
+                                ? classNameAnim
+                                : ''
+                            }
+                          >
                             {stats.minutesPlayed} MIN
                           </Badge>
                           <Group gap={4}>
