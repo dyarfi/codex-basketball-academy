@@ -107,7 +107,10 @@ const DefaultLayout = ({
               <Footer />
               {/* Toaster */}
               <Toaster
-                toastOptions={{ className: 'rw-toast', duration: 6000 }}
+                toastOptions={{
+                  className: 'rw-toast',
+                  duration: 6000,
+                }}
               />
             </Box>
           </AnnouncementProvider>

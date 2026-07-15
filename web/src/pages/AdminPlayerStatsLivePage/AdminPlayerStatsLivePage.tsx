@@ -280,7 +280,11 @@ const AdminPlayerStatsLivePage = () => {
       return
     }
     if (roster.length === 0) {
-      toast.error('Please add at least one player to the roster')
+      toast.error('Please add at least 1 player to the roster')
+      return
+    }
+    if (roster.length < 3) {
+      toast.error('Please add at least 3 player to start game')
       return
     }
     setGameStarted(true)
@@ -596,7 +600,7 @@ const AdminPlayerStatsLivePage = () => {
       return
     }
     if (roster.length === 0) {
-      toast.error('Please add at least one player to the roster')
+      toast.error('Please add at least 1 player to the roster')
       return
     }
 
@@ -632,19 +636,31 @@ const AdminPlayerStatsLivePage = () => {
         inputs,
       },
     })
+
+    toast.success('Game stats saved!')
   }
 
   // Handle animate class
   const classNameAnim = 'animate-[scorePop_300ms_ease-in-out]'
+  // Handle game not started not finish
+  const isGameNoStartNoFinish: boolean =
+    !gameStarted && !gameFinished && !timerRunning
+  // Handle game started not finish
+  const isGameStartNoFinish: boolean = gameStarted && !gameFinished
+  // Handle game idle
+  const isGameIdle: boolean = gameFinished && !gameStarted && !timerRunning
+  // Handle game player quota
+  const isGamePlayers = onCourtCount < 3
+  // Handle player added
+  const isRosterAdded = roster.length > 0
   // Handle warning text
-  const warningMessage =
-    onCourtCount < 3
-      ? '3 player minimum'
-      : !gameStarted && !gameFinished
-        ? 'Start the game first'
-        : gameStarted && !gameFinished
-          ? 'Stop the game to save'
-          : 'Save final game stats'
+  const warningMessage = isGamePlayers
+    ? '3 player minimum'
+    : isGameNoStartNoFinish
+      ? 'Start the game first'
+      : isGameStartNoFinish
+        ? 'Stop the game to save'
+        : 'Save final game stats'
 
   if (teamsError) {
     return (
@@ -698,7 +714,7 @@ const AdminPlayerStatsLivePage = () => {
             {hasDraft && (
               <Button
                 leftSection={<IconRefresh size={16} />}
-                variant="subtle"
+                variant="light"
                 color="red"
                 size="sm"
                 onClick={handleClearDraft}
@@ -706,9 +722,9 @@ const AdminPlayerStatsLivePage = () => {
                 Clear Draft
               </Button>
             )}
-            {roster.length > 0 && (
+            {isRosterAdded && (
               <>
-                {!gameStarted && !gameFinished && (
+                {isGameNoStartNoFinish && (
                   <Button
                     leftSection={<IconPlayerPlay size={16} />}
                     color="green"
@@ -718,7 +734,7 @@ const AdminPlayerStatsLivePage = () => {
                     Start Game
                   </Button>
                 )}
-                {gameStarted && !gameFinished && (
+                {isGameStartNoFinish && (
                   <>
                     {timerRunning ? (
                       <Button
@@ -769,35 +785,39 @@ const AdminPlayerStatsLivePage = () => {
         </Group>
 
         {/* Setup and Live Totals Grid */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="xl">
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" mb="sm">
           {/* Game Setup Card */}
           <Card withBorder shadow="sm" p="md" radius="md">
             <Text size="md" fw={700} mb="sm" c="blue">
               Game Information & Roster Setup
             </Text>
-            <Stack gap="md">
-              <TextInput
-                label="Game Name"
-                placeholder="e.g. Springfield Tournament Finals"
-                value={gameName}
-                onChange={(e) => {
-                  const val = e.currentTarget.value
-                  setGameName(val)
-                  persistDraft(buildDraftSnapshot({ gameName: val }))
-                }}
-                required
-              />
-              <TextInput
-                label="Game Date"
-                type="date"
-                value={gameDate}
-                onChange={(e) => {
-                  const val = e.currentTarget.value
-                  setGameDate(val)
-                  persistDraft(buildDraftSnapshot({ gameDate: val }))
-                }}
-                required
-              />
+            <Stack gap="xs" mb={'md'}>
+              <Group grow>
+                <TextInput
+                  disabled={gameFinished || gameStarted}
+                  label="Game Name"
+                  placeholder="e.g. Springfield Tournament Finals"
+                  value={gameName}
+                  onChange={(e) => {
+                    const val = e.currentTarget.value
+                    setGameName(val)
+                    persistDraft(buildDraftSnapshot({ gameName: val }))
+                  }}
+                  required
+                />
+                <TextInput
+                  disabled={gameFinished || gameStarted}
+                  label="Game Date"
+                  type="date"
+                  value={gameDate}
+                  onChange={(e) => {
+                    const val = e.currentTarget.value
+                    setGameDate(val)
+                    persistDraft(buildDraftSnapshot({ gameDate: val }))
+                  }}
+                  required
+                />
+              </Group>
               <Select
                 label="Select Team (Loads Roster)"
                 placeholder={
@@ -806,11 +826,39 @@ const AdminPlayerStatsLivePage = () => {
                 data={!teamsLoading && teamOptions}
                 value={selectedTeamId}
                 onChange={handleTeamChange}
-                disabled={teamsLoading}
+                disabled={teamsLoading || gameFinished || gameStarted}
                 clearable
                 searchable
               />
             </Stack>
+            {/* Roster Selection & Manual Addition */}
+            <Box>
+              <Text size="md" fw={700} mb="sm" c="blue">
+                Add Individual Players
+              </Text>
+              <Group grow justify="stretch" align="end">
+                <Select
+                  maw={500}
+                  label="Organize your player"
+                  placeholder="Search or select player to add..."
+                  data={playerOptions || [{ value: '', label: '' }]}
+                  value={individualPlayerSelect}
+                  onChange={setIndividualPlayerSelect}
+                  searchable
+                  clearable
+                  disabled={usersLoading}
+                  leftSection={<IconUsers size={16} />}
+                />
+                <Button
+                  onClick={handleAddPlayer}
+                  disabled={!individualPlayerSelect}
+                  color="blue"
+                  maw={130}
+                >
+                  Add Player
+                </Button>
+              </Group>
+            </Box>
           </Card>
 
           {/* Live Team Totals Card */}
@@ -822,15 +870,15 @@ const AdminPlayerStatsLivePage = () => {
             bg="blue.0"
             style={{ border: '1px solid var(--mantine-color-blue-3)' }}
           >
-            <Group justify="space-between">
+            <Group justify="space-between" align="stretch">
               <Text size="md" fw={700} mb="xs" c="blue.8">
                 Live Team Scoreboard Totals
+                <Text size="xs" c="dimmed" mb="md">
+                  Live sums computed from all active player records below.
+                </Text>
               </Text>
-              <IconEyePlus size={22} color="var(--mantine-color-blue-8)" />
+              <IconEyePlus size={28} color="var(--mantine-color-blue-8)" />
             </Group>
-            <Text size="xs" c="dimmed" mb="md">
-              Live sums computed from all active player records below.
-            </Text>
             <SimpleGrid cols={5} spacing="xs" style={{ textAlign: 'center' }}>
               <Paper p="xs" radius="sm" withBorder>
                 <Text size="xs" fw={700} c="dimmed">
@@ -908,7 +956,7 @@ const AdminPlayerStatsLivePage = () => {
                 </Text>
               </Paper>
             </SimpleGrid>
-            <Group justify="space-between" mt="lg">
+            <Group justify="space-between" mt="lg" mb={'md'}>
               <Group gap="xs">
                 <Text size="sm" fw={600} c="gray.7">
                   Roster: {roster.length} Players
@@ -941,43 +989,12 @@ const AdminPlayerStatsLivePage = () => {
                     : 'Game Not Started'}
               </Badge>
             </Group>
-          </Card>
-        </SimpleGrid>
-
-        {/* Roster Selection & Manual Addition */}
-        <Card withBorder shadow="sm" p="md" radius="md" mb="xl">
-          <Grid align="start" justify="flex-start">
-            <Grid.Col span={6}>
-              <Text size="md" fw={700} mb="sm" c="blue">
-                Add Individual Players
-              </Text>
-              <Group grow>
-                <Select
-                  maw={'500px'}
-                  placeholder="Search or select player to add..."
-                  data={playerOptions || [{ value: '', label: '' }]}
-                  value={individualPlayerSelect}
-                  onChange={setIndividualPlayerSelect}
-                  searchable
-                  clearable
-                  disabled={usersLoading}
-                  leftSection={<IconUsers size={16} />}
-                />
-                <Button
-                  onClick={handleAddPlayer}
-                  disabled={!individualPlayerSelect}
-                  color="blue"
-                  maw={'130px'}
-                >
-                  Add Player
-                </Button>
-              </Group>
-            </Grid.Col>
-            <Grid.Col span={6}>
-              {/* Game Clock / Substitution Minute Control */}
-              {roster.length > 0 && (
-                <Stack align="stretch" justify="center" gap="sm">
-                  <Text size="md" fw={700}>
+            {/* Game Clock / Substitution Minute Control */}
+            {isRosterAdded && (
+              <>
+                <Divider />
+                <Stack align="stretch" justify="center" gap="sm" mt={'sm'}>
+                  <Text size="md" fw={700} c="blue.8">
                     Game Clock
                   </Text>
 
@@ -1000,7 +1017,7 @@ const AdminPlayerStatsLivePage = () => {
                       textAlign: 'center',
                     }}
                   >
-                    <Group justify="center" align="center" gap="xs" mb={4}>
+                    <Group justify="center" align="center" gap="xs" mb={2}>
                       <IconClock
                         size={14}
                         color={
@@ -1060,14 +1077,14 @@ const AdminPlayerStatsLivePage = () => {
                   </Paper>
 
                   {/* Pause / Resume Controls (only visible if game started and not finished) */}
-                  {gameStarted && !gameFinished && (
+                  {isGameStartNoFinish && (
                     <Group gap="xs">
                       {timerRunning ? (
                         <Button
                           size="xs"
                           leftSection={<IconPlayerPause size={13} />}
                           color="orange"
-                          variant="light"
+                          variant="filled"
                           onClick={handlePauseTimer}
                           style={{ flex: 1 }}
                         >
@@ -1078,7 +1095,7 @@ const AdminPlayerStatsLivePage = () => {
                           size="xs"
                           leftSection={<IconPlayerPlay size={13} />}
                           color="green"
-                          variant="light"
+                          variant="filled"
                           onClick={handleResumeTimer}
                           style={{ flex: 1 }}
                         >
@@ -1100,13 +1117,13 @@ const AdminPlayerStatsLivePage = () => {
                     badge on each player row to sub at the current minute.
                   </Text>
                 </Stack>
-              )}
-            </Grid.Col>
-          </Grid>
-        </Card>
+              </>
+            )}
+          </Card>
+        </SimpleGrid>
 
         {/* Pre-game warning banner */}
-        {roster.length > 0 && !gameStarted && !gameFinished && (
+        {isRosterAdded && isGameNoStartNoFinish && (
           <Alert
             icon={<IconPlayerPlay size={16} />}
             title="Game Not Started"
@@ -1283,7 +1300,7 @@ const AdminPlayerStatsLivePage = () => {
                               }
                               color="red"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'points', -1)
                               }
@@ -1301,7 +1318,7 @@ const AdminPlayerStatsLivePage = () => {
                               }
                               color="blue"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() => updateStat(player.id, 'points', 1)}
                             >
                               +1
@@ -1317,7 +1334,7 @@ const AdminPlayerStatsLivePage = () => {
                               }
                               color="blue"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() => updateStat(player.id, 'points', 2)}
                             >
                               +2
@@ -1333,7 +1350,7 @@ const AdminPlayerStatsLivePage = () => {
                               }
                               color="blue"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() => updateStat(player.id, 'points', 3)}
                             >
                               +3
@@ -1362,7 +1379,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="light"
                               color="gray"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'rebounds', -1)
                               }
@@ -1373,7 +1390,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="filled"
                               color="teal"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'rebounds', 1)
                               }
@@ -1404,7 +1421,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="light"
                               color="gray"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'assists', -1)
                               }
@@ -1415,7 +1432,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="filled"
                               color="violet"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'assists', 1)
                               }
@@ -1446,7 +1463,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="light"
                               color="gray"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'steals', -1)
                               }
@@ -1457,7 +1474,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="filled"
                               color="orange"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() => updateStat(player.id, 'steals', 1)}
                             >
                               <IconPlus size={12} />
@@ -1486,7 +1503,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="light"
                               color="gray"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'blocks', -1)
                               }
@@ -1497,7 +1514,7 @@ const AdminPlayerStatsLivePage = () => {
                               size="sm"
                               variant="filled"
                               color="red"
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() => updateStat(player.id, 'blocks', 1)}
                             >
                               <IconPlus size={12} />
@@ -1528,7 +1545,7 @@ const AdminPlayerStatsLivePage = () => {
                               variant="light"
                               color="red"
                               px={4}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'minutesPlayed', -5)
                               }
@@ -1540,7 +1557,7 @@ const AdminPlayerStatsLivePage = () => {
                               variant="light"
                               color="red"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'minutesPlayed', -1)
                               }
@@ -1552,7 +1569,7 @@ const AdminPlayerStatsLivePage = () => {
                               variant="outline"
                               color="gray"
                               px={6}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'minutesPlayed', 1)
                               }
@@ -1564,7 +1581,7 @@ const AdminPlayerStatsLivePage = () => {
                               variant="outline"
                               color="gray"
                               px={4}
-                              disabled={!gameStarted && !gameFinished}
+                              disabled={isGameNoStartNoFinish}
                               onClick={() =>
                                 updateStat(player.id, 'minutesPlayed', 5)
                               }
@@ -1579,15 +1596,19 @@ const AdminPlayerStatsLivePage = () => {
                       <Table.Td style={{ textAlign: 'center' }}>
                         <Tooltip
                           label={
-                            gameStarted || gameFinished
+                            isGameNoStartNoFinish || isGameIdle
                               ? 'Remove player from this scoreboard'
-                              : 'Start the game to enable controls'
+                              : isGameStartNoFinish || !gameFinished
+                                ? 'Cannot remove while game started'
+                                : 'Cannot remove while game finished'
                           }
                         >
                           <ActionIcon
                             color="red"
                             variant="subtle"
-                            disabled={!gameStarted && !gameFinished}
+                            disabled={
+                              isGameStartNoFinish || isGameIdle || gameFinished
+                            }
                             onClick={() => handleRemovePlayer(player.id)}
                           >
                             <IconTrash size={16} />
@@ -1690,7 +1711,7 @@ const AdminPlayerStatsLivePage = () => {
         )}
 
         {/* Footer Actions */}
-        {roster.length > 0 && (
+        {isRosterAdded && (
           <Group justify="flex-end" mb="xl">
             <Button
               variant="outline"
@@ -1706,9 +1727,10 @@ const AdminPlayerStatsLivePage = () => {
               onClick={handleSaveStats}
               loading={isSaving}
               disabled={
-                onCourtCount < 3 ||
-                (!gameStarted && !gameFinished) ||
-                (gameStarted && !gameFinished)
+                isGamePlayers ||
+                isGameStartNoFinish ||
+                isGameIdle ||
+                !gameFinished
               }
               id="hover-save"
             >

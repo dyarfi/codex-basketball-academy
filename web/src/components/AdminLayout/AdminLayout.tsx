@@ -314,7 +314,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </Menu>
           </Group>
         </Group>
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: 'rw-toast',
+            duration: 6000,
+          }}
+        />
       </AppShell.Header>
       <AppShell.Main className={panelClass}>{children}</AppShell.Main>
     </AppShell>

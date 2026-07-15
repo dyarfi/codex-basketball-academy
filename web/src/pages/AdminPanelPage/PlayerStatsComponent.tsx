@@ -346,7 +346,7 @@ const PlayerStatsComponent = () => {
             leftSection={<IconEyePlus size={16} />}
             onClick={() => navigate(routes.adminPlayerStatsLive())}
             color="teal"
-            variant="light"
+            variant="outline"
           >
             Add Live Stats
           </Button>
