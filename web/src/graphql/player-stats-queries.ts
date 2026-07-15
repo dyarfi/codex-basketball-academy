@@ -21,6 +21,8 @@ export const GET_PLAYER_STATS = gql`
         profile {
           firstName
           lastName
+          jerseyNumber
+          position
         }
       }
     }
@@ -65,6 +67,8 @@ export const GET_PAGINATED_PLAYER_STATS = gql`
           profile {
             firstName
             lastName
+            jerseyNumber
+            position
           }
         }
       }
@@ -99,6 +103,8 @@ export const GET_PLAYER_STAT = gql`
         profile {
           firstName
           lastName
+          jerseyNumber
+          position
         }
       }
     }
