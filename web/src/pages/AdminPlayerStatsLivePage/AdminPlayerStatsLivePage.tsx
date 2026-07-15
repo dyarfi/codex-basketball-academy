@@ -8,10 +8,12 @@ import {
   Breadcrumbs,
   Button,
   Card,
+  Collapse,
   Container,
   Divider,
   Group,
   Loader,
+  NumberInput,
   Paper,
   Select,
   SimpleGrid,
@@ -22,11 +24,20 @@ import {
   Tooltip,
   ActionIcon,
   Stack,
+  Timeline,
+  ThemeIcon,
+  Box,
+  Grid,
+  Flex,
 } from '@mantine/core'
 import { useDebouncedCallback, useLocalStorage } from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconArrowLeft,
+  IconArrowRight,
+  IconArrowsExchange,
+  IconChevronDown,
+  IconChevronUp,
   IconCircleCheck,
   IconDeviceFloppy,
   IconMinus,
@@ -66,6 +77,14 @@ interface RosterPlayer {
   }
 }
 
+interface SubstitutionEvent {
+  type: 'OUT' | 'IN'
+  playerId: string
+  playerName: string
+  minute: number
+  timestamp: string
+}
+
 const getPlayerName = (player: RosterPlayer) => {
   const name = `${player.profile?.firstName || ''} ${
     player.profile?.lastName || ''
@@ -81,6 +100,9 @@ interface DraftSession {
   selectedTeamId: string | null
   roster: RosterPlayer[]
   statsMap: Record<string, PlayerStatsState>
+  substitutedOut: string[]
+  substitutionLog: SubstitutionEvent[]
+  gameMinute: number
 }
 
 const AdminPlayerStatsLivePage = () => {
@@ -111,6 +133,17 @@ const AdminPlayerStatsLivePage = () => {
     string | null
   >(null)
 
+  // ─── Substitution State ───────────────────────────────────────────────────────
+  const [substitutedOut, setSubstitutedOut] = useState<Set<string>>(
+    new Set(draft?.substitutedOut ?? [])
+  )
+  const [substitutionLog, setSubstitutionLog] = useState<SubstitutionEvent[]>(
+    draft?.substitutionLog ?? []
+  )
+  const [gameMinute, setGameMinute] = useState<number>(draft?.gameMinute ?? 1)
+  const [showSubLog, setShowSubLog] = useState(false)
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // hasDraft is derived – no extra state needed
   const hasDraft = draft !== null
 
@@ -130,8 +163,26 @@ const AdminPlayerStatsLivePage = () => {
     setSelectedTeamId(null)
     setRoster([])
     setStatsMap({})
+    setSubstitutedOut(new Set())
+    setSubstitutionLog([])
+    setGameMinute(1)
     toast.success('Draft cleared')
   }
+
+  // Helper to build a full DraftSession snapshot
+  const buildDraftSnapshot = (
+    overrides: Partial<DraftSession> = {}
+  ): DraftSession => ({
+    gameName,
+    gameDate,
+    selectedTeamId,
+    roster,
+    statsMap,
+    substitutedOut: Array.from(substitutedOut),
+    substitutionLog,
+    gameMinute,
+    ...overrides,
+  })
 
   // Queries & Mutations
   const {
@@ -188,13 +239,7 @@ const AdminPlayerStatsLivePage = () => {
   const handleTeamChange = (teamId: string | null) => {
     setSelectedTeamId(teamId)
     if (!teamId) {
-      persistDraft({
-        gameName,
-        gameDate,
-        selectedTeamId: teamId,
-        roster,
-        statsMap,
-      })
+      persistDraft(buildDraftSnapshot({ selectedTeamId: teamId }))
       return
     }
 
@@ -219,13 +264,18 @@ const AdminPlayerStatsLivePage = () => {
         }
       })
       setStatsMap(newStatsMap)
-      persistDraft({
-        gameName,
-        gameDate,
-        selectedTeamId: teamId,
-        roster: teamPlayers,
-        statsMap: newStatsMap,
-      })
+      // Reset substitution state on new team load
+      setSubstitutedOut(new Set())
+      setSubstitutionLog([])
+      persistDraft(
+        buildDraftSnapshot({
+          selectedTeamId: teamId,
+          roster: teamPlayers,
+          statsMap: newStatsMap,
+          substitutedOut: [],
+          substitutionLog: [],
+        })
+      )
       toast.success(
         `Loaded ${teamPlayers.length} players from ${selectedTeam.name}`
       )
@@ -255,13 +305,9 @@ const AdminPlayerStatsLivePage = () => {
       setRoster(newRoster)
       setStatsMap(newStatsMap)
       setIndividualPlayerSelect(null)
-      persistDraft({
-        gameName,
-        gameDate,
-        selectedTeamId,
-        roster: newRoster,
-        statsMap: newStatsMap,
-      })
+      persistDraft(
+        buildDraftSnapshot({ roster: newRoster, statsMap: newStatsMap })
+      )
       toast.success(`Added ${getPlayerName(playerToAdd)} to live scoreboard`)
     }
   }
@@ -271,16 +317,60 @@ const AdminPlayerStatsLivePage = () => {
     const newRoster = roster.filter((p) => p.id !== playerId)
     const newStatsMap = { ...statsMap }
     delete newStatsMap[playerId]
+    const newSubstitutedOut = new Set(substitutedOut)
+    newSubstitutedOut.delete(playerId)
+    const newLog = substitutionLog.filter((e) => e.playerId !== playerId)
     setRoster(newRoster)
     setStatsMap(newStatsMap)
-    persistDraft({
-      gameName,
-      gameDate,
-      selectedTeamId,
-      roster: newRoster,
-      statsMap: newStatsMap,
-    })
+    setSubstitutedOut(newSubstitutedOut)
+    setSubstitutionLog(newLog)
+    persistDraft(
+      buildDraftSnapshot({
+        roster: newRoster,
+        statsMap: newStatsMap,
+        substitutedOut: Array.from(newSubstitutedOut),
+        substitutionLog: newLog,
+      })
+    )
   }
+
+  // ─── Toggle Substitution ──────────────────────────────────────────────────────
+  const handleToggleSubstitution = (player: RosterPlayer) => {
+    const isBenched = substitutedOut.has(player.id)
+    const newSubstitutedOut = new Set(substitutedOut)
+    const eventType: 'IN' | 'OUT' = isBenched ? 'IN' : 'OUT'
+
+    if (isBenched) {
+      newSubstitutedOut.delete(player.id)
+    } else {
+      newSubstitutedOut.add(player.id)
+    }
+
+    const event: SubstitutionEvent = {
+      type: eventType,
+      playerId: player.id,
+      playerName: getPlayerName(player),
+      minute: gameMinute,
+      timestamp: new Date().toISOString(),
+    }
+
+    const newLog = [...substitutionLog, event]
+    setSubstitutedOut(newSubstitutedOut)
+    setSubstitutionLog(newLog)
+    persistDraft(
+      buildDraftSnapshot({
+        substitutedOut: Array.from(newSubstitutedOut),
+        substitutionLog: newLog,
+      })
+    )
+
+    toast.success(
+      eventType === 'OUT'
+        ? `${getPlayerName(player)} subbed OUT at minute ${gameMinute}`
+        : `${getPlayerName(player)} subbed IN at minute ${gameMinute}`
+    )
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // Update specific stats for a player
   const updateStat = (
@@ -302,16 +392,10 @@ const AdminPlayerStatsLivePage = () => {
       [playerId]: { ...currentStats, [statKey]: newValue },
     }
     setStatsMap(newStatsMap)
-    persistDraft({
-      gameName,
-      gameDate,
-      selectedTeamId,
-      roster,
-      statsMap: newStatsMap,
-    })
+    persistDraft(buildDraftSnapshot({ statsMap: newStatsMap }))
   }
 
-  // Calculate live team totals
+  // Calculate live team totals (all players, including benched)
   const teamTotals = useMemo(() => {
     const totals = { points: 0, rebounds: 0, assists: 0, steals: 0, blocks: 0 }
     Object.values(statsMap).forEach((stat) => {
@@ -323,6 +407,9 @@ const AdminPlayerStatsLivePage = () => {
     })
     return totals
   }, [statsMap])
+
+  // Count on-court players
+  const onCourtCount = roster.length - substitutedOut.size
 
   // Save Stats
   const handleSaveStats = () => {
@@ -459,13 +546,7 @@ const AdminPlayerStatsLivePage = () => {
                 onChange={(e) => {
                   const val = e.currentTarget.value
                   setGameName(val)
-                  persistDraft({
-                    gameName: val,
-                    gameDate,
-                    selectedTeamId,
-                    roster,
-                    statsMap,
-                  })
+                  persistDraft(buildDraftSnapshot({ gameName: val }))
                 }}
                 required
               />
@@ -476,13 +557,7 @@ const AdminPlayerStatsLivePage = () => {
                 onChange={(e) => {
                   const val = e.currentTarget.value
                   setGameDate(val)
-                  persistDraft({
-                    gameName,
-                    gameDate: val,
-                    selectedTeamId,
-                    roster,
-                    statsMap,
-                  })
+                  persistDraft(buildDraftSnapshot({ gameDate: val }))
                 }}
                 required
               />
@@ -584,9 +659,27 @@ const AdminPlayerStatsLivePage = () => {
               </Paper>
             </SimpleGrid>
             <Group justify="space-between" mt="lg">
-              <Text size="sm" fw={600} c="gray.7">
-                Roster Count: {roster.length} Players
-              </Text>
+              <Group gap="xs">
+                <Text size="sm" fw={600} c="gray.7">
+                  Roster: {roster.length} Players
+                </Text>
+                <Text size="xs" c="dimmed">
+                  ·
+                </Text>
+                <Badge color="green" variant="dot" size="sm">
+                  {onCourtCount} On Court
+                </Badge>
+                {substitutedOut.size > 0 && (
+                  <>
+                    <Text size="xs" c="dimmed">
+                      ·
+                    </Text>
+                    <Badge color="gray" variant="dot" size="sm">
+                      {substitutedOut.size} Benched
+                    </Badge>
+                  </>
+                )}
+              </Group>
               <Badge color="blue" variant="dot">
                 Live Tracker Active
               </Badge>
@@ -596,29 +689,69 @@ const AdminPlayerStatsLivePage = () => {
 
         {/* Roster Selection & Manual Addition */}
         <Card withBorder shadow="sm" p="md" radius="md" mb="xl">
-          <Text size="md" fw={700} mb="sm">
-            Add Individual Players
-          </Text>
-          <Group align="flex-end" grow>
-            <Select
-              placeholder="Search or select player to add..."
-              data={playerOptions || [{ value: '', label: '' }]}
-              value={individualPlayerSelect}
-              onChange={setIndividualPlayerSelect}
-              searchable
-              clearable
-              disabled={usersLoading}
-              leftSection={<IconUsers size={16} />}
-            />
-            <Button
-              onClick={handleAddPlayer}
-              disabled={!individualPlayerSelect}
-              color="blue"
-              style={{ maxWidth: '150px' }}
-            >
-              Add Player
-            </Button>
-          </Group>
+          <Grid align="start" justify="flex-start">
+            <Grid.Col span={6}>
+              <Text size="md" fw={700} mb="sm">
+                Add Individual Players
+              </Text>
+              <Group grow>
+                <Select
+                  maw={'500px'}
+                  placeholder="Search or select player to add..."
+                  data={playerOptions || [{ value: '', label: '' }]}
+                  value={individualPlayerSelect}
+                  onChange={setIndividualPlayerSelect}
+                  searchable
+                  clearable
+                  disabled={usersLoading}
+                  leftSection={<IconUsers size={16} />}
+                />
+                <Button
+                  onClick={handleAddPlayer}
+                  disabled={!individualPlayerSelect}
+                  color="blue"
+                  maw={'130px'}
+                >
+                  Add Player
+                </Button>
+              </Group>
+            </Grid.Col>
+            <Grid.Col span={6}>
+              {/* Game Clock / Substitution Minute Control */}
+              {roster.length > 0 && (
+                <Stack align="stretch" justify="center" gap="4">
+                  <Text size="md" fw={700}>
+                    Substitution Controls
+                  </Text>
+                  <NumberInput
+                    label="Current Game Minute"
+                    description="Used to log when substitutions happen"
+                    placeholder="e.g. 24"
+                    value={gameMinute}
+                    onChange={(val) => {
+                      const num = typeof val === 'number' ? val : 1
+                      setGameMinute(num)
+                      persistDraft(buildDraftSnapshot({ gameMinute: num }))
+                    }}
+                    min={1}
+                    max={200}
+                    style={{ width: 200 }}
+                  />
+                  <Text size="sm" c="dimmed">
+                    Click the{' '}
+                    <Badge size="xs" color="green" variant="filled">
+                      Playing
+                    </Badge>{' '}
+                    /{' '}
+                    <Badge size="xs" color="gray" variant="filled">
+                      Benched
+                    </Badge>{' '}
+                    badge on each player row to toggle substitution status.
+                  </Text>
+                </Stack>
+              )}
+            </Grid.Col>
+          </Grid>
         </Card>
 
         {/* Live Stat Tracker Table */}
@@ -627,7 +760,7 @@ const AdminPlayerStatsLivePage = () => {
           shadow="sm"
           p="0"
           radius="md"
-          mb="xl"
+          mb="lg"
           style={{ overflowX: 'auto' }}
         >
           {roster.length === 0 ? (
@@ -642,6 +775,9 @@ const AdminPlayerStatsLivePage = () => {
             <Table highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
+                  <Table.Th style={{ width: '100px', textAlign: 'center' }}>
+                    Status
+                  </Table.Th>
                   <Table.Th style={{ width: '220px' }}>Player</Table.Th>
                   <Table.Th style={{ width: '190px', textAlign: 'center' }}>
                     Points (PTS)
@@ -676,9 +812,43 @@ const AdminPlayerStatsLivePage = () => {
                     blocks: 0,
                     minutesPlayed: 0,
                   }
+                  const isBenched = substitutedOut.has(player.id)
 
                   return (
-                    <Table.Tr key={player.id}>
+                    <Table.Tr
+                      key={player.id}
+                      style={{
+                        opacity: isBenched ? 0.5 : 1,
+                        backgroundColor: isBenched
+                          ? 'var(--mantine-color-gray-1)'
+                          : undefined,
+                        transition:
+                          'opacity 0.25s ease, background-color 0.25s ease',
+                      }}
+                    >
+                      {/* Substitution Status Toggle */}
+                      <Table.Td style={{ textAlign: 'center' }}>
+                        <Tooltip
+                          label={
+                            isBenched
+                              ? `Sub IN at minute ${gameMinute}`
+                              : `Sub OUT at minute ${gameMinute}`
+                          }
+                          withArrow
+                        >
+                          <Badge
+                            color={isBenched ? 'gray' : 'green'}
+                            variant="filled"
+                            size="xs"
+                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                            onClick={() => handleToggleSubstitution(player)}
+                            leftSection={<IconArrowsExchange size={10} />}
+                          >
+                            {isBenched ? 'Benched' : 'Playing'}
+                          </Badge>
+                        </Tooltip>
+                      </Table.Td>
+
                       {/* Player Profile & Details */}
                       <Table.Td>
                         <Group gap="xs">
@@ -686,18 +856,25 @@ const AdminPlayerStatsLivePage = () => {
                             src={player.profile?.profilePhoto}
                             radius="xl"
                             size="md"
-                            color="blue"
+                            color={isBenched ? 'gray' : 'blue'}
                           >
                             {player.profile?.firstName?.[0]}
                             {player.profile?.lastName?.[0]}
                           </Avatar>
                           <div>
-                            <Text size="sm" fw={600}>
+                            <Text
+                              size="sm"
+                              fw={600}
+                              c={isBenched ? 'dimmed' : undefined}
+                            >
                               {getPlayerName(player)}
                             </Text>
                             <Group gap="xs">
                               {player.profile?.jerseyNumber !== undefined && (
-                                <Badge size="xs" color="gray">
+                                <Badge
+                                  size="xs"
+                                  color={isBenched ? 'gray' : 'gray'}
+                                >
                                   #{player.profile.jerseyNumber}
                                 </Badge>
                               )}
@@ -959,6 +1136,89 @@ const AdminPlayerStatsLivePage = () => {
             </Table>
           )}
         </Card>
+
+        {/* Substitution Log */}
+        {substitutionLog.length > 0 && (
+          <Card withBorder shadow="sm" p="md" radius="md" mb="xl">
+            <Group
+              justify="space-between"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setShowSubLog((v) => !v)}
+            >
+              <Group gap="xs">
+                <ThemeIcon size="md" variant="light" color="orange" radius="xl">
+                  <IconArrowsExchange size={16} />
+                </ThemeIcon>
+                <Text size="md" fw={700}>
+                  Substitution Log
+                </Text>
+                <Badge color="orange" variant="light" size="sm">
+                  {substitutionLog.length} event
+                  {substitutionLog.length !== 1 ? 's' : ''}
+                </Badge>
+              </Group>
+              <ActionIcon variant="subtle" color="gray">
+                {showSubLog ? (
+                  <IconChevronUp size={16} />
+                ) : (
+                  <IconChevronDown size={16} />
+                )}
+              </ActionIcon>
+            </Group>
+
+            <Collapse in={showSubLog}>
+              <Divider my="sm" />
+              <Timeline
+                active={substitutionLog.length - 1}
+                bulletSize={28}
+                lineWidth={2}
+                mt="sm"
+              >
+                {substitutionLog.map((event, index) => (
+                  <Timeline.Item
+                    key={`${event.playerId}-${event.timestamp}-${index}`}
+                    bullet={
+                      <ThemeIcon
+                        size={22}
+                        variant="filled"
+                        color={event.type === 'OUT' ? 'red' : 'green'}
+                        radius="xl"
+                      >
+                        {event.type === 'OUT' ? (
+                          <IconArrowRight size={12} />
+                        ) : (
+                          <IconArrowLeft size={12} />
+                        )}
+                      </ThemeIcon>
+                    }
+                    title={
+                      <Group gap="xs">
+                        <Text size="sm" fw={600}>
+                          {event.playerName}
+                        </Text>
+                        <Badge
+                          size="xs"
+                          color={event.type === 'OUT' ? 'red' : 'green'}
+                          variant="filled"
+                        >
+                          {event.type === 'OUT' ? 'Subbed OUT' : 'Subbed IN'}
+                        </Badge>
+                      </Group>
+                    }
+                  >
+                    <Text size="xs" c="dimmed">
+                      Minute {event.minute} &nbsp;·&nbsp;{' '}
+                      {new Date(event.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </Timeline.Item>
+                ))}
+              </Timeline>
+            </Collapse>
+          </Card>
+        )}
 
         {/* Footer Actions */}
         {roster.length > 0 && (
