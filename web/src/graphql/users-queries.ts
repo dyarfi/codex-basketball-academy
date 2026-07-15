@@ -20,6 +20,9 @@ export const GET_USERS = gql`
       profile {
         firstName
         lastName
+        jerseyNumber
+        profilePhoto
+        position
       }
     }
   }

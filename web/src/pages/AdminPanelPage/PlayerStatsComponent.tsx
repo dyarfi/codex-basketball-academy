@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react'
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Container,
   Group,
@@ -12,7 +13,12 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPlus, IconSearch } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconEyePlus,
+  IconPlus,
+  IconSearch,
+} from '@tabler/icons-react'
 
 import { routes, useParams, navigate } from '@redwoodjs/router'
 import { useMutation, useQuery } from '@redwoodjs/web'
@@ -105,12 +111,6 @@ const PlayerStatsComponent = () => {
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
   const { data: { playerStatsByGameName } = [], loading: gameNameLoading } =
     useQuery(GET_UNIQUE_GAME_NAME)
-  // console.log({ gameNameLoading })
-  // return false
-
-  // const totalItems = usersData?.totalCount || 0
-  // const totalPages =
-  //   usersData?.totalPages ?? Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
 
   const [createPlayerStat, { loading: isCreating }] = useMutation(
     CREATE_PLAYER_STAT,
@@ -232,14 +232,22 @@ const PlayerStatsComponent = () => {
       key: 'user',
       header: 'Player',
       render: (val: any) => (
-        <div>
-          <Text size="sm" fw={500}>
-            {getPlayerName(val)}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {val?.email}
-          </Text>
-        </div>
+        <Group gap={'sm'}>
+          <Box id={val.id}>
+            <Text size="sm" fw={500}>
+              {getPlayerName(val)}{' '}
+              <Badge variant="outline" size="sm" ml={2}>
+                #{val?.profile?.jerseyNumber}
+              </Badge>
+            </Text>
+            <Text size="xs" c="dimmed" my={2}>
+              {val?.email}{' '}
+            </Text>
+            <Text size="xs" c="green">
+              {val?.profile?.position}
+            </Text>
+          </Box>
+        </Group>
       ),
     },
     {
@@ -324,7 +332,7 @@ const PlayerStatsComponent = () => {
       py={{ base: 'sm', sm: 'md', md: 'xl' }}
       px={{ base: 'xs', sm: 'md' }}
     >
-      <Group justify="space-between" mb="lg" grow={true} align="flex-start">
+      <Group justify="space-between" mb="lg" grow align="flex-start">
         <div>
           <Text size="lg" fw={700}>
             Player Stats Management
@@ -333,9 +341,9 @@ const PlayerStatsComponent = () => {
             Track and manage player game performance
           </Text>
         </div>
-        <Group gap="xs">
+        <Group gap="xs" grow>
           <Button
-            leftSection={<IconPlus size={16} />}
+            leftSection={<IconEyePlus size={16} />}
             onClick={() => navigate(routes.adminPlayerStatsLive())}
             color="teal"
             variant="light"
@@ -356,10 +364,11 @@ const PlayerStatsComponent = () => {
         gap="md"
         mb="lg"
         className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
-        grow={true}
+        grow
       >
         <TextInput
           placeholder="Search by player name or email..."
+          description="Player Name or Email"
           leftSection={<IconSearch size={16} />}
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.currentTarget.value)}
@@ -368,6 +377,7 @@ const PlayerStatsComponent = () => {
 
         <Select
           placeholder="Filter by game name"
+          description="Game Name"
           data={[{ value: '', label: 'All Game' }, ...gameOptions]}
           value={gameNameFilter || ''}
           onChange={(value) => setGameNameFilter(value || null)}
@@ -377,6 +387,7 @@ const PlayerStatsComponent = () => {
 
         <Select
           placeholder="Filter by player"
+          description="Player"
           data={[{ value: '', label: 'All Players' }, ...playerOptions]}
           value={playerFilter || ''}
           onChange={(value) => setPlayerFilter(value || null)}
@@ -387,6 +398,7 @@ const PlayerStatsComponent = () => {
         <TextInput
           type="date"
           placeholder="From date"
+          description="From Date"
           value={dateFrom}
           onChange={(event) => setDateFrom(event.currentTarget.value)}
         />
@@ -394,6 +406,7 @@ const PlayerStatsComponent = () => {
         <TextInput
           type="date"
           placeholder="To date"
+          description="To Date"
           value={dateTo}
           onChange={(event) => setDateTo(event.currentTarget.value)}
         />
