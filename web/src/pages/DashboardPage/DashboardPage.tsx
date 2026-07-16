@@ -113,7 +113,7 @@ const DashboardPage = () => {
               <p
                 className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}
               >
-                Role
+                Member
               </p>
               <p className={`text-lg font-semibold capitalize ${headingClass}`}>
                 {user?.role?.toLowerCase()}

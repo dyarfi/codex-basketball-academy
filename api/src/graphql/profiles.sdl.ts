@@ -5,6 +5,7 @@ export const schema = gql`
     user: User!
     firstName: String!
     lastName: String!
+    gender: String
     dateOfBirth: DateTime
     phoneNumber: String
     address: String
@@ -34,6 +35,7 @@ export const schema = gql`
   input CreateProfileInput {
     firstName: String!
     lastName: String!
+    gender: String
     dateOfBirth: DateTime
     phoneNumber: String
     address: String
@@ -56,6 +58,7 @@ export const schema = gql`
   input UpdateProfileInput {
     firstName: String
     lastName: String
+    gender: String
     dateOfBirth: DateTime
     phoneNumber: String
     address: String

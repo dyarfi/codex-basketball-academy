@@ -173,6 +173,7 @@ export const createUser: MutationResolvers['createUser'] = ({ input }) => {
             ? new Date(profile.dateOfBirth)
             : null,
           phoneNumber: profile.phoneNumber || null,
+          gender: profile.gender || null,
           address: profile.address || null,
           city: profile.city || null,
           state: profile.state || null,
@@ -209,6 +210,7 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
       firstName,
       lastName,
       dateOfBirth,
+      gender,
       phoneNumber,
       address,
       city,
@@ -231,6 +233,7 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
       firstName,
       lastName,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender,
       phoneNumber,
       address,
       city,

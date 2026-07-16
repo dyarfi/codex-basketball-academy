@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react'
 
-import { Link, navigate } from '@redwoodjs/router'
+import { Group, Loader, Container } from '@mantine/core'
+
+import { Link, navigate, useParams } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
-import { toast } from '@redwoodjs/web/toast'
+import Footer from 'src/components/Footer/Footer'
+import BlankLayout from 'src/layouts/BlankLayout'
+import { useSettings } from 'src/providers/SettingsProvider'
 
 const SignupPage = () => {
-
   const { isAuthenticated, loading: isLoading, signUp } = useAuth()
   const [loading, setLoading] = useState(false)
+  const { getSetting, loading: settingsLoading } = useSettings()
+  const { invite: codeInvite } = useParams()
+  const enableSignUpInvite: boolean =
+    getSetting('enable_signup_invite', 'true') === 'true' ? true : false
+  const siteName: string = getSetting('site_name', 'Basketball Academy')
+  const siteLogo: string = getSetting('site_logo', '')
 
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +25,8 @@ const SignupPage = () => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'PLAYER' as const,
+    gender: '',
+    role: 'PROSPECT' as const,
     dateOfBirth: '',
   })
   const [error, setError] = useState('')
@@ -35,14 +45,6 @@ const SignupPage = () => {
       navigate('/dashboard')
     }
   }, [isAuthenticated, isLoading])
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    )
-  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -63,7 +65,8 @@ const SignupPage = () => {
       !formData.password ||
       !formData.confirmPassword ||
       !formData.firstName ||
-      !formData.lastName
+      !formData.lastName ||
+      !formData.gender
     ) {
       setError('All fields are required')
       return
@@ -85,7 +88,6 @@ const SignupPage = () => {
       )
       return
     }
-    // console.log({ formData })
     try {
       setLoading(true)
       const response = await signUp({
@@ -94,13 +96,14 @@ const SignupPage = () => {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        gender: formData.gender || null,
         role: formData.role,
         dateOfBirth: formData.dateOfBirth
           ? new Date(formData.dateOfBirth).toISOString()
           : null,
       })
       if (response.message) {
-        success(response.message)
+        toast.success(response.message)
       } else if (response.error) {
         toast.error(response.error)
       } else {
@@ -114,81 +117,165 @@ const SignupPage = () => {
     }
   }
 
+  if (isLoading) {
+    return (
+      <Container
+        size="xl"
+        py={{ base: 'sm', sm: 'md', md: 'xl' }}
+        px={{ base: 'xs', sm: 'md' }}
+      >
+        <Group justify="center">
+          <Loader size="sm" />
+        </Group>
+      </Container>
+    )
+  }
+
+  if (!enableSignUpInvite && !codeInvite) {
+    return navigate('/')
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Basketball Academy
-          </p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">{error}</p>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="firstName"
-                className="block text-sm font-medium text-gray-700"
+    <BlankLayout
+      metaTags={{
+        title: 'Programs of our Basketball Academy Website',
+        description: 'Basketball Academy in your town',
+      }}
+    >
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Create Account
+            </h2>
+            <p className="mt-2 text-center">
+              <Link
+                to="/"
+                className="font-bold text-blue-600 hover:text-blue-500"
               >
-                First Name
-              </label>
-              <input
-                id="firstName"
-                type="text"
-                name="firstName"
-                required
-                value={formData.firstName}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+                {siteLogo} {siteName}
+              </Link>
+            </p>
+          </div>
 
-            <div>
-              <label
-                htmlFor="lastName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Last Name
-              </label>
-              <input
-                id="lastName"
-                type="text"
-                name="lastName"
-                required
-                value={formData.lastName}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+            )}
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  First Name
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="firstName"
+                  type="text"
+                  name="firstName"
+                  required
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
 
-            <div>
+              <div>
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Last Name
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="lastName"
+                  type="text"
+                  name="lastName"
+                  required
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email Address
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="email"
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="dateOfBirth"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Date of Birth (Optional)
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="dateOfBirth"
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <div className="block text-sm font-medium text-gray-700">
+                  Gender
+                </div>
+                <div className="inline-flex">
+                  <label htmlFor="gender[Male]" className={'mr-2'}>
+                    <input
+                      disabled={settingsLoading}
+                      id="gender[Male]"
+                      name="gender"
+                      type="radio"
+                      required
+                      value={'Male'}
+                      onChange={handleChange}
+                      className={'mr-1'}
+                    />
+                    Male
+                  </label>
+                  <label htmlFor="gender[Female]">
+                    <input
+                      disabled={settingsLoading}
+                      id="gender[Female]"
+                      name="gender"
+                      type="radio"
+                      required
+                      value={'Female'}
+                      onChange={handleChange}
+                      className={'mr-1'}
+                    />
+                    Female
+                  </label>
+                </div>
+              </div>
+
+              {/* <div>
               <label
                 htmlFor="role"
                 className="block text-sm font-medium text-gray-700"
@@ -207,84 +294,71 @@ const SignupPage = () => {
                 <option value="COACH">Coach</option>
                 <option value="PROSPECT">Prospect</option>
               </select>
+            </div> */}
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="password"
+                  type="password"
+                  name="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Confirm Password
+                </label>
+                <input
+                  disabled={settingsLoading}
+                  id="confirmPassword"
+                  type="password"
+                  name="confirmPassword"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <p className="text-xs text-gray-500">
+                Password must be at least 8 characters with uppercase,
+                lowercase, and numbers.
+              </p>
             </div>
 
-            <div>
-              <label
-                htmlFor="dateOfBirth"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Date of Birth (Optional)
-              </label>
-              <input
-                id="dateOfBirth"
-                type="date"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+            <button
+              type="submit"
+              disabled={loading || settingsLoading}
+              className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                name="confirmPassword"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <p className="text-xs text-gray-500">
-              Password must be at least 8 characters with uppercase, lowercase,
-              and numbers.
+            <p className="text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-blue-600 hover:text-blue-500">
+                Sign in
+              </Link>
             </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Create Account'}
-          </button>
-
-          <p className="text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
-          </p>
-        </form>
+          </form>
+          <Footer type="social" />
+        </div>
       </div>
-    </div>
+    </BlankLayout>
   )
 }
 

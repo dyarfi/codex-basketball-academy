@@ -109,7 +109,7 @@ const DefaultLayout = ({
               <Toaster
                 toastOptions={{
                   className: 'rw-toast',
-                  duration: 6000,
+                  duration: 4000,
                 }}
               />
             </Box>

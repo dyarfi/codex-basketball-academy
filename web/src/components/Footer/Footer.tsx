@@ -8,7 +8,11 @@ import {
 import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
-const Footer = () => {
+const Footer = ({
+  type = '',
+}: {
+  type?: 'social' | 'links' | 'contact' | ''
+}) => {
   const { isDark } = useAppTheme()
   const { getSetting, loading } = useSettings()
 
@@ -43,6 +47,10 @@ const Footer = () => {
 
   if (loading) return null
 
+  const isContact = type === 'contact' || type === ''
+  const isSocial = type === 'social' || type === ''
+  const isLinks = type === 'links' || type === ''
+
   return (
     <footer
       className={`${footerClass} py-12`}
@@ -54,111 +62,120 @@ const Footer = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Contact Info */}
-          <div>
-            <h3 className="mb-4 font-semibold text-blue-600">Contact Us</h3>
-            <div className={`space-y-2 text-sm ${textClass}`}>
-              <p>{footerAddress}</p>
-              <p>
-                <a href={`tel:${footerPhone}`} className="hover:text-blue-600">
-                  {footerPhone}
-                </a>
-              </p>
-              <p>
-                <a
-                  href={`mailto:${footerEmail}`}
-                  className="hover:text-blue-600"
-                >
-                  {footerEmail}
-                </a>
-              </p>
+          {isContact && (
+            <div>
+              <h3 className="mb-4 font-semibold text-blue-600">Contact Us</h3>
+              <div className={`space-y-2 text-sm ${textClass}`}>
+                <p>{footerAddress}</p>
+                <p>
+                  <a
+                    href={`tel:${footerPhone}`}
+                    className="hover:text-blue-600"
+                  >
+                    {footerPhone}
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href={`mailto:${footerEmail}`}
+                    className="hover:text-blue-600"
+                  >
+                    {footerEmail}
+                  </a>
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quick Links */}
-          <div>
-            <h3 className="mb-4 font-semibold text-blue-600">Quick Links</h3>
-            <ul className={`space-y-2 text-sm ${textClass}`}>
-              <li>
-                <a href="/programs" className="hover:text-blue-600">
-                  Programs
-                </a>
-              </li>
-              <li>
-                <a href="/gallery" className="hover:text-blue-600">
-                  Gallery
-                </a>
-              </li>
-              <li>
-                <a href="/about" className="hover:text-blue-600">
-                  About
-                </a>
-              </li>
-              <li>
-                <a href="/contact" className="hover:text-blue-600">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="/dashboard" className="hover:text-blue-600">
-                  Dashboard
-                </a>
-              </li>
-              <li>
-                <a href="/login" className="hover:text-blue-600">
-                  Login
-                </a>
-              </li>
-              <li>
-                <a href="/signup" className="hover:text-blue-600">
-                  Sign Up
-                </a>
-              </li>
-            </ul>
-          </div>
+          {isLinks && (
+            <div>
+              <h3 className="mb-4 font-semibold text-blue-600">Quick Links</h3>
+              <ul className={`space-y-2 text-sm ${textClass}`}>
+                <li>
+                  <a href="/programs" className="hover:text-blue-600">
+                    Programs
+                  </a>
+                </li>
+                <li>
+                  <a href="/gallery" className="hover:text-blue-600">
+                    Gallery
+                  </a>
+                </li>
+                <li>
+                  <a href="/about" className="hover:text-blue-600">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href="/contact" className="hover:text-blue-600">
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a href="/dashboard" className="hover:text-blue-600">
+                    Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a href="/login" className="hover:text-blue-600">
+                    Login
+                  </a>
+                </li>
+                <li>
+                  <a href="/signup" className="hover:text-blue-600">
+                    Sign Up
+                  </a>
+                </li>
+              </ul>
+            </div>
+          )}
 
           {/* Social Media */}
-          <div>
-            <h3 className="mb-4 font-semibold text-blue-600">Follow Us</h3>
-            <Group>
-              {facebookUrl && (
-                <ActionIcon
-                  radius={0}
-                  autoContrast
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  size={'sm'}
-                >
-                  <IconBrandFacebook stroke={1} />
-                </ActionIcon>
-              )}
-              {twitterUrl && (
-                <ActionIcon
-                  radius={0}
-                  autoContrast
-                  component="a"
-                  href={twitterUrl}
-                  rel="noopener noreferrer"
-                  aria-label="X"
-                  size={'sm'}
-                >
-                  <IconBrandX stroke={1} />
-                </ActionIcon>
-              )}
-              {instagramUrl && (
-                <ActionIcon
-                  radius={0}
-                  autoContrast
-                  component="a"
-                  href={instagramUrl}
-                  rel="noopener noreferrer"
-                  aria-label="X"
-                  size={'sm'}
-                >
-                  <IconBrandInstagram stroke={1} />
-                </ActionIcon>
-              )}
-            </Group>
-          </div>
+          {isSocial && (
+            <div>
+              <h3 className="mb-4 font-semibold text-blue-600">Follow Us</h3>
+              <Group>
+                {facebookUrl && (
+                  <ActionIcon
+                    radius={0}
+                    autoContrast
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    size={'sm'}
+                  >
+                    <IconBrandFacebook stroke={1} />
+                  </ActionIcon>
+                )}
+                {twitterUrl && (
+                  <ActionIcon
+                    radius={0}
+                    autoContrast
+                    component="a"
+                    href={twitterUrl}
+                    rel="noopener noreferrer"
+                    aria-label="X"
+                    size={'sm'}
+                  >
+                    <IconBrandX stroke={1} />
+                  </ActionIcon>
+                )}
+                {instagramUrl && (
+                  <ActionIcon
+                    radius={0}
+                    autoContrast
+                    component="a"
+                    href={instagramUrl}
+                    rel="noopener noreferrer"
+                    aria-label="X"
+                    size={'sm'}
+                  >
+                    <IconBrandInstagram stroke={1} />
+                  </ActionIcon>
+                )}
+              </Group>
+            </div>
+          )}
         </div>
 
         {/* Copyright */}

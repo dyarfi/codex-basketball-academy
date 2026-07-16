@@ -271,8 +271,8 @@ export const GalleryComponent = () => {
 
   const handleOpenMediaModal = (galleryId: number) => {
     setSelectedGalleryId(galleryId)
-    openMedia()
     setMediaFormData({ name: '', description: '', image: '' })
+    openMedia()
     setSelectedFile(null)
   }
 
@@ -566,7 +566,11 @@ export const GalleryComponent = () => {
       {/* Media Modal */}
       <Modal
         opened={mediaOpened}
-        onClose={closeMedia}
+        onClose={() => {
+          setMediaFormData({ name: '', description: '', image: '' })
+          closeMedia()
+        }}
+        // onClose={closeMedia}
         title="Add Image to Gallery"
         size="lg"
       >
@@ -597,7 +601,7 @@ export const GalleryComponent = () => {
             /> */}
           </Group>
           <Box>
-            {mediaFormData.image && (
+            {mediaFormData?.image && (
               <>
                 <TextInput
                   label="Image Name"
@@ -622,7 +626,7 @@ export const GalleryComponent = () => {
               </>
             )}
 
-            {mediaFormData.image && (
+            {mediaFormData?.image && (
               <Image
                 src={mediaFormData.image}
                 fallbackSrc="https://placehold.co/200x260?text=Image"

@@ -58,6 +58,7 @@ const UserProfilePage = () => {
   const [editFormData, setEditFormData] = useState({
     firstName: currentUser?.profile?.firstName || '',
     lastName: currentUser?.profile?.lastName || '',
+    gender: currentUser?.profile?.gender || '',
     email: currentUser?.email || '',
     phoneNumber: currentUser?.profile?.phoneNumber,
     address: currentUser?.profile?.address,
@@ -180,6 +181,7 @@ const UserProfilePage = () => {
             profile: {
               firstName: editFormData.firstName,
               lastName: editFormData.lastName,
+              gender: editFormData.gender || null,
               // dateOfBirth: values.profile.dateOfBirth
               //   ? new Date(values.profile.dateOfBirth).toISOString()
               //   : null,
@@ -492,6 +494,22 @@ const UserProfilePage = () => {
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  value={editFormData.gender}
+                  onChange={handleEditChange as any}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
 
               <div>

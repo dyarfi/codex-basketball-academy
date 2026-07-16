@@ -66,6 +66,7 @@ export const schema = gql`
   input CreateProfileInput {
     firstName: String!
     lastName: String!
+    gender: String
     dateOfBirth: DateTime
     phoneNumber: String
     address: String

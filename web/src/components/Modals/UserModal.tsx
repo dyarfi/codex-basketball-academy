@@ -57,6 +57,7 @@ const UserModal: React.FC<UserModalProps> = ({
         firstName: '',
         lastName: '',
         dateOfBirth: '',
+        gender: '',
         phoneNumber: '',
         address: '',
         city: '',
@@ -90,6 +91,7 @@ const UserModal: React.FC<UserModalProps> = ({
         profile: {
           firstName: userData.profile?.firstName || '',
           lastName: userData.profile?.lastName || '',
+          gender: userData.profile?.gender || '',
           dateOfBirth: userData.profile?.dateOfBirth
             ? new Date(userData.profile.dateOfBirth).toISOString().split('T')[0]
             : '',
@@ -126,6 +128,10 @@ const UserModal: React.FC<UserModalProps> = ({
     }
     if (!values.profile.lastName) {
       form.setFieldError('profile.lastName', 'Last name is required')
+      return
+    }
+    if (!values.profile.gender) {
+      form.setFieldError('profile.gender', 'Gender is required')
       return
     }
     // Prepare upload
@@ -229,6 +235,13 @@ const UserModal: React.FC<UserModalProps> = ({
                   required
                   error={form.errors['profile.lastName']}
                   {...form.getInputProps('profile.lastName')}
+                />
+                <TextInput
+                  label="Gender"
+                  placeholder="Male/Female"
+                  required
+                  error={form.errors['profile.gender']}
+                  {...form.getInputProps('profile.gender')}
                 />
               </Group>
 

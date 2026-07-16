@@ -38,6 +38,7 @@ import {
   DELETE_USER,
   CREATE_USER,
 } from 'src/graphql/users-queries'
+import { sendEmailMessage } from 'src/lib/fetch'
 // import { sendEmailMessage } from 'src/lib/fetch'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
@@ -176,6 +177,12 @@ const UsersPage = () => {
           },
         },
       })
+      if (values.role === 'PLAYER') {
+        sendEmailMessage({
+          template: 'memberAccepted',
+          subject: 'Your member status',
+        })
+      }
     } else {
       createUser({
         variables: {

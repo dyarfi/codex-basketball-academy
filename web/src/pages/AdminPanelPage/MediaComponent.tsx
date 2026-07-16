@@ -72,7 +72,10 @@ export const MediaComponent = () => {
     false,
     {
       onOpen: () => console.log('Opened'),
-      onClose: () => setModalContent(''),
+      onClose: () => {
+        setModalContent('')
+        refetch()
+      },
     }
   )
   const [modalContent, setModalContent] = useState('')
@@ -446,7 +449,10 @@ export const MediaComponent = () => {
       {/* Upload Modal */}
       <Modal
         opened={opened}
-        onClose={close}
+        onClose={() => {
+          close()
+          refetch()
+        }}
         title="Upload Media"
         size="xl"
         centered

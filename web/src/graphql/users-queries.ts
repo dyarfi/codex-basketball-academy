@@ -20,6 +20,7 @@ export const GET_USERS = gql`
       profile {
         firstName
         lastName
+        gender
         jerseyNumber
         profilePhoto
         position
@@ -58,6 +59,7 @@ export const GET_PAGINATED_USERS = gql`
         profile {
           firstName
           lastName
+          gender
           dateOfBirth
           phoneNumber
           address
@@ -104,6 +106,7 @@ export const GET_USER = gql`
       profile {
         firstName
         lastName
+        gender
         dateOfBirth
         phoneNumber
         address
@@ -143,6 +146,7 @@ export const UPDATE_USER = gql`
       profile {
         firstName
         lastName
+        gender
         dateOfBirth
         phoneNumber
         address
@@ -182,6 +186,7 @@ export const CREATE_USER = gql`
       profile {
         firstName
         lastName
+        gender
         dateOfBirth
         phoneNumber
         address
@@ -227,6 +232,7 @@ export const GET_COACHES = gql`
       profile {
         firstName
         lastName
+        gender
         dateOfBirth
         jerseyNumber
         position
@@ -256,6 +262,7 @@ export const USERS_QUERY = gql`
       profile {
         firstName
         lastName
+        gender
       }
     }
   }

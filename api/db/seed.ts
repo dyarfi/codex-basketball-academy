@@ -40,6 +40,7 @@ export async function seed() {
           create: {
             firstName: 'Admin',
             lastName: 'User',
+            gender: 'Male',
             phoneNumber: '+1-555-0100',
             address: '123 Academy Way',
             city: 'Springfield',
@@ -64,6 +65,7 @@ export async function seed() {
           create: {
             firstName: 'Michael',
             lastName: 'Johnson',
+            gender: 'Male',
             dateOfBirth: new Date('1985-03-20'),
             phoneNumber: '+1-555-0101',
             address: '456 Coaching Drive',
@@ -90,6 +92,7 @@ export async function seed() {
           create: {
             firstName: 'Sarah',
             lastName: 'Williams',
+            gender: 'Female',
             dateOfBirth: new Date('1988-07-15'),
             phoneNumber: '+1-555-0102',
             address: '789 Court Lane',
@@ -116,6 +119,7 @@ export async function seed() {
           create: {
             firstName: 'David',
             lastName: 'Brown',
+            gender: 'Male',
             dateOfBirth: new Date('1982-11-10'),
             phoneNumber: '+1-555-0103',
             address: '321 Basketball Blvd',
@@ -384,7 +388,10 @@ export async function seed() {
       let assignedTeamId = null
       if (player.firstName === 'Kobe') {
         assignedTeamId = teamU12.id
-      } else if (player.firstName === 'Michael' || player.firstName === 'Stephen') {
+      } else if (
+        player.firstName === 'Michael' ||
+        player.firstName === 'Stephen'
+      ) {
         assignedTeamId = teamU14.id
       } else {
         assignedTeamId = teamU16.id
@@ -402,6 +409,7 @@ export async function seed() {
             create: {
               firstName: player.firstName,
               lastName: player.lastName,
+              gender: 'Male',
               dateOfBirth: new Date(`${player.birthYear}-06-15`),
               phoneNumber: `+1-555-${2000 + Math.floor(Math.random() * 9000)}`,
               position: player.position,
@@ -431,6 +439,7 @@ export async function seed() {
           create: {
             firstName: 'John',
             lastName: 'Smith',
+            gender: 'Male',
             phoneNumber: '+1-555-0201',
             address: '999 Family Lane',
             city: 'Springfield',
@@ -453,6 +462,7 @@ export async function seed() {
           create: {
             firstName: 'Jennifer',
             lastName: 'Davis',
+            gender: 'Female',
             phoneNumber: '+1-555-0202',
             address: '888 Parent Ave',
             city: 'Springfield',
@@ -477,6 +487,7 @@ export async function seed() {
           create: {
             firstName: 'Chris',
             lastName: 'Miller',
+            gender: 'Male',
             dateOfBirth: new Date('2010-08-20'),
             phoneNumber: '+1-555-0300',
             position: 'Forward',
@@ -979,6 +990,16 @@ export async function seed() {
       data: {
         key: 'enable_announcements',
         label: 'Enable Announcements',
+        group: 'features',
+        value: 'true',
+        valueType: 'boolean',
+      },
+    })
+
+    await db.siteSetting.create({
+      data: {
+        key: 'enable_signup_invite',
+        label: 'Enable SignUp Invite',
         group: 'features',
         value: 'true',
         valueType: 'boolean',

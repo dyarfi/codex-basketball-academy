@@ -16,6 +16,7 @@ const APP_URL = process.env.APP_URL
 import {
   templateEmailCertificate,
   templateConfirmEmail,
+  templateMemberAccepted,
 } from './emailTemplates'
 // // Sending a confirmation email
 // await sendEmailMessage({
@@ -35,6 +36,7 @@ import {
 const templateEmails = {
   confirmEmail: templateConfirmEmail,
   emailCertificate: templateEmailCertificate,
+  memberAccepted: templateMemberAccepted,
 }
 
 export function uploadCloud(file: any, folder: string) {
