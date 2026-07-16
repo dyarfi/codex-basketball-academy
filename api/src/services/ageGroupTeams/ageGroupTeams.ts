@@ -23,7 +23,8 @@ export const publicAgeGroupTeams: QueryResolvers['publicAgeGroupTeams'] =
         players: {
           where: { isActive: true, role: 'PLAYER' },
           include: { profile: true },
-          orderBy: { email: 'asc' },
+          orderBy: { createdAt: 'desc' },
+          limit: 15,
         },
       },
     })

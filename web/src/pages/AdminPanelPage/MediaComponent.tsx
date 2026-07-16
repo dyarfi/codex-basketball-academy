@@ -19,6 +19,8 @@ import {
   Checkbox,
   CopyButton,
   Center,
+  Anchor,
+  Breadcrumbs,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import {
@@ -31,7 +33,7 @@ import {
 } from '@phosphor-icons/react'
 import { IconAlertCircle, IconCopy, IconCopyCheck } from '@tabler/icons-react'
 
-import { useParams, routes } from '@redwoodjs/router'
+import { useParams, routes, Link } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
@@ -296,6 +298,18 @@ export const MediaComponent = () => {
       py={{ base: 'sm', sm: 'md', md: 'xl' }}
       px={{ base: 'xs', sm: 'md' }}
     >
+      {/* Navigation Breadcrumbs */}
+      <Breadcrumbs mb="lg" separator="→">
+        <Anchor component={Link} to={routes.adminPanel()} size="sm">
+          Admin Panel
+        </Anchor>
+        <Anchor component={Link} to={routes.adminGalleries()} size="sm">
+          Galleries
+        </Anchor>
+        <Text size="sm" c="dimmed">
+          Medias
+        </Text>
+      </Breadcrumbs>
       <Group justify="space-between" mb="lg" grow align="flex-start">
         <div>
           <Text size="lg" fw={700}>
