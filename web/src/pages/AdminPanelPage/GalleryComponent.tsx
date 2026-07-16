@@ -18,6 +18,8 @@ import {
   ActionIcon,
   Image,
   Flex,
+  Anchor,
+  Breadcrumbs,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import { Plus, Images as ImagesIcon } from '@phosphor-icons/react'
@@ -30,7 +32,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 
-import { useParams } from '@redwoodjs/router'
+import { routes, navigate, useParams } from '@redwoodjs/router'
 import { useQuery, useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
@@ -359,6 +361,15 @@ export const GalleryComponent = () => {
       py={{ base: 'sm', sm: 'md', md: 'xl' }}
       px={{ base: 'xs', sm: 'md' }}
     >
+      {/* Navigation Breadcrumbs */}
+      {/* <Breadcrumbs mb="lg" separator="→">
+        <Anchor component={Link} to={routes.adminPanel()} size="sm">
+          Admin Panel
+        </Anchor>
+        <Text size="sm" c="dimmed">
+          Gallery
+        </Text>
+      </Breadcrumbs> */}
       <Group justify="space-between" mb="lg" grow align="flex-start">
         <div>
           <Text size="lg" fw={700}>
@@ -374,6 +385,14 @@ export const GalleryComponent = () => {
           color="blue"
         >
           New Gallery
+        </Button>
+        <Button
+          leftSection={<Plus size={16} weight="bold" />}
+          onClick={() => navigate(routes.adminGalleriesMedias())}
+          color="blue"
+          variant="outline"
+        >
+          New Media
         </Button>
       </Group>
 

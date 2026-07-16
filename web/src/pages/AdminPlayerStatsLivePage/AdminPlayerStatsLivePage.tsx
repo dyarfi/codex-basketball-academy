@@ -12,8 +12,6 @@ import {
   Container,
   Divider,
   Group,
-  Loader,
-  NumberInput,
   Paper,
   Select,
   SimpleGrid,
@@ -26,9 +24,7 @@ import {
   Stack,
   Timeline,
   ThemeIcon,
-  Box,
-  Grid,
-  Flex,
+  Switch,
 } from '@mantine/core'
 import { useDebouncedCallback, useLocalStorage } from '@mantine/hooks'
 import {
@@ -347,7 +343,9 @@ const AdminPlayerStatsLivePage = () => {
       onCompleted: () => {
         persistDraft.cancel()
         removeDraft()
-        toast.success('Live game stats saved successfully')
+        toast.success(
+          `Live game stats ${gameName && `${gameName} `}saved successfully`
+        )
         navigate(routes.adminPlayerStats())
       },
       onError: (err) => {
@@ -375,7 +373,7 @@ const AdminPlayerStatsLivePage = () => {
 
   // Dropdown for adding players manually (excluding already added ones)
   const playerOptions = useMemo(() => {
-    const rosterIds = new Set(roster.map((p) => p.id))
+    const rosterIds = new Set(roster.map((r) => r.id))
     return allPlayers
       .filter((p: any) => !rosterIds.has(p.id))
       .map((p: any) => ({
@@ -491,6 +489,7 @@ const AdminPlayerStatsLivePage = () => {
     const newSubstitutedOut = new Set(substitutedOut)
     const eventType: 'IN' | 'OUT' = isBenched ? 'IN' : 'OUT'
 
+    // Check the player status
     if (isBenched) {
       newSubstitutedOut.delete(player.id)
     } else {
@@ -505,9 +504,12 @@ const AdminPlayerStatsLivePage = () => {
       timestamp: new Date().toISOString(),
     }
 
-    const newLog = [...substitutionLog, event]
     setSubstitutedOut(newSubstitutedOut)
-    setSubstitutionLog(newLog)
+    const newLog = gameStarted ? [...substitutionLog, event] : substitutionLog
+    if (gameStarted) {
+      setSubstitutionLog(newLog)
+    }
+
     persistDraft(
       buildDraftSnapshot({
         substitutedOut: Array.from(newSubstitutedOut),
@@ -517,8 +519,8 @@ const AdminPlayerStatsLivePage = () => {
 
     toast.success(
       eventType === 'OUT'
-        ? `${getPlayerName(player)} subbed OUT at minute ${gameMinute}`
-        : `${getPlayerName(player)} subbed IN at minute ${gameMinute}`
+        ? `${getPlayerName(player)} subbed OUT at minute ${gameMinute == 1 && !gameStarted ? 0 : gameMinute}`
+        : `${getPlayerName(player)} subbed IN at minute ${gameMinute == 1 && !gameStarted ? 0 : gameMinute}`
     )
   }
   // ─────────────────────────────────────────────────────────────────────────────
@@ -637,25 +639,26 @@ const AdminPlayerStatsLivePage = () => {
       },
     })
 
-    toast.success('Game stats saved!')
+    toast.success(`Game stats ${gameName && `${gameName} `}saved!`)
   }
 
-  // Handle animate class
-  const classNameAnim = 'animate-[scorePop_300ms_ease-in-out]'
-  // Handle game not started not finish
+  // Handle animated class
+  const classScoreAnim = 'animate-[scorePop_300ms_ease-in-out]'
+  const classButtonAnim = 'animate-[pulse_600ms_linear]'
+  // Handle game not started not finished
   const isGameNoStartNoFinish: boolean =
     !gameStarted && !gameFinished && !timerRunning
-  // Handle game started not finish
+  // Handle game started not finished
   const isGameStartNoFinish: boolean = gameStarted && !gameFinished
   // Handle game idle
   const isGameIdle: boolean = gameFinished && !gameStarted && !timerRunning
-  // Handle game player quota
-  const isGamePlayers = onCourtCount < 3
+  // Handle game minimum player quota
+  const isGameMinStart: boolean = onCourtCount < 3
   // Handle player added
-  const isRosterAdded = roster.length > 0
+  const isRosterAdded: boolean = roster.length > 0
   // Handle warning text
-  const warningMessage = isGamePlayers
-    ? '3 player minimum'
+  const warningMessage = isGameMinStart
+    ? '3 Player minimum'
     : isGameNoStartNoFinish
       ? 'Start the game first'
       : isGameStartNoFinish
@@ -689,7 +692,6 @@ const AdminPlayerStatsLivePage = () => {
             Live Scoreboard
           </Text>
         </Breadcrumbs>
-
         {/* Page Header */}
         <Group justify="space-between" mb="lg">
           <Stack gap={2}>
@@ -718,6 +720,7 @@ const AdminPlayerStatsLivePage = () => {
                 color="red"
                 size="sm"
                 onClick={handleClearDraft}
+                className={classButtonAnim}
               >
                 Clear Draft
               </Button>
@@ -729,7 +732,12 @@ const AdminPlayerStatsLivePage = () => {
                     leftSection={<IconPlayerPlay size={16} />}
                     color="green"
                     size="sm"
+                    disabled={isGameMinStart}
+                    title={
+                      isGameMinStart ? '3 Player minimum' : 'Start the Game'
+                    }
                     onClick={handleStartGame}
+                    className={classButtonAnim}
                   >
                     Start Game
                   </Button>
@@ -742,6 +750,7 @@ const AdminPlayerStatsLivePage = () => {
                         color="orange"
                         size="sm"
                         onClick={handlePauseTimer}
+                        className={classButtonAnim}
                       >
                         Pause Game
                       </Button>
@@ -751,6 +760,7 @@ const AdminPlayerStatsLivePage = () => {
                         color="green"
                         size="sm"
                         onClick={handleResumeTimer}
+                        className={classButtonAnim}
                       >
                         Resume Game
                       </Button>
@@ -760,6 +770,7 @@ const AdminPlayerStatsLivePage = () => {
                       color="red"
                       size="sm"
                       onClick={handleStopGame}
+                      className={classButtonAnim}
                     >
                       Stop Game
                     </Button>
@@ -767,7 +778,7 @@ const AdminPlayerStatsLivePage = () => {
                 )}
                 {gameFinished && (
                   <Badge color="red" size="lg" variant="filled">
-                    Game Finished
+                    Game Finished!
                   </Badge>
                 )}
               </>
@@ -785,13 +796,13 @@ const AdminPlayerStatsLivePage = () => {
         </Group>
 
         {/* Setup and Live Totals Grid */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" mb="sm">
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="sm">
           {/* Game Setup Card */}
           <Card withBorder shadow="sm" p="md" radius="md">
             <Text size="md" fw={700} mb="sm" c="blue">
               Game Information & Roster Setup
             </Text>
-            <Stack gap="xs" mb={'md'}>
+            <Stack gap="lg" mb={'md'}>
               <Group grow>
                 <TextInput
                   disabled={gameFinished || gameStarted}
@@ -830,16 +841,13 @@ const AdminPlayerStatsLivePage = () => {
                 clearable
                 searchable
               />
-            </Stack>
-            {/* Roster Selection & Manual Addition */}
-            <Box>
-              <Text size="md" fw={700} mb="sm" c="blue">
-                Add Individual Players
-              </Text>
+              {/* Roster Selection & Manual Addition */}
               <Group grow justify="stretch" align="end">
                 <Select
                   maw={500}
-                  label="Organize your player"
+                  maxDropdownHeight={100}
+                  comboboxProps={{ dropdownPadding: 0 }}
+                  label="Add Individual Players"
                   placeholder="Search or select player to add..."
                   data={playerOptions || [{ value: '', label: '' }]}
                   value={individualPlayerSelect}
@@ -858,7 +866,13 @@ const AdminPlayerStatsLivePage = () => {
                   Add Player
                 </Button>
               </Group>
-            </Box>
+              {gameFinished && (
+                <Text size="sm" c="red.8" className="animate-pulse">
+                  <b>GAME FINISHED!</b> You can now make final adjustments and{' '}
+                  <b>Save Game Stats</b>!
+                </Text>
+              )}
+            </Stack>
           </Card>
 
           {/* Live Team Totals Card */}
@@ -870,7 +884,7 @@ const AdminPlayerStatsLivePage = () => {
             bg="blue.0"
             style={{ border: '1px solid var(--mantine-color-blue-3)' }}
           >
-            <Group justify="space-between" align="stretch">
+            <Group justify="space-between" align="stretch" gap={'xl'}>
               <Text size="md" fw={700} mb="xs" c="blue.8">
                 Live Team Scoreboard Totals
                 <Text size="xs" c="dimmed" mb="md">
@@ -889,7 +903,7 @@ const AdminPlayerStatsLivePage = () => {
                   fw={900}
                   c="blue.8"
                   className={
-                    changedStat?.statKey === 'points' ? classNameAnim : ''
+                    changedStat?.statKey === 'points' ? classScoreAnim : ''
                   }
                 >
                   {teamTotals.points}
@@ -904,7 +918,7 @@ const AdminPlayerStatsLivePage = () => {
                   fw={900}
                   c="teal.8"
                   className={
-                    changedStat?.statKey === 'rebounds' ? classNameAnim : ''
+                    changedStat?.statKey === 'rebounds' ? classScoreAnim : ''
                   }
                 >
                   {teamTotals.rebounds}
@@ -919,7 +933,7 @@ const AdminPlayerStatsLivePage = () => {
                   fw={900}
                   c="violet.8"
                   className={
-                    changedStat?.statKey === 'assists' ? classNameAnim : ''
+                    changedStat?.statKey === 'assists' ? classScoreAnim : ''
                   }
                 >
                   {teamTotals.assists}
@@ -934,7 +948,7 @@ const AdminPlayerStatsLivePage = () => {
                   fw={900}
                   c="orange.8"
                   className={
-                    changedStat?.statKey === 'steals' ? classNameAnim : ''
+                    changedStat?.statKey === 'steals' ? classScoreAnim : ''
                   }
                 >
                   {teamTotals.steals}
@@ -949,7 +963,7 @@ const AdminPlayerStatsLivePage = () => {
                   fw={900}
                   c="red.8"
                   className={
-                    changedStat?.statKey === 'blocks' ? classNameAnim : ''
+                    changedStat?.statKey === 'blocks' ? classScoreAnim : ''
                   }
                 >
                   {teamTotals.blocks}
@@ -993,7 +1007,13 @@ const AdminPlayerStatsLivePage = () => {
             {isRosterAdded && (
               <>
                 <Divider />
-                <Stack align="stretch" justify="center" gap="sm" mt={'sm'}>
+                <Stack
+                  align="stretch"
+                  justify="center"
+                  gap="sm"
+                  mt={'sm'}
+                  className={classButtonAnim}
+                >
                   <Text size="md" fw={700} c="blue.8">
                     Game Clock
                   </Text>
@@ -1070,7 +1090,11 @@ const AdminPlayerStatsLivePage = () => {
                     </Text>
                     <Text size="xs" c="dimmed">
                       Minute{' '}
-                      <Text span fw={700} c={gameStarted ? 'blue' : 'dimmed'}>
+                      <Text
+                        span
+                        fw={700}
+                        c={gameStarted ? 'orange.7' : 'dimmed'}
+                      >
                         {gameMinute}
                       </Text>
                     </Text>
@@ -1107,14 +1131,29 @@ const AdminPlayerStatsLivePage = () => {
 
                   <Text size="xs" c="dimmed">
                     Click the{' '}
-                    <Badge size="xs" color="green" variant="filled">
-                      Playing
+                    <Badge
+                      size="xs"
+                      color="teal"
+                      variant="filled"
+                      title="Playing"
+                      leftSection={<IconArrowsExchange size={10} />}
+                      style={{ verticalAlign: 'middle' }}
+                    >
+                      IN
                     </Badge>{' '}
                     /{' '}
-                    <Badge size="xs" color="gray" variant="filled">
-                      Benched
+                    <Badge
+                      size="xs"
+                      color="var(--mantine-color-gray-3)"
+                      c="var(--mantine-color-gray-6)"
+                      variant="filled"
+                      title="Benched"
+                      leftSection={<IconArrowsExchange size={10} />}
+                      style={{ verticalAlign: 'middle' }}
+                    >
+                      OUT
                     </Badge>{' '}
-                    badge on each player row to sub at the current minute.
+                    switch on each player row to sub at the current minute.
                   </Text>
                 </Stack>
               </>
@@ -1131,9 +1170,12 @@ const AdminPlayerStatsLivePage = () => {
             variant="light"
             mb="md"
           >
-            Stat tracking is disabled. Press <strong>Start Game</strong> to
-            enable Points, Rebounds, Assists, Steals, Blocks, Minutes, and
-            Remove controls.
+            Stat tracking is disabled. Press{' '}
+            <Text c="green" component="span" fw="bold" fz="sm">
+              Start Game
+            </Text>{' '}
+            button to enable Points, Rebounds, Assists, Steals, Blocks, and
+            Minutes controls.
           </Alert>
         )}
 
@@ -1158,26 +1200,32 @@ const AdminPlayerStatsLivePage = () => {
             <Table highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th style={{ width: '100px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '100px', textAlign: 'center' }}>
                     Status
                   </Table.Th>
-                  <Table.Th style={{ width: '180px' }}>Player</Table.Th>
-                  <Table.Th style={{ width: '190px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '170px' }}>Player</Table.Th>
+                  <Table.Th
+                    style={{
+                      width: '140px',
+                      textAlign: 'center',
+                      minWidth: '150px',
+                    }}
+                  >
                     Points (PTS)
                   </Table.Th>
-                  <Table.Th style={{ width: '130px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '40px', textAlign: 'center' }}>
                     Rebounds (REB)
                   </Table.Th>
-                  <Table.Th style={{ width: '130px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '60px', textAlign: 'center' }}>
                     Assists (AST)
                   </Table.Th>
-                  <Table.Th style={{ width: '130px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '70px', textAlign: 'center' }}>
                     Steals (STL)
                   </Table.Th>
-                  <Table.Th style={{ width: '130px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '70px', textAlign: 'center' }}>
                     Blocks (BLK)
                   </Table.Th>
-                  <Table.Th style={{ width: '160px', textAlign: 'center' }}>
+                  <Table.Th style={{ minWidth: '140px', textAlign: 'center' }}>
                     Minutes (MIN)
                   </Table.Th>
                   <Table.Th style={{ width: '50px', textAlign: 'center' }}>
@@ -1220,16 +1268,40 @@ const AdminPlayerStatsLivePage = () => {
                           }
                           withArrow
                         >
-                          <Badge
-                            color={isBenched ? 'gray' : 'green'}
-                            variant="filled"
-                            size="xs"
-                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                            onClick={() => handleToggleSubstitution(player)}
-                            leftSection={<IconArrowsExchange size={10} />}
-                          >
-                            {isBenched ? 'Benched' : 'Playing'}
-                          </Badge>
+                          <Stack gap={2} justify="stretch" align="center">
+                            <Text size="xs" tt="uppercase">
+                              {isBenched ? 'Benched' : 'Playing'}
+                            </Text>
+                            <Switch
+                              checked={!isBenched}
+                              onChange={() => handleToggleSubstitution(player)}
+                              color="teal"
+                              size="lg"
+                              onLabel={
+                                <Text fw="bold" size="11">
+                                  IN
+                                </Text>
+                              }
+                              offLabel={
+                                <Text fw="bold" size="11">
+                                  OUT
+                                </Text>
+                              }
+                              thumbIcon={
+                                !isBenched ? (
+                                  <IconArrowsExchange
+                                    size={14}
+                                    color="var(--mantine-color-teal-6)"
+                                  />
+                                ) : (
+                                  <IconArrowsExchange
+                                    size={14}
+                                    color="var(--mantine-color-red-6)"
+                                  />
+                                )
+                              }
+                            />
+                          </Stack>
                         </Tooltip>
                       </Table.Td>
 
@@ -1240,6 +1312,8 @@ const AdminPlayerStatsLivePage = () => {
                             src={player.profile?.profilePhoto}
                             radius="xl"
                             size="md"
+                            variant={player.profile?.profilePhoto}
+                            style={{ border: '1px solid #dddddd' }}
                             color={isBenched ? 'gray' : 'blue'}
                           >
                             {player.profile?.firstName?.[0]}
@@ -1255,7 +1329,7 @@ const AdminPlayerStatsLivePage = () => {
                             </Text>
                             {player.profile?.jerseyNumber !== undefined && (
                               <Badge
-                                size="lg"
+                                size="md"
                                 variant="outline"
                                 color={isBenched ? 'gray' : 'green'}
                               >
@@ -1282,7 +1356,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'points'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1368,7 +1442,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'rebounds'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1410,7 +1484,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'assists'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1452,7 +1526,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'steals'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1492,7 +1566,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'blocks'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1533,7 +1607,7 @@ const AdminPlayerStatsLivePage = () => {
                             className={
                               changedStat?.playerId === player.id &&
                               changedStat?.statKey === 'minutesPlayed'
-                                ? classNameAnim
+                                ? classScoreAnim
                                 : ''
                             }
                           >
@@ -1727,7 +1801,7 @@ const AdminPlayerStatsLivePage = () => {
               onClick={handleSaveStats}
               loading={isSaving}
               disabled={
-                isGamePlayers ||
+                isGameMinStart ||
                 isGameStartNoFinish ||
                 isGameIdle ||
                 !gameFinished

@@ -318,7 +318,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           position="top-right"
           toastOptions={{
             className: 'rw-toast',
-            duration: 6000,
+            duration: 3000,
           }}
         />
       </AppShell.Header>
