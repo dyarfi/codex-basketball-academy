@@ -10,6 +10,10 @@ import { db } from 'src/lib/db'
 export const ageGroupTeams: QueryResolvers['ageGroupTeams'] = () => {
   return db.ageGroupTeam.findMany({
     orderBy: { createdAt: 'desc' },
+    include: {
+      coaches: { include: { user: { include: { profile: true } } } },
+      memberships: { include: { user: { include: { profile: true } } } },
+    },
   })
 }
 
@@ -19,12 +23,20 @@ export const publicAgeGroupTeams: QueryResolvers['publicAgeGroupTeams'] =
       where: { isActive: true },
       orderBy: [{ ageGroup: 'desc' }, { createdAt: 'desc' }],
       include: {
-        coach: { include: { profile: true } },
-        players: {
-          where: { isActive: true, role: 'PLAYER' },
-          include: { profile: true },
-          orderBy: { createdAt: 'desc' },
-          limit: 15,
+        coaches: {
+          where: { isActive: true },
+          include: {
+            user: { include: { profile: true } },
+          },
+        },
+        memberships: {
+          include: {
+            user: {
+              where: { isActive: true, role: 'PLAYER' },
+              include: { profile: true },
+            },
+          },
+          take: 15,
         },
       },
     })
@@ -75,6 +87,10 @@ export const paginatedAgeGroupTeams: QueryResolvers['paginatedAgeGroupTeams'] =
       orderBy: [{ name: 'asc' }, { id: 'desc' }],
       skip,
       take: safePageSize,
+      include: {
+        coaches: { include: { user: { include: { profile: true } } } },
+        memberships: { include: { user: { include: { profile: true } } } },
+      },
     })
 
     return {
@@ -91,21 +107,37 @@ export const paginatedAgeGroupTeams: QueryResolvers['paginatedAgeGroupTeams'] =
 export const ageGroupTeam: QueryResolvers['ageGroupTeam'] = ({ id }) => {
   return db.ageGroupTeam.findUnique({
     where: { id },
+    include: {
+      coaches: { include: { user: { include: { profile: true } } } },
+      memberships: { include: { user: { include: { profile: true } } } },
+    },
   })
 }
 
 export const createAgeGroupTeam: MutationResolvers['createAgeGroupTeam'] = ({
   input,
 }) => {
-  const { playerIds, ...rest } = input
+  const { playerIds, coachIds, ...rest } = input
   return db.ageGroupTeam.create({
     data: {
       ...rest,
-      players: playerIds
+      coaches: coachIds?.length
         ? {
-            connect: playerIds.map((id) => ({ id })),
+            create: coachIds.map((userId) => ({
+              userId,
+              role: 'HEAD_COACH',
+            })),
           }
         : undefined,
+      memberships: playerIds?.length
+        ? {
+            create: playerIds.map((userId) => ({ userId })),
+          }
+        : undefined,
+    },
+    include: {
+      coaches: { include: { user: { include: { profile: true } } } },
+      memberships: { include: { user: { include: { profile: true } } } },
     },
   })
 }
@@ -114,16 +146,30 @@ export const updateAgeGroupTeam: MutationResolvers['updateAgeGroupTeam'] = ({
   id,
   input,
 }) => {
-  const { playerIds, ...rest } = input
+  const { playerIds, coachIds, ...rest } = input
   return db.ageGroupTeam.update({
     where: { id },
     data: {
       ...rest,
-      players: playerIds
-        ? {
-            set: playerIds.map((id) => ({ id })),
-          }
-        : undefined,
+      ...(coachIds !== undefined && {
+        coaches: {
+          deleteMany: {},
+          create: coachIds.map((userId) => ({
+            userId,
+            role: 'HEAD_COACH',
+          })),
+        },
+      }),
+      ...(playerIds !== undefined && {
+        memberships: {
+          deleteMany: {},
+          create: playerIds.map((userId) => ({ userId })),
+        },
+      }),
+    },
+    include: {
+      coaches: { include: { user: { include: { profile: true } } } },
+      memberships: { include: { user: { include: { profile: true } } } },
     },
   })
 }
@@ -137,10 +183,14 @@ export const deleteAgeGroupTeam: MutationResolvers['deleteAgeGroupTeam'] = ({
 }
 
 export const AgeGroupTeam: AgeGroupTeamRelationResolvers = {
-  coach: (_obj, { root }) => {
-    return db.ageGroupTeam.findUnique({ where: { id: root?.id } }).coach()
+  coaches: (_obj, { root }) => {
+    return db.ageGroupTeam
+      .findUnique({ where: { id: root?.id } })
+      .coaches({ include: { user: { include: { profile: true } } } })
   },
-  players: (_obj, { root }) => {
-    return db.ageGroupTeam.findUnique({ where: { id: root?.id } }).players()
+  memberships: (_obj, { root }) => {
+    return db.ageGroupTeam
+      .findUnique({ where: { id: root?.id } })
+      .memberships({ include: { user: { include: { profile: true } } } })
   },
 }

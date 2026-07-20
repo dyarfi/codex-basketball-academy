@@ -25,8 +25,13 @@ import {
   Timeline,
   ThemeIcon,
   Switch,
+  Grid,
 } from '@mantine/core'
-import { useDebouncedCallback, useLocalStorage } from '@mantine/hooks'
+import {
+  useDebouncedCallback,
+  useFullscreen,
+  useLocalStorage,
+} from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -46,6 +51,11 @@ import {
   IconRefresh,
   IconTrash,
   IconUsers,
+  IconMaximize,
+  IconMinimize,
+  IconClock24,
+  IconStopwatch,
+  IconUserPlus,
 } from '@tabler/icons-react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
@@ -183,6 +193,10 @@ const AdminPlayerStatsLivePage = () => {
     (session: DraftSession) => setDraft(session),
     500
   )
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ---- Fullscreen handler -----------------
+  const { ref, toggle, fullscreen } = useFullscreen()
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ─── Timer interval – auto-syncs elapsed minutes → gameMinute ────────────────
@@ -394,8 +408,10 @@ const AdminPlayerStatsLivePage = () => {
       (t: any) => t.id === teamId
     )
 
-    if (selectedTeam && selectedTeam.players) {
-      const teamPlayers = selectedTeam.players as RosterPlayer[]
+    if (selectedTeam && selectedTeam.memberships) {
+      const teamPlayers = (selectedTeam.memberships as any[])
+        .map((m) => m.user)
+        .filter(Boolean) as RosterPlayer[]
       setRoster(teamPlayers)
 
       // Initialize stats for players
@@ -656,6 +672,8 @@ const AdminPlayerStatsLivePage = () => {
   const isGameMinStart: boolean = onCourtCount < 3
   // Handle player added
   const isRosterAdded: boolean = roster.length > 0
+  // Handle fullscren css mode
+  const CSSFullscreen: string = fullscreen ? 'white' : ''
   // Handle warning text
   const warningMessage = isGameMinStart
     ? '3 Player minimum'
@@ -679,7 +697,13 @@ const AdminPlayerStatsLivePage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="md">
+      <Container
+        ref={ref}
+        size="xl"
+        py="md"
+        bg={CSSFullscreen}
+        style={{ overflowY: 'auto', overflowX: 'hidden' }}
+      >
         {/* Navigation Breadcrumbs */}
         <Breadcrumbs mb="lg" separator="→">
           <Anchor component={Link} to={routes.adminPanel()} size="sm">
@@ -707,6 +731,20 @@ const AdminPlayerStatsLivePage = () => {
                   Draft Saved
                 </Badge>
               )}
+              <Button
+                radius={'lg'}
+                onClick={toggle}
+                size="compact-xs"
+                leftSection={
+                  fullscreen ? (
+                    <IconMinimize size={14} />
+                  ) : (
+                    <IconMaximize size={14} />
+                  )
+                }
+              >
+                {fullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              </Button>
             </Group>
             <Text size="sm" c="dimmed">
               Track and log player stats live in real-time during a game.
@@ -796,18 +834,24 @@ const AdminPlayerStatsLivePage = () => {
         </Group>
 
         {/* Setup and Live Totals Grid */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="sm">
+        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg" mb="sm">
           {/* Game Setup Card */}
           <Card withBorder shadow="sm" p="md" radius="md">
-            <Text size="md" fw={700} mb="sm" c="blue">
-              Game Information & Roster Setup
-            </Text>
+            <Group justify="space-between" align="stretch">
+              <Text size="md" fw={700} mb="sm" c="blue">
+                Game Information & Roster Setup
+                <Text size="xs" c="dimmed">
+                  Live game scoreboard information & roster setup.
+                </Text>
+              </Text>
+              <IconUserPlus size={28} color="var(--mantine-color-blue-8)" />
+            </Group>
             <Stack gap="lg" mb={'md'}>
               <Group grow>
                 <TextInput
                   disabled={gameFinished || gameStarted}
                   label="Game Name"
-                  placeholder="e.g. Springfield Tournament Finals"
+                  placeholder="e.g. Springfield Tournament Finals."
                   value={gameName}
                   onChange={(e) => {
                     const val = e.currentTarget.value
@@ -830,9 +874,10 @@ const AdminPlayerStatsLivePage = () => {
                 />
               </Group>
               <Select
+                comboboxProps={{ withinPortal: false }}
                 label="Select Team (Loads Roster)"
                 placeholder={
-                  teamsLoading ? 'Loading teams...' : 'Select a team'
+                  teamsLoading ? 'Loading teams...' : 'Select a team.'
                 }
                 data={!teamsLoading && teamOptions}
                 value={selectedTeamId}
@@ -842,36 +887,42 @@ const AdminPlayerStatsLivePage = () => {
                 searchable
               />
               {/* Roster Selection & Manual Addition */}
-              <Group grow justify="stretch" align="end">
-                <Select
-                  maw={500}
-                  maxDropdownHeight={100}
-                  comboboxProps={{ dropdownPadding: 0 }}
-                  label="Add Individual Players"
-                  placeholder="Search or select player to add..."
-                  data={playerOptions || [{ value: '', label: '' }]}
-                  value={individualPlayerSelect}
-                  onChange={setIndividualPlayerSelect}
-                  searchable
-                  clearable
-                  disabled={usersLoading}
-                  leftSection={<IconUsers size={16} />}
-                />
-                <Button
-                  onClick={handleAddPlayer}
-                  disabled={!individualPlayerSelect}
-                  color="blue"
-                  maw={130}
-                >
-                  Add Player
-                </Button>
-              </Group>
-              {gameFinished && (
-                <Text size="sm" c="red.8" className="animate-pulse">
-                  <b>GAME FINISHED!</b> You can now make final adjustments and{' '}
-                  <b>Save Game Stats</b>!
-                </Text>
-              )}
+              {/* <Group justify="stretch" align="end" grow> */}
+              <Grid grow justify="flex-end" align="end">
+                <Grid.Col span={{ lg: 6 }}>
+                  <Select
+                    comboboxProps={{
+                      withinPortal: false,
+                      dropdownPadding: 0,
+                      // width: 404,
+                    }}
+                    // width={400}
+                    // miw={280}
+                    label="Add Individual Players"
+                    placeholder="Search or select player to add..."
+                    data={playerOptions || [{ value: '', label: '' }]}
+                    value={individualPlayerSelect}
+                    onChange={setIndividualPlayerSelect}
+                    searchable
+                    clearable
+                    disabled={usersLoading}
+                    leftSection={<IconUsers size={16} />}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ lg: 1 }}>
+                  <Button
+                    onClick={handleAddPlayer}
+                    disabled={!individualPlayerSelect}
+                    color="blue"
+                    miw={100}
+                    tt="uppercase"
+                    // size="compact-lg"
+                  >
+                    Add
+                  </Button>
+                </Grid.Col>
+              </Grid>
+              {/* </Group> */}
             </Stack>
           </Card>
 
@@ -884,16 +935,21 @@ const AdminPlayerStatsLivePage = () => {
             bg="blue.0"
             style={{ border: '1px solid var(--mantine-color-blue-3)' }}
           >
-            <Group justify="space-between" align="stretch" gap={'xl'}>
+            <Group justify="space-between" align="stretch">
               <Text size="md" fw={700} mb="xs" c="blue.8">
                 Live Team Scoreboard Totals
-                <Text size="xs" c="dimmed" mb="md">
-                  Live sums computed from all active player records below.
+                <Text size="xs" c="dimmed">
+                  Live totals from active players.
                 </Text>
               </Text>
               <IconEyePlus size={28} color="var(--mantine-color-blue-8)" />
             </Group>
-            <SimpleGrid cols={5} spacing="xs" style={{ textAlign: 'center' }}>
+            <SimpleGrid
+              cols={5}
+              spacing="xs"
+              style={{ textAlign: 'center' }}
+              my={'lg'}
+            >
               <Paper p="xs" radius="sm" withBorder>
                 <Text size="xs" fw={700} c="dimmed">
                   PTS
@@ -978,7 +1034,7 @@ const AdminPlayerStatsLivePage = () => {
                 <Text size="xs" c="dimmed">
                   ·
                 </Text>
-                <Badge color="green" variant="dot" size="sm">
+                <Badge color="green" variant="dot" size="md">
                   {onCourtCount} On Court
                 </Badge>
                 {substitutedOut.size > 0 && (
@@ -986,7 +1042,7 @@ const AdminPlayerStatsLivePage = () => {
                     <Text size="xs" c="dimmed">
                       ·
                     </Text>
-                    <Badge color="gray" variant="dot" size="sm">
+                    <Badge color="gray" variant="dot" size="md">
                       {substitutedOut.size} Benched
                     </Badge>
                   </>
@@ -1003,161 +1059,186 @@ const AdminPlayerStatsLivePage = () => {
                     : 'Game Not Started'}
               </Badge>
             </Group>
-            {/* Game Clock / Substitution Minute Control */}
-            {isRosterAdded && (
-              <>
-                <Divider />
-                <Stack
-                  align="stretch"
-                  justify="center"
-                  gap="sm"
-                  mt={'sm'}
-                  className={classButtonAnim}
-                >
-                  <Text size="md" fw={700} c="blue.8">
-                    Game Clock
-                  </Text>
+          </Card>
 
-                  {/* Timer Display */}
-                  <Paper
-                    withBorder
-                    p="sm"
-                    radius="md"
+          {/* Game Setup Scoreboard */}
+          <Card withBorder shadow="sm" p="md" radius="md">
+            {/* Game Clock / Substitution Minute Control */}
+            {/* {isRosterAdded && ( */}
+            <>
+              <Stack
+                align="stretch"
+                justify="center"
+                gap="sm"
+                className={classButtonAnim}
+              >
+                <Group justify="space-between" align="stretch">
+                  <Text size="md" fw={700} c="blue.8">
+                    Live Game Clock
+                    <Text size="xs" c="dimmed">
+                      Scoreboard live game clock.
+                    </Text>
+                  </Text>
+                  <IconStopwatch
+                    size={28}
+                    color="var(--mantine-color-blue-8)"
+                  />
+                </Group>
+                {/* Timer Display */}
+                <Paper
+                  withBorder
+                  p="sm"
+                  mt={2}
+                  radius="md"
+                  style={{
+                    background: gameStarted
+                      ? timerRunning
+                        ? 'linear-gradient(135deg, var(--mantine-color-green-0), var(--mantine-color-teal-0))'
+                        : 'linear-gradient(135deg, var(--mantine-color-orange-0), var(--mantine-color-yellow-0))'
+                      : 'var(--mantine-color-gray-0)',
+                    border: gameStarted
+                      ? timerRunning
+                        ? '1.5px solid var(--mantine-color-green-4)'
+                        : '1.5px solid var(--mantine-color-orange-4)'
+                      : '1.5px solid var(--mantine-color-gray-3)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Group justify="center" align="center" gap="xs" mb={2}>
+                    <IconClock
+                      size={14}
+                      color={
+                        gameStarted
+                          ? timerRunning
+                            ? 'var(--mantine-color-green-7)'
+                            : 'var(--mantine-color-orange-7)'
+                          : 'var(--mantine-color-gray-5)'
+                      }
+                    />
+                    <Text
+                      size="xs"
+                      fw={600}
+                      c={
+                        gameFinished
+                          ? 'red.7'
+                          : gameStarted
+                            ? timerRunning
+                              ? 'green.7'
+                              : 'orange.7'
+                            : 'dimmed'
+                      }
+                    >
+                      {gameFinished
+                        ? 'FINISHED'
+                        : gameStarted
+                          ? timerRunning
+                            ? 'LIVE'
+                            : 'PAUSED'
+                          : 'NOT STARTED'}
+                    </Text>
+                  </Group>
+                  <Text
+                    fw={900}
+                    fz={{ base: 'h1', lg: '3.2rem' }}
                     style={{
-                      background: gameStarted
-                        ? timerRunning
-                          ? 'linear-gradient(135deg, var(--mantine-color-green-0), var(--mantine-color-teal-0))'
-                          : 'linear-gradient(135deg, var(--mantine-color-orange-0), var(--mantine-color-yellow-0))'
-                        : 'var(--mantine-color-gray-0)',
-                      border: gameStarted
-                        ? timerRunning
-                          ? '1.5px solid var(--mantine-color-green-4)'
-                          : '1.5px solid var(--mantine-color-orange-4)'
-                        : '1.5px solid var(--mantine-color-gray-3)',
-                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.05em',
+                      color: gameFinished
+                        ? 'var(--mantine-color-red-8)'
+                        : gameStarted
+                          ? timerRunning
+                            ? 'var(--mantine-color-green-8)'
+                            : 'var(--mantine-color-orange-7)'
+                          : 'var(--mantine-color-gray-5)',
                     }}
                   >
-                    <Group justify="center" align="center" gap="xs" mb={2}>
-                      <IconClock
-                        size={14}
-                        color={
-                          gameStarted
-                            ? timerRunning
-                              ? 'var(--mantine-color-green-7)'
-                              : 'var(--mantine-color-orange-7)'
-                            : 'var(--mantine-color-gray-5)'
-                        }
-                      />
-                      <Text
-                        size="xs"
-                        fw={600}
-                        c={
-                          gameFinished
-                            ? 'red.7'
-                            : gameStarted
-                              ? timerRunning
-                                ? 'green.7'
-                                : 'orange.7'
-                              : 'dimmed'
-                        }
-                      >
-                        {gameFinished
-                          ? 'FINISHED'
-                          : gameStarted
-                            ? timerRunning
-                              ? 'LIVE'
-                              : 'PAUSED'
-                            : 'NOT STARTED'}
-                      </Text>
-                    </Group>
-                    <Text
-                      fw={900}
-                      style={{
-                        fontSize: '2.2rem',
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.05em',
-                        color: gameFinished
-                          ? 'var(--mantine-color-red-8)'
-                          : gameStarted
-                            ? timerRunning
-                              ? 'var(--mantine-color-green-8)'
-                              : 'var(--mantine-color-orange-7)'
-                            : 'var(--mantine-color-gray-5)',
-                      }}
-                    >
-                      {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}
-                      :{String(elapsedSeconds % 60).padStart(2, '0')}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Minute{' '}
-                      <Text
-                        span
-                        fw={700}
-                        c={gameStarted ? 'orange.7' : 'dimmed'}
-                      >
-                        {gameMinute}
-                      </Text>
-                    </Text>
-                  </Paper>
-
-                  {/* Pause / Resume Controls (only visible if game started and not finished) */}
-                  {isGameStartNoFinish && (
-                    <Group gap="xs">
-                      {timerRunning ? (
-                        <Button
-                          size="xs"
-                          leftSection={<IconPlayerPause size={13} />}
-                          color="orange"
-                          variant="filled"
-                          onClick={handlePauseTimer}
-                          style={{ flex: 1 }}
-                        >
-                          Pause Clock
-                        </Button>
-                      ) : (
-                        <Button
-                          size="xs"
-                          leftSection={<IconPlayerPlay size={13} />}
-                          color="green"
-                          variant="filled"
-                          onClick={handleResumeTimer}
-                          style={{ flex: 1 }}
-                        >
-                          Resume Clock
-                        </Button>
-                      )}
-                    </Group>
-                  )}
-
-                  <Text size="xs" c="dimmed">
-                    Click the{' '}
-                    <Badge
-                      size="xs"
-                      color="teal"
-                      variant="filled"
-                      title="Playing"
-                      leftSection={<IconArrowsExchange size={10} />}
-                      style={{ verticalAlign: 'middle' }}
-                    >
-                      IN
-                    </Badge>{' '}
-                    /{' '}
-                    <Badge
-                      size="xs"
-                      color="var(--mantine-color-gray-3)"
-                      c="var(--mantine-color-gray-6)"
-                      variant="filled"
-                      title="Benched"
-                      leftSection={<IconArrowsExchange size={10} />}
-                      style={{ verticalAlign: 'middle' }}
-                    >
-                      OUT
-                    </Badge>{' '}
-                    switch on each player row to sub at the current minute.
+                    {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:
+                    {String(elapsedSeconds % 60).padStart(2, '0')}
                   </Text>
-                </Stack>
-              </>
-            )}
+                  <Text size="xs" c="dimmed">
+                    Minute{' '}
+                    <Text span fw={700} c={gameStarted ? 'orange.7' : 'dimmed'}>
+                      {gameMinute}
+                    </Text>
+                  </Text>
+                </Paper>
+
+                {/* Pause / Resume Controls (only visible if game started and not finished) */}
+                {isGameStartNoFinish && (
+                  <Group gap="xs" mt={gameStarted ? 4 : 1}>
+                    {timerRunning ? (
+                      <Button
+                        size="xs"
+                        leftSection={<IconPlayerPause size={13} />}
+                        color="orange"
+                        variant="filled"
+                        onClick={handlePauseTimer}
+                        style={{ flex: 1 }}
+                      >
+                        Pause Clock
+                      </Button>
+                    ) : (
+                      <Button
+                        size="xs"
+                        leftSection={<IconPlayerPlay size={13} />}
+                        color="green"
+                        variant="filled"
+                        onClick={handleResumeTimer}
+                        style={{ flex: 1 }}
+                      >
+                        Resume Clock
+                      </Button>
+                    )}
+                  </Group>
+                )}
+
+                {!gameStarted && !gameFinished && (
+                  <Text
+                    mt={1}
+                    size="sm"
+                    c="blue.8"
+                    className="animate-pulse"
+                    ta="center"
+                  >
+                    Add players to <b>start</b> the game!
+                  </Text>
+                )}
+
+                <Text size="xs" c="dimmed" mt={gameStarted ? 2 : 1}>
+                  Click the{' '}
+                  <Badge
+                    size="xs"
+                    color="teal"
+                    variant="filled"
+                    title="Playing"
+                    leftSection={<IconArrowsExchange size={10} />}
+                    style={{ verticalAlign: 'middle' }}
+                  >
+                    IN
+                  </Badge>{' '}
+                  /{' '}
+                  <Badge
+                    size="xs"
+                    color="var(--mantine-color-gray-3)"
+                    c="var(--mantine-color-gray-6)"
+                    variant="filled"
+                    title="Benched"
+                    leftSection={<IconArrowsExchange size={10} />}
+                    style={{ verticalAlign: 'middle' }}
+                  >
+                    OUT
+                  </Badge>{' '}
+                  switch on each player row to sub at the current minute.
+                </Text>
+                {gameFinished && (
+                  <Text size="sm" c="red.8" className="animate-pulse">
+                    <b>GAME FINISHED!</b> You can now make final adjustments and{' '}
+                    <b>Save Game Stats</b>!
+                  </Text>
+                )}
+              </Stack>
+            </>
+            {/* )} */}
           </Card>
         </SimpleGrid>
 

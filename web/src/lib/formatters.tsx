@@ -60,6 +60,11 @@ export const timeTag = (dateTime?: string, format?: string) => {
   return output
 }
 
+export const formatDateOfBirth = (dateOfBirth = '', label = 'y/o') => {
+  const today = dayjs()
+  return `${today.diff(dayjs(dateOfBirth), 'year')} ${label}`
+}
+
 export const formatDatetime = (value) => {
   if (value) {
     return value.replace(/:\d{2}\.\d{3}\w/, '')

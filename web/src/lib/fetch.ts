@@ -141,7 +141,7 @@ export async function sendEmailMessage({
     to,
     subject,
     htmlContent,
-    attachment,
+    ...(attachment[0]?.content ? { attachment } : undefined),
   }
   // Set up headers for the API request
   const headers = {

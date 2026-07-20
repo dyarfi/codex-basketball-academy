@@ -1,15 +1,34 @@
 export const schema = gql`
+  type TeamCoach {
+    id: Int!
+    userId: String!
+    teamId: String!
+    role: CoachRole!
+    joinedAt: DateTime!
+    leftAt: DateTime
+    isActive: Boolean!
+    user: User
+    team: AgeGroupTeam
+  }
+
+  type TeamMembership {
+    id: Int!
+    userId: String!
+    teamId: String!
+    user: User
+    team: AgeGroupTeam
+  }
+
   type AgeGroupTeam {
     id: String!
     name: String!
     ageGroup: String!
     description: String
-    coachId: String
-    coach: User
-    players: [User!]!
     isActive: Boolean!
     createdAt: DateTime!
     updatedAt: DateTime!
+    coaches: [TeamCoach!]!
+    memberships: [TeamMembership!]!
   }
 
   type PaginatedAgeGroupTeams {
@@ -20,6 +39,12 @@ export const schema = gql`
     totalPages: Int!
     hasNextPage: Boolean!
     hasPreviousPage: Boolean!
+  }
+
+  enum CoachRole {
+    HEAD_COACH
+    ASSISTANT
+    TRAINER
   }
 
   type Query {
@@ -39,7 +64,7 @@ export const schema = gql`
     name: String!
     ageGroup: String!
     description: String
-    coachId: String
+    coachIds: [String!]
     playerIds: [String!]
     isActive: Boolean
   }
@@ -48,7 +73,7 @@ export const schema = gql`
     name: String
     ageGroup: String
     description: String
-    coachId: String
+    coachIds: [String!]
     playerIds: [String!]
     isActive: Boolean
   }

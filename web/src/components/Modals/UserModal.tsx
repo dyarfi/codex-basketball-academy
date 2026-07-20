@@ -20,6 +20,7 @@ import {
 import { useForm } from '@mantine/form'
 
 import { uploadCloud } from 'src/lib/fetch'
+import { formatDateOfBirth } from 'src/lib/formatters'
 
 interface UserModalProps {
   isOpen: boolean
@@ -28,12 +29,6 @@ interface UserModalProps {
   onSave: (data: Record<string, any>) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userData?: Record<string, any> // If present, it's an edit
-  teams?: Array<{
-    id: string
-    name: string
-    ageGroup?: string
-    isActive?: boolean
-  }>
   isLoading?: boolean
 }
 
@@ -42,7 +37,6 @@ const UserModal: React.FC<UserModalProps> = ({
   onClose,
   onSave,
   userData,
-  teams = [],
   isLoading = false,
 }) => {
   const [fileUpload, setFileUpload] = useState<File | null>(null)
@@ -52,7 +46,6 @@ const UserModal: React.FC<UserModalProps> = ({
       email: '',
       role: 'PLAYER',
       isActive: true,
-      teamId: '',
       profile: {
         firstName: '',
         lastName: '',
@@ -78,6 +71,10 @@ const UserModal: React.FC<UserModalProps> = ({
     validate: {
       email: (value: string) =>
         /^\S+@\S+$/.test(value) ? null : 'Invalid email',
+      profile: {
+        gender: (value: string) =>
+          value === 'Male' || value === 'Female' ? null : 'False gender format',
+      },
     },
   })
 
@@ -87,7 +84,6 @@ const UserModal: React.FC<UserModalProps> = ({
         email: userData.email || '',
         role: userData.role || 'PLAYER',
         isActive: userData.isActive !== undefined ? userData.isActive : true,
-        teamId: userData.teamId || '',
         profile: {
           firstName: userData.profile?.firstName || '',
           lastName: userData.profile?.lastName || '',
@@ -246,14 +242,12 @@ const UserModal: React.FC<UserModalProps> = ({
               </Group>
 
               <TextInput
-                label="Date of Birth"
+                label={`Date of Birth ${formatDateOfBirth(form.getValues()?.profile?.dateOfBirth)}`}
                 type="date"
                 {...form.getInputProps('profile.dateOfBirth')}
               />
 
-              {/* <Group align="self-end" preventGrowOverflow={false} wrap="nowrap"> */}
               <TextInput
-                // w={'100%'}
                 label="Profile Photo"
                 disabled
                 leftSection={
@@ -265,8 +259,6 @@ const UserModal: React.FC<UserModalProps> = ({
                         }
                       >
                         <Avatar
-                          // m={0}
-                          // p={0}
                           radius={'none'}
                           style={{ cursor: 'pointer' }}
                           bd={'1px solid grey'}
@@ -279,7 +271,6 @@ const UserModal: React.FC<UserModalProps> = ({
                   )
                 }
                 leftSectionWidth={48}
-                // leftSectionProps={{ padding: 'xs' }}
                 rightSection={
                   <FileButton
                     onChange={onChangeFile}
@@ -295,7 +286,6 @@ const UserModal: React.FC<UserModalProps> = ({
                 rightSectionWidth={87}
                 {...form.getInputProps('profile.profilePhoto')}
               />
-              {/* </Group> */}
 
               <Select
                 label="Role"
@@ -317,19 +307,10 @@ const UserModal: React.FC<UserModalProps> = ({
               />
 
               {form.values.role === 'PLAYER' && (
-                <Select
-                  label="Age Group Team"
-                  placeholder="No team assigned"
-                  data={teams
-                    .filter((team) => team.isActive !== false)
-                    .map((team) => ({
-                      value: team.id,
-                      label: `${team.name}${team.ageGroup ? ` (${team.ageGroup})` : ''}`,
-                    }))}
-                  searchable
-                  clearable
-                  {...form.getInputProps('teamId')}
-                />
+                <Text size="xs" c="dimmed">
+                  To assign this player to an Age Group Team, go to the Age
+                  Group Teams page and edit the team.
+                </Text>
               )}
 
               {!userData && (
@@ -426,7 +407,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 {...form.getInputProps('profile.emergencyContactPhone')}
               />
               <TextInput
-                label="Relationship to Player"
+                label="Relationship to Contact"
                 placeholder="Parent, Guardian, etc."
                 {...form.getInputProps('profile.relationshipToPlayer')}
               />
@@ -438,7 +419,6 @@ const UserModal: React.FC<UserModalProps> = ({
           <Button
             variant="default"
             onClick={onClose}
-            // disabled={isLoading}
             disabled={prepareSave}
           >
             Cancel

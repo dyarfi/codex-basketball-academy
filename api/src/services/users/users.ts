@@ -69,6 +69,12 @@ export const usersQuery: QueryResolvers['usersQuery'] = async ({
   return db.user.findMany({
     where,
     orderBy: { email: 'asc' },
+    include: {
+      profile: true,
+      teamMemberships: {
+        include: { team: true },
+      },
+    },
   })
 }
 
@@ -136,6 +142,12 @@ export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     skip,
     take: safePageSize,
+    include: {
+      profile: true,
+      teamMemberships: {
+        include: { team: true },
+      },
+    },
   })
 
   return {
@@ -152,17 +164,22 @@ export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
 export const user: QueryResolvers['user'] = ({ id }) => {
   return db.user.findUnique({
     where: { id },
+    include: {
+      profile: true,
+      teamMemberships: {
+        include: { team: true },
+      },
+    },
   })
 }
 
 export const createUser: MutationResolvers['createUser'] = ({ input }) => {
-  const { email, role, isActive, profile, teamId } = input
+  const { email, role, isActive, profile } = input
   return db.user.create({
     data: {
       email,
       role,
       isActive,
-      teamId: teamId || null,
       hashedPassword: '', // Placeholder - should be set via password reset or invitation email
       salt: '', // Placeholder - should be set via password reset or invitation email
       profile: {
@@ -201,9 +218,6 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
   const { profile, ...userInput } = input
 
   const updateData: Record<string, any> = { ...userInput }
-  if ('teamId' in updateData) {
-    updateData.teamId = updateData.teamId || null
-  }
 
   if (profile) {
     const {
@@ -264,7 +278,12 @@ export const updateUser: MutationResolvers['updateUser'] = ({ id, input }) => {
   return db.user.update({
     data: updateData,
     where: { id },
-    include: { profile: true },
+    include: {
+      profile: true,
+      teamMemberships: {
+        include: { team: true },
+      },
+    },
   })
 }
 
@@ -311,10 +330,14 @@ export const User: UserRelationResolvers = {
   classesAsTutor: (_obj, { root }) => {
     return db.user.findUnique({ where: { id: root?.id } }).classesAsTutor()
   },
-  team: (_obj, { root }) => {
-    return db.user.findUnique({ where: { id: root?.id } }).team()
+  teamMemberships: (_obj, { root }) => {
+    return db.user
+      .findUnique({ where: { id: root?.id } })
+      .teamMemberships({ include: { team: true } })
   },
-  teamsAsCoach: (_obj, { root }) => {
-    return db.user.findUnique({ where: { id: root?.id } }).teamsAsCoach()
+  coachedTeams: (_obj, { root }) => {
+    return db.user
+      .findUnique({ where: { id: root?.id } })
+      .coachedTeams({ include: { team: true } })
   },
 }

@@ -32,6 +32,7 @@ import {
 
 import { navigate, useLocation, routes, Link } from '@redwoodjs/router'
 import { useRoutePath } from '@redwoodjs/router'
+import { Metadata, Head } from '@redwoodjs/web'
 import { Toaster } from '@redwoodjs/web/toast'
 
 import { useAuth } from 'src/auth'
@@ -41,9 +42,17 @@ import { useAppTheme } from 'src/providers/ThemeProvider'
 
 interface AdminLayoutProps {
   children: ReactNode
+  metaTags?: Record<string, string>
 }
 
-export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+const APP_NAME = process.env.APP_NAME || ''
+const APP_URL = process.env.APP_URL || ''
+const NODE_ENV = process.env.REDWOOD_NODE_ENV || ''
+
+export const AdminLayout: React.FC<AdminLayoutProps> = ({
+  children,
+  metaTags,
+}) => {
   // const navigate = navigate();
   const routePath = useRoutePath()
   const [opened, { toggle }] = useDisclosure()
@@ -72,6 +81,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     ? 'border-slate-800 bg-slate-900'
     : 'border-slate-200 bg-slate-50'
   const textMutedClass = isDark ? 'text-slate-400' : 'text-slate-500'
+
+  if (NODE_ENV === 'production') {
+    // ReactGA.initialize('G-2SFJR186C4')
+  }
 
   if (isLoading) {
     return (
@@ -204,126 +217,144 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // console.log({ location: routes })
 
   return (
-    <AppShell
-      layout="alt"
-      navbar={{
-        width: { base: 250, sm: 250 },
-        breakpoint: 'sm',
-        collapsed: { mobile: !opened, desktop: false },
-      }}
-      header={{ height: 60 }}
-      transitionTimingFunction="ease-in-out"
-    >
-      <AppShell.Navbar
-        p="md"
-        className={`${surfaceClass} overflow-y-auto border-r`}
+    <>
+      <Head>
+        <link rel="canonical" href={location.href} />
+      </Head>
+      <Metadata
+        og={{
+          site_name: APP_NAME,
+          logo: APP_URL + '/images/favicon.png',
+          url: location.href,
+          type: 'website',
+        }}
+        {...metaTags}
+      />
+      <AppShell
+        layout="alt"
+        navbar={{
+          width: { base: 250, sm: 250 },
+          breakpoint: 'sm',
+          collapsed: { mobile: !opened, desktop: false },
+        }}
+        header={{ height: 60 }}
+        transitionTimingFunction="ease-in-out"
       >
-        <div className="mb-4">
-          <Group justify="space-between" align="start">
-            <Box>
-              <Text size="md" fw={700} className="mb-1">
+        <AppShell.Navbar
+          p="md"
+          className={`${surfaceClass} overflow-y-auto border-r`}
+        >
+          <div className="mb-4">
+            <Group justify="space-between" align="start">
+              <Box>
+                <Text size="md" fw={700} className="mb-1">
+                  {siteName}
+                </Text>
+                <Text size="xs" className={`${textMutedClass}`}>
+                  {headerSubtitle}
+                </Text>
+              </Box>
+              <Burger
+                hidden={!opened}
+                opened={opened}
+                onClick={toggle}
+                hiddenFrom="md"
+                size="sm"
+              />
+            </Group>
+          </div>
+          <AppShell.Section grow>
+            <div className="space-y-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  label={item.label}
+                  leftSection={item.icon}
+                  active={isActive(item.href)}
+                  onClick={() => navigate(item.href)}
+                  style={{
+                    borderRadius: '0.5rem',
+                    color: isActive(item.href)
+                      ? isDark
+                        ? '#93c5fd'
+                        : '#1d4ed8'
+                      : isDark
+                        ? '#cbd5e1'
+                        : '#475569',
+                    backgroundColor: isActive(item.href)
+                      ? isDark
+                        ? 'rgba(59, 130, 246, 0.2)'
+                        : '#eff6ff'
+                      : 'transparent',
+                    fontSize: '0.875rem',
+                  }}
+                />
+              ))}
+            </div>
+          </AppShell.Section>
+        </AppShell.Navbar>
+        <AppShell.Header
+          p="xs"
+          pl={'lg'}
+          className={`${surfaceClass} border-b`}
+        >
+          <Group justify="space-between" h="100%">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <Burger
+                opened={opened}
+                onClick={toggle}
+                hiddenFrom="sm"
+                size="sm"
+              />
+              <Text fw={600} size="md" sm={{ size: 'lg' }} truncate>
                 {siteName}
               </Text>
-              <Text size="xs" className={`${textMutedClass}`}>
-                {headerSubtitle}
+            </div>
+            <Group gap="xs" sm={{ gap: 'lg' }}>
+              <ThemeToggle />
+              <Text size="xs" className={`${textMutedClass} hidden sm:block`}>
+                {user?.profile?.firstName}
               </Text>
-            </Box>
-            <Burger
-              hidden={!opened}
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="md"
-              size="sm"
-            />
+              <Menu position="bottom-end" shadow="md">
+                <Menu.Target>
+                  <Avatar
+                    name={user?.email || 'Admin'}
+                    color={isDark ? 'cyan' : 'blue'}
+                    radius="xl"
+                    size="sm"
+                    className="cursor-pointer"
+                  />
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item>
+                    <Link to="/profile">
+                      <Text size="sm" fw={500}>
+                        {user?.email}
+                      </Text>
+                    </Link>
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item
+                    leftSection={<SignOutIcon size={14} weight="bold" />}
+                    color="red"
+                  >
+                    <Link to="/auth/logout">Logout</Link>
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
           </Group>
-        </div>
-        <AppShell.Section grow>
-          <div className="space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.href}
-                label={item.label}
-                leftSection={item.icon}
-                active={isActive(item.href)}
-                onClick={() => navigate(item.href)}
-                style={{
-                  borderRadius: '0.5rem',
-                  color: isActive(item.href)
-                    ? isDark
-                      ? '#93c5fd'
-                      : '#1d4ed8'
-                    : isDark
-                      ? '#cbd5e1'
-                      : '#475569',
-                  backgroundColor: isActive(item.href)
-                    ? isDark
-                      ? 'rgba(59, 130, 246, 0.2)'
-                      : '#eff6ff'
-                    : 'transparent',
-                  fontSize: '0.875rem',
-                }}
-              />
-            ))}
-          </div>
-        </AppShell.Section>
-      </AppShell.Navbar>
-      <AppShell.Header p="xs" pl={'lg'} className={`${surfaceClass} border-b`}>
-        <Group justify="space-between" h="100%">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <Burger
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="sm"
-              size="sm"
-            />
-            <Text fw={600} size="md" sm={{ size: 'lg' }} truncate>
-              {siteName}
-            </Text>
-          </div>
-          <Group gap="xs" sm={{ gap: 'lg' }}>
-            <ThemeToggle />
-            <Text size="xs" className={`${textMutedClass} hidden sm:block`}>
-              {user?.profile?.firstName}
-            </Text>
-            <Menu position="bottom-end" shadow="md">
-              <Menu.Target>
-                <Avatar
-                  name={user?.email || 'Admin'}
-                  color={isDark ? 'cyan' : 'blue'}
-                  radius="xl"
-                  size="sm"
-                  className="cursor-pointer"
-                />
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item>
-                  <Link to="/profile">
-                    <Text size="sm" fw={500}>
-                      {user?.email}
-                    </Text>
-                  </Link>
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  leftSection={<SignOutIcon size={14} weight="bold" />}
-                  color="red"
-                >
-                  <Link to="/auth/logout">Logout</Link>
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        </Group>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            className: 'rw-toast',
-            duration: 4000,
-          }}
-        />
-      </AppShell.Header>
-      <AppShell.Main className={panelClass}>{children}</AppShell.Main>
-    </AppShell>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              className: 'rw-toast',
+              duration: 4000,
+            }}
+          />
+        </AppShell.Header>
+        <AppShell.Main className={panelClass}>{children}</AppShell.Main>
+      </AppShell>
+    </>
   )
 }
 

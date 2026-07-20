@@ -100,7 +100,7 @@ export const deleteSkillAssessment: MutationResolvers['deleteSkillAssessment'] =
     })
   }
 
-// export const topPerformers = async ({ limit = 10, programId }) => {
+// export const topPerformers = async ({ take = 10, programId }) => {
 export const topPerformers = async () => {
   const grouped = await db.skillAssessment.findMany({
     orderBy: {

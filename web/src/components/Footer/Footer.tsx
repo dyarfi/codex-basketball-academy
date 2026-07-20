@@ -1,12 +1,9 @@
-import { ActionIcon, Group } from '@mantine/core'
-import {
-  IconBrandFacebook,
-  IconBrandInstagram,
-  IconBrandX,
-} from '@tabler/icons-react'
-
 import { useSettings } from 'src/providers/SettingsProvider'
 import { useAppTheme } from 'src/providers/ThemeProvider'
+
+import { Contact } from './Component/Contact'
+import { Links } from './Component/Links'
+import { Social } from './Component/Social'
 
 const Footer = ({
   type = '',
@@ -19,24 +16,6 @@ const Footer = ({
   const footerText = getSetting(
     'footer_text',
     '© 2026 Basketball Academy. All rights reserved.'
-  )
-  const footerAddress = getSetting(
-    'footer_address',
-    '123 Academy Way, Springfield, IL 62701'
-  )
-  const footerPhone = getSetting('footer_phone', '+1 (555) 123-4567')
-  const footerEmail = getSetting('footer_email', 'info@basketballacademy.com')
-  const facebookUrl = getSetting(
-    'facebook_url',
-    'https://facebook.com/basketballacademy'
-  )
-  const twitterUrl = getSetting(
-    'twitter_url',
-    'https://twitter.com/basketballacademy'
-  )
-  const instagramUrl = getSetting(
-    'instagram_url',
-    'https://instagram.com/basketballacademy'
   )
 
   const footerClass = isDark
@@ -62,120 +41,13 @@ const Footer = ({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Contact Info */}
-          {isContact && (
-            <div>
-              <h3 className="mb-4 font-semibold text-blue-600">Contact Us</h3>
-              <div className={`space-y-2 text-sm ${textClass}`}>
-                <p>{footerAddress}</p>
-                <p>
-                  <a
-                    href={`tel:${footerPhone}`}
-                    className="hover:text-blue-600"
-                  >
-                    {footerPhone}
-                  </a>
-                </p>
-                <p>
-                  <a
-                    href={`mailto:${footerEmail}`}
-                    className="hover:text-blue-600"
-                  >
-                    {footerEmail}
-                  </a>
-                </p>
-              </div>
-            </div>
-          )}
+          {isContact && <Contact textClass={textClass} />}
 
           {/* Quick Links */}
-          {isLinks && (
-            <div>
-              <h3 className="mb-4 font-semibold text-blue-600">Quick Links</h3>
-              <ul className={`space-y-2 text-sm ${textClass}`}>
-                <li>
-                  <a href="/programs" className="hover:text-blue-600">
-                    Programs
-                  </a>
-                </li>
-                <li>
-                  <a href="/gallery" className="hover:text-blue-600">
-                    Gallery
-                  </a>
-                </li>
-                <li>
-                  <a href="/about" className="hover:text-blue-600">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="/contact" className="hover:text-blue-600">
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="/dashboard" className="hover:text-blue-600">
-                    Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a href="/login" className="hover:text-blue-600">
-                    Login
-                  </a>
-                </li>
-                <li>
-                  <a href="/signup" className="hover:text-blue-600">
-                    Sign Up
-                  </a>
-                </li>
-              </ul>
-            </div>
-          )}
+          {isLinks && <Links textClass={textClass} />}
 
           {/* Social Media */}
-          {isSocial && (
-            <div>
-              <h3 className="mb-4 font-semibold text-blue-600">Follow Us</h3>
-              <Group>
-                {facebookUrl && (
-                  <ActionIcon
-                    radius={0}
-                    autoContrast
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                    size={'sm'}
-                  >
-                    <IconBrandFacebook stroke={1} />
-                  </ActionIcon>
-                )}
-                {twitterUrl && (
-                  <ActionIcon
-                    radius={0}
-                    autoContrast
-                    component="a"
-                    href={twitterUrl}
-                    rel="noopener noreferrer"
-                    aria-label="X"
-                    size={'sm'}
-                  >
-                    <IconBrandX stroke={1} />
-                  </ActionIcon>
-                )}
-                {instagramUrl && (
-                  <ActionIcon
-                    radius={0}
-                    autoContrast
-                    component="a"
-                    href={instagramUrl}
-                    rel="noopener noreferrer"
-                    aria-label="X"
-                    size={'sm'}
-                  >
-                    <IconBrandInstagram stroke={1} />
-                  </ActionIcon>
-                )}
-              </Group>
-            </div>
-          )}
+          {isSocial && <Social textClass={textClass} />}
         </div>
 
         {/* Copyright */}

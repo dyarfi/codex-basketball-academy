@@ -15,9 +15,12 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconBasketHeart,
   IconEyePlus,
+  IconHomeStats,
   IconPlus,
   IconSearch,
+  IconStopwatch,
 } from '@tabler/icons-react'
 
 import { routes, useParams, navigate } from '@redwoodjs/router'
@@ -326,6 +329,8 @@ const PlayerStatsComponent = () => {
     )
   }
 
+  console.log({ gameNameFilter })
+
   return (
     <Container
       size="xl"
@@ -411,6 +416,13 @@ const PlayerStatsComponent = () => {
           onChange={(event) => setDateTo(event.currentTarget.value)}
         />
       </Group>
+
+      {/* Game stats history */}
+      {/* {gameNameFilter && (
+        <Alert variant="info" icon={<IconStopwatch />} mb={'lg'}>
+          {gameNameFilter}
+        </Alert>
+      )} */}
 
       <CrudTable
         data={stats}

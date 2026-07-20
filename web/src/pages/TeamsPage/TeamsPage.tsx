@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 
-import { Loader } from '@mantine/core'
+import { Loader, Text } from '@mantine/core'
 
 import { Link } from '@redwoodjs/router/Link'
 import { useQuery } from '@redwoodjs/web'
 
 import { GET_PUBLIC_AGE_GROUP_TEAMS } from 'src/graphql/age-group-teams-queries'
 import DefaultLayout from 'src/layouts/DefaultLayout'
+import { formatDateOfBirth } from 'src/lib/formatters'
 import { useAppTheme } from 'src/providers/ThemeProvider'
 
 type Profile = {
@@ -15,6 +16,8 @@ type Profile = {
   position?: string | null
   jerseyNumber?: number | null
   profilePhoto?: string | null
+  gender?: string | null
+  dateOfBirth?: string | null
 }
 
 type TeamUser = {
@@ -23,13 +26,27 @@ type TeamUser = {
   profile?: Profile | null
 }
 
+type TeamCoach = {
+  id: number
+  userId: string
+  role: string
+  isActive: boolean
+  user?: TeamUser | null
+}
+
+type TeamMembership = {
+  id: number
+  userId: string
+  user?: TeamUser | null
+}
+
 type AgeGroupTeam = {
   id: string
   name: string
   ageGroup: string
   description?: string | null
-  coach?: TeamUser | null
-  players: TeamUser[]
+  coaches: TeamCoach[]
+  memberships: TeamMembership[]
 }
 
 const heroImage =
@@ -64,7 +81,7 @@ const TeamsPage = () => {
   )
 
   const totalPlayers = teams.reduce(
-    (sum, team) => sum + (team.players?.length || 0),
+    (sum, team) => sum + (team.memberships?.length || 0),
     0
   )
 
@@ -116,7 +133,7 @@ const TeamsPage = () => {
                 <p className="text-sm text-slate-200">Rostered players</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-3xl font-black">U-12-U-18</p>
+                <p className="text-3xl font-black">U-6-U-18</p>
                 <p className="text-sm text-slate-200">Core pathway</p>
               </div>
             </div>
@@ -165,7 +182,17 @@ const TeamsPage = () => {
             {!loading && !error && teams.length > 0 && (
               <div className="space-y-8">
                 {teams.map((team) => {
-                  const coachName = getName(team.coach)
+                  // Get first active head coach
+                  const headCoach = team.coaches?.find(
+                    (c) => c.isActive && c.role === 'HEAD_COACH'
+                  ) ?? team.coaches?.[0]
+                  const coachUser = headCoach?.user
+                  const coachName = getName(coachUser)
+
+                  // Get players from memberships
+                  const players = team.memberships
+                    ?.map((m) => m.user)
+                    .filter(Boolean) ?? []
 
                   return (
                     <article
@@ -193,9 +220,9 @@ const TeamsPage = () => {
                           </div>
 
                           <div className="mt-10 flex items-center gap-4 border-t border-white/15 pt-5">
-                            {team.coach?.profile?.profilePhoto ? (
+                            {coachUser?.profile?.profilePhoto ? (
                               <img
-                                src={team.coach.profile.profilePhoto}
+                                src={coachUser.profile.profilePhoto}
                                 alt={coachName}
                                 className="h-14 w-14 rounded-full border border-gray-600 object-cover"
                               />
@@ -223,7 +250,7 @@ const TeamsPage = () => {
                               Roster
                             </p>
                             <h4 className="text-2xl font-black">
-                              {team.players.length} players
+                              {players.length} players
                             </h4>
                           </div>
                           <span className="border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-900">
@@ -231,7 +258,7 @@ const TeamsPage = () => {
                           </span>
                         </div>
 
-                        {team.players.length === 0 ? (
+                        {players.length === 0 ? (
                           <p
                             className={`border-t pt-5 text-sm ${mutedText} ${dividerClass}`}
                           >
@@ -246,7 +273,7 @@ const TeamsPage = () => {
                           </p>
                         ) : (
                           <div className={`divide-y ${divideClass}`}>
-                            {team.players.map((player) => {
+                            {players.map((player) => {
                               const playerName = getName(player)
 
                               return (
@@ -273,7 +300,13 @@ const TeamsPage = () => {
                                   )}
                                   <div className="min-w-0">
                                     <p className="truncate font-bold">
-                                      {playerName}
+                                      {playerName}{' '}
+                                      <Text size="xs" c="dimmed" fw="bold">
+                                        {player?.profile?.gender}{' '}
+                                        {formatDateOfBirth(
+                                          player?.profile?.dateOfBirth
+                                        )}
+                                      </Text>
                                     </p>
                                     <p className={`text-sm ${mutedText}`}>
                                       {player.profile?.position || 'Player'}

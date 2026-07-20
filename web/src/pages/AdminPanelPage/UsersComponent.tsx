@@ -31,7 +31,7 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import UserModal from 'src/components/Modals/UserModal'
-import { GET_AGE_GROUP_TEAMS } from 'src/graphql/age-group-teams-queries'
+
 import {
   GET_PAGINATED_USERS,
   UPDATE_USER,
@@ -39,6 +39,7 @@ import {
   CREATE_USER,
 } from 'src/graphql/users-queries'
 import { sendEmailMessage } from 'src/lib/fetch'
+import { formatDateOfBirth } from 'src/lib/formatters'
 // import { sendEmailMessage } from 'src/lib/fetch'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
@@ -67,6 +68,7 @@ const UsersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
+
   const variables = {
     page: currentPage,
     pageSize: PAGE_SIZE,
@@ -76,7 +78,7 @@ const UsersPage = () => {
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_USERS, {
     variables,
   })
-  const { data: teamsData } = useQuery(GET_AGE_GROUP_TEAMS)
+
 
   const users = data?.paginatedUsers?.items || []
   const totalUsers = data?.paginatedUsers?.totalCount || 0
@@ -150,13 +152,14 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
-            teamId: values.role === 'PLAYER' ? values.teamId || null : null,
+  
             profile: {
               firstName: values.profile.firstName,
               lastName: values.profile.lastName,
               dateOfBirth: values.profile.dateOfBirth
                 ? new Date(values.profile.dateOfBirth).toISOString()
                 : null,
+              gender: values.profile.gender || null,
               phoneNumber: values.profile.phoneNumber || null,
               address: values.profile.address || null,
               city: values.profile.city || null,
@@ -190,7 +193,7 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
-            teamId: values.role === 'PLAYER' ? values.teamId || null : null,
+
             profile: {
               firstName: values.profile.firstName,
               lastName: values.profile.lastName,
@@ -244,13 +247,19 @@ const UsersPage = () => {
       render: (val: any, user: any) => (
         <Group>
           <Avatar
-            src={user.profile.profilePhoto}
+            src={user?.profile?.profilePhoto}
             name={val?.firstName + ' ' + val?.lastName}
             alt={val?.firstName + ' ' + val?.lastName}
             variant="light"
           />
           <Text size="sm">
             {val?.firstName} {val?.lastName}
+            <Text size="xs" fw="bold" c="gray.6">
+              {user?.profile.gender} {` `}
+              {user?.role === 'PLAYER' || user?.role === 'PROSPECT'
+                ? formatDateOfBirth(user?.profile?.dateOfBirth)
+                : ''}
+            </Text>
           </Text>
           {currentUser?.role === 'ADMIN'}
           <Button
@@ -282,13 +291,18 @@ const UsersPage = () => {
       },
     },
     {
-      key: 'team',
+      key: 'teamMemberships',
       header: 'Team',
-      render: (team: any) => (
-        <Text size="sm" c={team?.name ? undefined : 'dimmed'}>
-          {team?.name || 'Unassigned'}
-        </Text>
-      ),
+      render: (memberships: any) => {
+        if (!memberships?.length) {
+          return <Text size="sm" c="dimmed">Unassigned</Text>
+        }
+        return (
+          <Text size="sm">
+            {memberships.map((m: any) => m.team?.name).filter(Boolean).join(', ')}
+          </Text>
+        )
+      },
     },
     {
       key: 'isActive',
@@ -416,7 +430,6 @@ const UsersPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         userData={selectedUser}
-        teams={teamsData?.ageGroupTeams || []}
         isLoading={selectedUser ? isUpdating : isCreating}
       />
 

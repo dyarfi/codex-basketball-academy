@@ -18,15 +18,23 @@ type UserOption = {
   email: string
   role: string
   isActive?: boolean
-  teamId?: string | null
-  team?: {
-    id: string
-    name: string
-  } | null
+  teamMemberships?: Array<{
+    teamId: string
+    team?: { id: string; name: string } | null
+  }>
   profile?: {
     firstName?: string | null
     lastName?: string | null
   } | null
+}
+
+type TeamCoach = {
+  userId: string
+  role: string
+}
+
+type TeamMembership = {
+  userId: string
 }
 
 type TeamData = {
@@ -34,8 +42,8 @@ type TeamData = {
   name?: string | null
   ageGroup?: string | null
   description?: string | null
-  coachId?: string | null
-  players?: UserOption[]
+  coaches?: TeamCoach[]
+  memberships?: TeamMembership[]
   isActive?: boolean | null
 }
 
@@ -81,7 +89,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
       name: '',
       ageGroup: '',
       description: '',
-      coachId: '',
+      coachIds: [] as string[],
       playerIds: [] as string[],
       isActive: true,
     },
@@ -97,9 +105,8 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: teamData.name || '',
         ageGroup: teamData.ageGroup || '',
         description: teamData.description || '',
-        coachId: teamData.coachId || '',
-        playerIds:
-          teamData.players?.map((player: UserOption) => player.id) || [],
+        coachIds: teamData.coaches?.map((c) => c.userId) || [],
+        playerIds: teamData.memberships?.map((m) => m.userId) || [],
         isActive:
           teamData.isActive !== undefined ? Boolean(teamData.isActive) : true,
       })
@@ -108,7 +115,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: '',
         ageGroup: '',
         description: '',
-        coachId: '',
+        coachIds: [],
         playerIds: [],
         isActive: true,
       })
@@ -126,21 +133,26 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
 
   const playerOptions = players
     .filter((player) => player.role === 'PLAYER' && player.isActive !== false)
-    .map((player) => ({
-      value: player.id,
-      label: `${getUserName(player)}${
-        player.team?.name && player.team.id !== teamData?.id
-          ? ` (${player.team.name})`
-          : ''
-      }`,
-    }))
+    .map((player) => {
+      // Get current team name if player is assigned to a different team
+      const currentMembership = player.teamMemberships?.find(
+        (m) => m.teamId !== teamData?.id
+      )
+      const teamLabel = currentMembership?.team?.name
+        ? ` (${currentMembership.team.name})`
+        : ''
+      return {
+        value: player.id,
+        label: `${getUserName(player)}${teamLabel}`,
+      }
+    })
 
   const handleSubmit = (values: typeof form.values) => {
     onSave({
       name: values.name.trim(),
       ageGroup: values.ageGroup,
       description: values.description.trim() || null,
-      coachId: values.coachId || null,
+      coachIds: values.coachIds,
       playerIds: values.playerIds,
       isActive: values.isActive,
     })
@@ -179,13 +191,14 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
             {...form.getInputProps('description')}
           />
 
-          <Select
-            label="Coach"
-            placeholder="Assign a coach"
+          <MultiSelect
+            label="Coaches"
+            placeholder="Assign coaches to this team"
             data={coachOptions}
             searchable
             clearable
-            {...form.getInputProps('coachId')}
+            hidePickedOptions
+            {...form.getInputProps('coachIds')}
           />
 
           <MultiSelect
