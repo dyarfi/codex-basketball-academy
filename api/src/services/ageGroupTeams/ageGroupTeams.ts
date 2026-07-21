@@ -30,9 +30,14 @@ export const publicAgeGroupTeams: QueryResolvers['publicAgeGroupTeams'] =
           },
         },
         memberships: {
+          where: {
+            user: {
+              isActive: true,
+              role: 'PLAYER',
+            },
+          },
           include: {
             user: {
-              where: { isActive: true, role: 'PLAYER' },
               include: { profile: true },
             },
           },
@@ -117,15 +122,15 @@ export const ageGroupTeam: QueryResolvers['ageGroupTeam'] = ({ id }) => {
 export const createAgeGroupTeam: MutationResolvers['createAgeGroupTeam'] = ({
   input,
 }) => {
-  const { playerIds, coachIds, ...rest } = input
+  const { playerIds, coaches, ...rest } = input
   return db.ageGroupTeam.create({
     data: {
       ...rest,
-      coaches: coachIds?.length
+      coaches: coaches?.length
         ? {
-            create: coachIds.map((userId) => ({
+            create: coaches.map(({ userId, role }) => ({
               userId,
-              role: 'HEAD_COACH',
+              role,
             })),
           }
         : undefined,
@@ -146,17 +151,17 @@ export const updateAgeGroupTeam: MutationResolvers['updateAgeGroupTeam'] = ({
   id,
   input,
 }) => {
-  const { playerIds, coachIds, ...rest } = input
+  const { playerIds, coaches, ...rest } = input
   return db.ageGroupTeam.update({
     where: { id },
     data: {
       ...rest,
-      ...(coachIds !== undefined && {
+      ...(coaches !== undefined && {
         coaches: {
           deleteMany: {},
-          create: coachIds.map((userId) => ({
+          create: coaches.map(({ userId, role }) => ({
             userId,
-            role: 'HEAD_COACH',
+            role,
           })),
         },
       }),

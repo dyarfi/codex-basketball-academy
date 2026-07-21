@@ -125,11 +125,15 @@ const TeamsPage = () => {
             </div>
             <div className="mt-10 grid max-w-2xl grid-cols-2 gap-4 border-t border-white/20 pt-6 text-white sm:grid-cols-3">
               <div>
-                <p className="text-3xl font-black">{teams.length}</p>
+                <p className="text-3xl font-black">
+                  {!loading && teams?.length}
+                </p>
                 <p className="text-sm text-slate-200">Active teams</p>
               </div>
               <div>
-                <p className="text-3xl font-black">{totalPlayers}</p>
+                <p className="text-3xl font-black">
+                  {!loading && totalPlayers}
+                </p>
                 <p className="text-sm text-slate-200">Rostered players</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
@@ -182,17 +186,9 @@ const TeamsPage = () => {
             {!loading && !error && teams.length > 0 && (
               <div className="space-y-8">
                 {teams.map((team) => {
-                  // Get first active head coach
-                  const headCoach = team.coaches?.find(
-                    (c) => c.isActive && c.role === 'HEAD_COACH'
-                  ) ?? team.coaches?.[0]
-                  const coachUser = headCoach?.user
-                  const coachName = getName(coachUser)
-
                   // Get players from memberships
-                  const players = team.memberships
-                    ?.map((m) => m.user)
-                    .filter(Boolean) ?? []
+                  const players =
+                    team.memberships?.map((m) => m.user).filter(Boolean) ?? []
 
                   return (
                     <article
@@ -219,30 +215,47 @@ const TeamsPage = () => {
                             </p>
                           </div>
 
-                          <div className="mt-10 flex items-center gap-4 border-t border-white/15 pt-5">
-                            {coachUser?.profile?.profilePhoto ? (
-                              <img
-                                src={coachUser.profile.profilePhoto}
-                                alt={coachName}
-                                className="h-14 w-14 rounded-full border border-gray-600 object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
-                                {getInitials(coachName)}
-                              </div>
-                            )}
-                            <div>
-                              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                                Head Coach
-                              </p>
-                              <p className="text-lg font-bold">{coachName}</p>
-                            </div>
+                          <div className="mt-10 flex items-center gap-3 border-t border-white/15 pt-5">
+                            {team.coaches &&
+                              team.coaches.map((coach) => {
+                                const coachUser = coach?.user
+                                const coachName = getName(coachUser)
+                                const coachType = coach?.role
+                                const titleCoach =
+                                  coachType === 'HEAD_COACH'
+                                    ? 'Head Coach'
+                                    : 'Coach Assistance'
+
+                                return (
+                                  <>
+                                    {coach?.profile?.profilePhoto ? (
+                                      <img
+                                        src={coach?.profile?.profilePhoto}
+                                        alt={coachName}
+                                        className="h-12 w-12 rounded-full border border-gray-600 object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
+                                        {getInitials(coachName)}
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                                        {titleCoach}
+                                      </p>
+                                      <p className="text-sm font-bold">
+                                        {coachName}
+                                      </p>
+                                    </div>
+                                  </>
+                                )
+                              })}
                           </div>
                         </div>
                       </div>
 
                       <div className="p-6 sm:p-8">
-                        <div className="mb-5 flex items-center justify-between gap-4">
+                        <div className="mb-5 flex items-center justify-between gap-3">
                           <div>
                             <p
                               className={`text-xs uppercase tracking-[0.18em] ${mutedText}`}
@@ -278,12 +291,12 @@ const TeamsPage = () => {
 
                               return (
                                 <div
-                                  key={player.id}
-                                  className="grid grid-cols-[auto_1fr_auto] items-center gap-4 py-4 transition duration-200 hover:translate-x-1"
+                                  key={player?.id}
+                                  className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3 transition duration-200 hover:translate-x-1"
                                 >
-                                  {player.profile?.profilePhoto ? (
+                                  {player?.profile?.profilePhoto ? (
                                     <img
-                                      src={player.profile.profilePhoto}
+                                      src={player?.profile?.profilePhoto}
                                       alt={playerName}
                                       className="h-11 w-11 rounded-full border border-gray-200 object-cover"
                                     />
@@ -304,12 +317,12 @@ const TeamsPage = () => {
                                       <Text size="xs" c="dimmed" fw="bold">
                                         {player?.profile?.gender}{' '}
                                         {formatDateOfBirth(
-                                          player?.profile?.dateOfBirth
+                                          player?.profile?.dateOfBirth as string
                                         )}
                                       </Text>
                                     </p>
                                     <p className={`text-sm ${mutedText}`}>
-                                      {player.profile?.position || 'Player'}
+                                      {player?.profile?.position || 'Player'}
                                     </p>
                                   </div>
                                   <div className="text-right">
@@ -317,7 +330,7 @@ const TeamsPage = () => {
                                       No.
                                     </p>
                                     <p className="text-xl font-black">
-                                      {player.profile?.jerseyNumber ?? '--'}
+                                      {player?.profile?.jerseyNumber ?? '--'}
                                     </p>
                                   </div>
                                 </div>

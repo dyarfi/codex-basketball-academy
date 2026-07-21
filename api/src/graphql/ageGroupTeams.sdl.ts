@@ -60,11 +60,16 @@ export const schema = gql`
     ): PaginatedAgeGroupTeams! @requireAuth
   }
 
+  input TeamCoachInput {
+    userId: String!
+    role: CoachRole!
+  }
+
   input CreateAgeGroupTeamInput {
     name: String!
     ageGroup: String!
     description: String
-    coachIds: [String!]
+    coaches: [TeamCoachInput!]
     playerIds: [String!]
     isActive: Boolean
   }
@@ -73,7 +78,7 @@ export const schema = gql`
     name: String
     ageGroup: String
     description: String
-    coachIds: [String!]
+    coaches: [TeamCoachInput!]
     playerIds: [String!]
     isActive: Boolean
   }

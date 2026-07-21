@@ -494,7 +494,8 @@ model AgeGroupTeam {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   memberships TeamMembership[]
-  coaches TeamCoach[]
+  coaches     TeamCoach[]
+  liveGameSessions LiveGameSession[]
 
   @@index([ageGroup])
   @@index([isActive])
@@ -532,4 +533,27 @@ model TeamCoach {
 
   @@index([userId])
   @@index([teamId])
+}
+
+// LiveGameSession Model
+model LiveGameSession {
+  id              String        @id @default(cuid())
+  gameName        String        @unique
+  gameDate        DateTime
+  selectedTeamId  String?
+  team            AgeGroupTeam? @relation(fields: [selectedTeamId], references: [id], onDelete: SetNull)
+  roster          Json          // Array of player user objects with profiles
+  statsMap        Json          // Object mapping userId to their current stats
+  substitutedOut  Json          // Array of substituted out player IDs
+  substitutionLog Json          // Array of substitution event objects
+  gameMinute      Int           @default(1)
+  gameStarted     Boolean       @default(false)
+  gameFinished    Boolean       @default(false)
+  elapsedSeconds  Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([selectedTeamId])
+  @@index([gameDate])
+  @@index([gameName])
 }

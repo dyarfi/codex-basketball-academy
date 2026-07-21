@@ -42,6 +42,7 @@ interface CrudTableProps<T extends { id: string }>
 
   containerClassName?: string
   rowClassName?: string
+  isDisableDelete?: boolean
 
   editButtonProps?: ActionIconProps
   deleteButtonProps?: ActionIconProps
@@ -68,6 +69,7 @@ export function CrudTable<T extends { id: string }>({
 
   containerClassName,
   rowClassName,
+  isDisableDelete = false,
 
   editButtonProps,
   deleteButtonProps,
@@ -195,7 +197,7 @@ export function CrudTable<T extends { id: string }>({
                           </Tooltip>
                         )}
 
-                        {onDelete && (
+                        {!isDisableDelete && onDelete && (
                           <Tooltip label="Delete">
                             <ActionIcon
                               variant="light"

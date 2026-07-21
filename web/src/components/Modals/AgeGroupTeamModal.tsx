@@ -10,8 +10,11 @@ import {
   Switch,
   Textarea,
   TextInput,
+  Text,
+  ActionIcon,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { IconPlus, IconTrash } from '@tabler/icons-react'
 
 type UserOption = {
   id: string
@@ -89,7 +92,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
       name: '',
       ageGroup: '',
       description: '',
-      coachIds: [] as string[],
+      coaches: [] as TeamCoach[],
       playerIds: [] as string[],
       isActive: true,
     },
@@ -105,7 +108,10 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: teamData.name || '',
         ageGroup: teamData.ageGroup || '',
         description: teamData.description || '',
-        coachIds: teamData.coaches?.map((c) => c.userId) || [],
+        coaches: teamData.coaches?.map((c) => ({
+          userId: c.userId,
+          role: c.role,
+        })) || [],
         playerIds: teamData.memberships?.map((m) => m.userId) || [],
         isActive:
           teamData.isActive !== undefined ? Boolean(teamData.isActive) : true,
@@ -115,7 +121,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: '',
         ageGroup: '',
         description: '',
-        coachIds: [],
+        coaches: [],
         playerIds: [],
         isActive: true,
       })
@@ -147,12 +153,26 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
       }
     })
 
+  const addCoach = () => {
+    form.setFieldValue('coaches', [
+      ...form.values.coaches,
+      { userId: '', role: 'ASSISTANT' },
+    ])
+  }
+
+  const removeCoach = (index: number) => {
+    form.setFieldValue(
+      'coaches',
+      form.values.coaches.filter((_, i) => i !== index)
+    )
+  }
+
   const handleSubmit = (values: typeof form.values) => {
     onSave({
       name: values.name.trim(),
       ageGroup: values.ageGroup,
       description: values.description.trim() || null,
-      coachIds: values.coachIds,
+      coaches: values.coaches.filter((c) => c.userId),
       playerIds: values.playerIds,
       isActive: values.isActive,
     })
@@ -191,15 +211,62 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
             {...form.getInputProps('description')}
           />
 
-          <MultiSelect
-            label="Coaches"
-            placeholder="Assign coaches to this team"
-            data={coachOptions}
-            searchable
-            clearable
-            hidePickedOptions
-            {...form.getInputProps('coachIds')}
-          />
+          <div>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={500}>Coaches & Roles</Text>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconPlus size={14} />}
+                onClick={addCoach}
+              >
+                Add Coach
+              </Button>
+            </Group>
+
+            {form.values.coaches.length === 0 ? (
+              <Text size="xs" c="dimmed" fs="italic" py="xs" style={{ border: '1px dashed #ced4da', borderRadius: '4px', textAlign: 'center' }}>
+                No coaches assigned. Click "Add Coach" to assign a coach.
+              </Text>
+            ) : (
+              <Stack gap="xs">
+                {form.values.coaches.map((item, index) => (
+                  <Group key={index} gap="sm" align="flex-end">
+                    <Select
+                      label={index === 0 ? "Coach" : null}
+                      placeholder="Select coach"
+                      data={coachOptions}
+                      searchable
+                      required
+                      {...form.getInputProps(`coaches.${index}.userId`)}
+                      style={{ flex: 2 }}
+                    />
+                    <Select
+                      label={index === 0 ? "Role" : null}
+                      placeholder="Select role"
+                      data={[
+                        { value: 'HEAD_COACH', label: 'Head Coach' },
+                        { value: 'ASSISTANT', label: 'Assistant Coach' },
+                        { value: 'TRAINER', label: 'Trainer' },
+                      ]}
+                      required
+                      {...form.getInputProps(`coaches.${index}.role`)}
+                      style={{ flex: 1.5 }}
+                    />
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      onClick={() => removeCoach(index)}
+                      size="lg"
+                      style={{ marginBottom: '4px' }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Group>
+                ))}
+              </Stack>
+            )}
+          </div>
 
           <MultiSelect
             label="Players"

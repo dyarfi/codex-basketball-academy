@@ -1,3 +1,6 @@
+// Random UUID generator for creating unique invitation codes
+import { randomUUID } from 'crypto'
+
 // We use the official Redwood hashPassword utility for dbAuth compatibility
 import { hashPassword } from '@redwoodjs/auth-dbauth-api'
 
@@ -1008,6 +1011,21 @@ export async function seed() {
       },
     })
 
+    const makeInvite = () => {
+      const code = randomUUID().replace(/-/g, '').slice(0, 12)
+
+      return {
+        code,
+        url: `signup?invite=${code}`,
+        purpose: 'Seed invitation',
+        maxUses: 1,
+      }
+    }
+
+    await db.invitationLink.createMany({
+      data: [makeInvite(), makeInvite(), makeInvite(), makeInvite()],
+    })
+
     console.log('✅ Database seeded successfully!')
     console.log(`Created:`)
     console.log(`  - 1 Admin user`)
@@ -1027,6 +1045,7 @@ export async function seed() {
     console.log(`  - 3 Announcements`)
     console.log(`  - 2 Messages`)
     console.log(`  - 23 Site Settings`)
+    console.log(`  - 4 Invitation Link`)
   } catch (error) {
     console.error('🔥 Error seeding database:', error)
     throw error

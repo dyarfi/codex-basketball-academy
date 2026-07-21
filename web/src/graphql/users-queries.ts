@@ -85,6 +85,14 @@ export const GET_PAGINATED_USERS = gql`
           relationshipToPlayer
           profilePhoto
         }
+        coachedTeams {
+          role
+          team {
+            id
+            name
+            ageGroup
+          }
+        }
       }
       totalCount
       currentPage

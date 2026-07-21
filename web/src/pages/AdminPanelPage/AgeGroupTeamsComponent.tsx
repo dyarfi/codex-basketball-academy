@@ -267,9 +267,21 @@ const AgeGroupTeamsComponent = () => {
       render: (coaches) => {
         const coachList = coaches as TeamCoach[]
         if (!coachList?.length) return <Text size="sm" c="dimmed">Unassigned</Text>
+        const formatRole = (role: string) => {
+          switch (role) {
+            case 'HEAD_COACH':
+              return 'Head'
+            case 'ASSISTANT':
+              return 'Assistant'
+            case 'TRAINER':
+              return 'Trainer'
+            default:
+              return role
+          }
+        }
         return (
           <Text size="sm">
-            {coachList.map((c) => getUserName(c.user)).join(', ')}
+            {coachList.map((c) => `${getUserName(c.user)} (${formatRole(c.role)})`).join(', ')}
           </Text>
         )
       },

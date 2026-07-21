@@ -12,6 +12,7 @@ import {
   Alert,
   ActionIcon,
   Avatar,
+  Stack,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
@@ -31,7 +32,6 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import UserModal from 'src/components/Modals/UserModal'
-
 import {
   GET_PAGINATED_USERS,
   UPDATE_USER,
@@ -78,7 +78,6 @@ const UsersPage = () => {
   const { data, loading, error, refetch } = useQuery(GET_PAGINATED_USERS, {
     variables,
   })
-
 
   const users = data?.paginatedUsers?.items || []
   const totalUsers = data?.paginatedUsers?.totalCount || 0
@@ -152,7 +151,7 @@ const UsersPage = () => {
             email: values.email,
             role: values.role,
             isActive: values.isActive,
-  
+
             profile: {
               firstName: values.profile.firstName,
               lastName: values.profile.lastName,
@@ -262,6 +261,15 @@ const UsersPage = () => {
             </Text>
           </Text>
           {currentUser?.role === 'ADMIN'}
+        </Group>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      render: (val: any) => (
+        <Stack justify="start" align="flex-start" gap={3}>
+          <Text size="xs">{val}</Text>
           <Button
             title="Reset Password"
             variant="outline"
@@ -272,10 +280,9 @@ const UsersPage = () => {
           >
             Reset
           </Button>
-        </Group>
+        </Stack>
       ),
     },
-    { key: 'email', header: 'Email' },
     {
       key: 'role',
       header: 'Role',
@@ -293,14 +300,37 @@ const UsersPage = () => {
     {
       key: 'teamMemberships',
       header: 'Team',
-      render: (memberships: any) => {
-        if (!memberships?.length) {
-          return <Text size="sm" c="dimmed">Unassigned</Text>
+      render: (memberships: any, { coachedTeams = [], role = '' }: any) => {
+        if (!memberships?.length && !coachedTeams?.length) {
+          return (
+            <Text size="sm" c="dimmed">
+              Unassigned
+            </Text>
+          )
         }
         return (
-          <Text size="sm">
-            {memberships.map((m: any) => m.team?.name).filter(Boolean).join(', ')}
-          </Text>
+          <Group gap={'xs'} justify="flex-start">
+            {memberships &&
+              memberships
+                .map((m: any) => m.team?.name)
+                .filter(Boolean)
+                // .join(', ')
+                .map((b: any) => (
+                  <Badge key={b} variant="outline" size="xs">
+                    {b}
+                  </Badge>
+                ))}
+            {coachedTeams &&
+              coachedTeams
+                .map((m: any) => m)
+                .filter(Boolean)
+                // .join(', ')
+                .map((b: any) => (
+                  <Badge key={b} variant="outline" size="xs">
+                    {b.team.ageGroup} {b.role.replace('_', ' ')}
+                  </Badge>
+                ))}
+          </Group>
         )
       },
     },

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import {
   Alert,
+  AnchorStylesNames,
   Badge,
   Box,
   Button,
@@ -9,18 +10,25 @@ import {
   Group,
   Loader,
   Select,
+  Table,
   Text,
   TextInput,
+  ThemeIcon,
+  Timeline,
+  Title,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconBasketHeart,
+  IconArrowLeft,
+  IconArrowRight,
+  // IconBasketHeart,
   IconEyePlus,
-  IconHomeStats,
+  // IconHomeStats,
   IconPlus,
   IconSearch,
   IconStopwatch,
+  // IconStopwatch,
 } from '@tabler/icons-react'
 
 import { routes, useParams, navigate } from '@redwoodjs/router'
@@ -31,6 +39,7 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import PlayerStatsModal from 'src/components/Modals/PlayerStatsModal'
+import { GET_LIVE_GAME_SESSIONS } from 'src/graphql/live-game-sessions-queries'
 import {
   CREATE_PLAYER_STAT,
   DELETE_PLAYER_STAT,
@@ -39,6 +48,7 @@ import {
   GET_UNIQUE_GAME_NAME,
 } from 'src/graphql/player-stats-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
+import { formatDatetime } from 'src/lib/formatters'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
 type RouteBuilder = (params?: RouteQuery) => string
@@ -111,6 +121,7 @@ const PlayerStatsComponent = () => {
       variables,
     }
   )
+
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
   const { data: { playerStatsByGameName } = [], loading: gameNameLoading } =
     useQuery(GET_UNIQUE_GAME_NAME)
@@ -164,6 +175,15 @@ const PlayerStatsComponent = () => {
       awaitRefetchQueries: true,
     }
   )
+
+  const { data: sessionsData, refetch: refetchSessions } = useQuery(
+    GET_LIVE_GAME_SESSIONS,
+    {
+      variables: { gameName: gameNameFilter },
+      skip: !gameNameFilter,
+    }
+  )
+  const { liveGameSessionsByName } = sessionsData || {}
 
   const stats = data?.paginatedPlayerStats?.items || []
   const totalStats = data?.paginatedPlayerStats?.totalCount || 0
@@ -329,8 +349,6 @@ const PlayerStatsComponent = () => {
     )
   }
 
-  console.log({ gameNameFilter })
-
   return (
     <Container
       size="xl"
@@ -418,11 +436,74 @@ const PlayerStatsComponent = () => {
       </Group>
 
       {/* Game stats history */}
-      {/* {gameNameFilter && (
+      {gameNameFilter && liveGameSessionsByName?.length > 0 && (
         <Alert variant="info" icon={<IconStopwatch />} mb={'lg'}>
-          {gameNameFilter}
+          <Title size="h4" c="blue.8">
+            Game Log: {gameNameFilter}
+          </Title>
+          {liveGameSessionsByName &&
+            liveGameSessionsByName.map((sessions) => (
+              <>
+                <Group>
+                  <div>{sessions?.gameMinute} Minute</div>
+                  <div>{formatDate(sessions?.gameDate)}</div>
+                  <div>
+                    {sessions?.team?.name} - ({sessions?.team?.ageGroup})
+                  </div>
+                </Group>
+                <Timeline
+                  active={sessions?.substitutionLog.length - 1}
+                  bulletSize={28}
+                  lineWidth={2}
+                  mt="sm"
+                >
+                  {sessions?.substitutionLog.map((event, index) => (
+                    <Timeline.Item
+                      key={`${event.playerId}-${event.timestamp}-${index}`}
+                      bullet={
+                        <ThemeIcon
+                          size={22}
+                          variant="filled"
+                          color={event.type === 'OUT' ? 'red' : 'green'}
+                          radius="xl"
+                        >
+                          {event.type === 'OUT' ? (
+                            <IconArrowRight size={12} />
+                          ) : (
+                            <IconArrowLeft size={12} />
+                          )}
+                        </ThemeIcon>
+                      }
+                      title={
+                        <Group gap="xs">
+                          <Text size="sm" fw={600}>
+                            {event.playerName}
+                          </Text>
+                          <Badge
+                            size="xs"
+                            color={event.type === 'OUT' ? 'red' : 'green'}
+                            variant="filled"
+                          >
+                            {event.type === 'OUT' ? 'Subbed OUT' : 'Subbed IN'}
+                          </Badge>
+                        </Group>
+                      }
+                      className="animate-[pulse_300ms_ease-in-out]"
+                    >
+                      <Text size="xs" c="dimmed">
+                        Minute {event.minute} &nbsp;·&nbsp;{' '}
+                        {new Date(event.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              </>
+            ))}
         </Alert>
-      )} */}
+      )}
 
       <CrudTable
         data={stats}
@@ -431,6 +512,7 @@ const PlayerStatsComponent = () => {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
         emptyText="No player stats found"
+        isDisableDelete={true}
       />
 
       {stats.length > 0 && totalPages > 1 && (

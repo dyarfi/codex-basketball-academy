@@ -147,6 +147,9 @@ export const paginatedUsers: QueryResolvers['paginatedUsers'] = async ({
       teamMemberships: {
         include: { team: true },
       },
+      coachedTeams: {
+        include: { team: true },
+      },
     },
   })
 

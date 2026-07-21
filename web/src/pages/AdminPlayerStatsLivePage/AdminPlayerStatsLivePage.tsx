@@ -53,7 +53,6 @@ import {
   IconUsers,
   IconMaximize,
   IconMinimize,
-  IconClock24,
   IconStopwatch,
   IconUserPlus,
 } from '@tabler/icons-react'
@@ -64,6 +63,12 @@ import { toast } from '@redwoodjs/web/toast'
 
 import { AdminLayout } from 'src/components/AdminLayout/AdminLayout'
 import { GET_AGE_GROUP_TEAMS } from 'src/graphql/age-group-teams-queries'
+import {
+  // GET_LIVE_GAME_SESSIONS,
+  CREATE_LIVE_GAME_SESSION,
+  UPDATE_LIVE_GAME_SESSION,
+  // DELETE_LIVE_GAME_SESSION,
+} from 'src/graphql/live-game-sessions-queries'
 import { CREATE_BULK_PLAYER_STATS } from 'src/graphql/player-stats-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
 
@@ -107,6 +112,7 @@ const getPlayerName = (player: RosterPlayer) => {
 const DRAFT_KEY = 'live_stats_draft'
 
 interface DraftSession {
+  id?: string | null
   gameName: string
   gameDate: string
   selectedTeamId: string | null
@@ -127,6 +133,10 @@ const AdminPlayerStatsLivePage = () => {
     defaultValue: null,
     getInitialValueInEffect: false,
   })
+
+  const [dbSessionId, setDbSessionId] = useState<string | null>(
+    draft?.id ?? null
+  )
 
   // Game Setup State – seeded from draft when present
   const [gameName, setGameName] = useState(draft?.gameName ?? '')
@@ -264,6 +274,7 @@ const AdminPlayerStatsLivePage = () => {
   const handleClearDraft = () => {
     persistDraft.cancel()
     removeDraft()
+    setDbSessionId(null)
     setGameName('')
     const today = new Date()
     setGameDate(today.toISOString().split('T')[0])
@@ -329,6 +340,7 @@ const AdminPlayerStatsLivePage = () => {
   const buildDraftSnapshot = (
     overrides: Partial<DraftSession> = {}
   ): DraftSession => ({
+    id: dbSessionId,
     gameName,
     gameDate,
     selectedTeamId,
@@ -351,12 +363,58 @@ const AdminPlayerStatsLivePage = () => {
   } = useQuery(GET_AGE_GROUP_TEAMS)
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
 
+  // const { data: sessionsData, refetch: refetchSessions } = useQuery(
+  //   GET_LIVE_GAME_SESSIONS
+  // )
+
+  const [createLiveGameSession, { loading: isCreatingSession }] = useMutation(
+    CREATE_LIVE_GAME_SESSION,
+    {
+      onCompleted: (data) => {
+        const newId = data.createLiveGameSession.id
+        setDbSessionId(newId)
+        persistDraft(buildDraftSnapshot({ id: newId }))
+        // refetchSessions()
+      },
+      onError: (err) => {
+        toast.error(err.message || 'Failed to save live session')
+      },
+    }
+  )
+
+  const [updateLiveGameSession, { loading: isUpdatingSession }] = useMutation(
+    UPDATE_LIVE_GAME_SESSION,
+    {
+      onCompleted: () => {
+        // refetchSessions()
+      },
+      onError: (err) => {
+        toast.error(err.message || 'Failed to update live session')
+      },
+    }
+  )
+
+  // const [deleteLiveGameSession] = useMutation(DELETE_LIVE_GAME_SESSION, {
+  //   onCompleted: () => {
+  //     refetchSessions()
+  //     toast.success('Live session deleted successfully')
+  //   },
+  //   onError: (err) => {
+  //     toast.error(err.message || 'Failed to delete live session')
+  //   },
+  // })
+
   const [createBulkPlayerStats, { loading: isSaving }] = useMutation(
     CREATE_BULK_PLAYER_STATS,
     {
       onCompleted: () => {
         persistDraft.cancel()
         removeDraft()
+        // if (dbSessionId) {
+        //   deleteLiveGameSession({
+        //     variables: { id: dbSessionId },
+        //   }).catch(() => {})
+        // }
         toast.success(
           `Live game stats ${gameName && `${gameName} `}saved successfully`
         )
@@ -367,6 +425,40 @@ const AdminPlayerStatsLivePage = () => {
       },
     }
   )
+
+  // const handleLoadSession = (session: any) => {
+  //   setDbSessionId(session.id)
+  //   setGameName(session.gameName)
+  //   const dateStr = session.gameDate ? session.gameDate.split('T')[0] : ''
+  //   setGameDate(dateStr)
+  //   setSelectedTeamId(session.selectedTeamId)
+  //   setRoster(session.roster)
+  //   setStatsMap(session.statsMap)
+  //   setSubstitutedOut(new Set(session.substitutedOut))
+  //   setSubstitutionLog(session.substitutionLog)
+  //   setGameMinute(session.gameMinute)
+  //   setGameStarted(session.gameStarted)
+  //   setGameFinished(session.gameFinished)
+  //   setElapsedSeconds(session.elapsedSeconds)
+  //   setTimerRunning(false)
+
+  //   setDraft({
+  //     id: session.id,
+  //     gameName: session.gameName,
+  //     gameDate: dateStr,
+  //     selectedTeamId: session.selectedTeamId,
+  //     roster: session.roster,
+  //     statsMap: session.statsMap,
+  //     substitutedOut: session.substitutedOut,
+  //     substitutionLog: session.substitutionLog,
+  //     gameMinute: session.gameMinute,
+  //     gameStarted: session.gameStarted,
+  //     gameFinished: session.gameFinished,
+  //     elapsedSeconds: session.elapsedSeconds,
+  //   })
+
+  //   toast.success(`Loaded live session: ${session.gameName}`)
+  // }
 
   // Format team selections
   const teamOptions = useMemo(() => {
@@ -607,7 +699,7 @@ const AdminPlayerStatsLivePage = () => {
   // Count on-court players
   const onCourtCount = roster.length - substitutedOut.size
 
-  // Save Stats
+  // Save Stats – also upserts the live session to DB for audit trail
   const handleSaveStats = () => {
     if (!gameName.trim()) {
       toast.error('Please enter a Game Name')
@@ -624,6 +716,28 @@ const AdminPlayerStatsLivePage = () => {
 
     // Normalize date to ISO start of day
     const normalizedDate = new Date(`${gameDate}T00:00:00`).toISOString()
+
+    // Upsert the live session snapshot to DB as an audit record
+    const sessionInput = {
+      gameName: gameName.trim(),
+      gameDate: normalizedDate,
+      selectedTeamId,
+      roster,
+      statsMap,
+      substitutedOut: Array.from(substitutedOut),
+      substitutionLog,
+      gameMinute,
+      gameStarted,
+      gameFinished,
+      elapsedSeconds,
+    }
+    if (dbSessionId) {
+      updateLiveGameSession({
+        variables: { id: dbSessionId, input: sessionInput },
+      })
+    } else {
+      createLiveGameSession({ variables: { input: sessionInput } })
+    }
 
     const inputs = roster.map((player) => {
       const stats = statsMap[player.id] || {
@@ -654,8 +768,6 @@ const AdminPlayerStatsLivePage = () => {
         inputs,
       },
     })
-
-    toast.success(`Game stats ${gameName && `${gameName} `}saved!`)
   }
 
   // Handle animated class
@@ -717,20 +829,29 @@ const AdminPlayerStatsLivePage = () => {
           </Text>
         </Breadcrumbs>
         {/* Page Header */}
-        <Group justify="space-between" mb="lg">
+        <Group justify="space-between" mb="lg" align="start">
           <Stack gap={2}>
             <Group gap="xs" align="center">
               <Title order={2}>Live Game Scoreboard</Title>
-              {hasDraft && (
+              {dbSessionId ? (
+                <Badge
+                  color="blue"
+                  variant="dot"
+                  rightSection={<IconCircleCheck size={12} />}
+                  size="md"
+                >
+                  Cloud Saved
+                </Badge>
+              ) : hasDraft ? (
                 <Badge
                   color="teal"
                   variant="dot"
                   rightSection={<IconCircleCheck size={12} />}
                   size="md"
                 >
-                  Draft Saved
+                  Local Draft
                 </Badge>
-              )}
+              ) : null}
               <Button
                 radius={'lg'}
                 onClick={toggle}
@@ -751,7 +872,7 @@ const AdminPlayerStatsLivePage = () => {
             </Text>
           </Stack>
           <Group gap="xs">
-            {hasDraft && (
+            {!gameFinished && hasDraft && !gameStarted && (
               <Button
                 leftSection={<IconRefresh size={16} />}
                 variant="light"
@@ -810,7 +931,7 @@ const AdminPlayerStatsLivePage = () => {
                       onClick={handleStopGame}
                       className={classButtonAnim}
                     >
-                      Stop Game
+                      Finish Game
                     </Button>
                   </>
                 )}
@@ -924,6 +1045,61 @@ const AdminPlayerStatsLivePage = () => {
               </Grid>
               {/* </Group> */}
             </Stack>
+
+            {/* {!gameStarted &&
+              !gameFinished &&
+              sessionsData?.liveGameSessions?.length > 0 && (
+                <>
+                  <Divider
+                    my="md"
+                    label="Resume Saved Live Session"
+                    labelPosition="center"
+                  />
+                  <Stack gap="xs" mt="xs">
+                    {sessionsData.liveGameSessions.map((s: any) => (
+                      <Paper key={s.id} withBorder p="xs" radius="sm">
+                        <Group justify="space-between">
+                          <Stack gap={2}>
+                            <Text size="sm" fw={600}>
+                              {s.gameName}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {s.gameDate ? s.gameDate.split('T')[0] : ''} ·{' '}
+                              {s.roster ? s.roster.length : 0} Players
+                            </Text>
+                          </Stack>
+                          <Group gap="xs">
+                            <Button
+                              size="compact-xs"
+                              color="blue"
+                              onClick={() => handleLoadSession(s)}
+                            >
+                              Load
+                            </Button>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    `Are you sure you want to delete the saved session "${s.gameName}"?`
+                                  )
+                                ) {
+                                  deleteLiveGameSession({
+                                    variables: { id: s.id },
+                                  })
+                                }
+                              }}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Group>
+                      </Paper>
+                    ))}
+                  </Stack>
+                </>
+              )} */}
           </Card>
 
           {/* Live Team Totals Card */}
@@ -1880,7 +2056,7 @@ const AdminPlayerStatsLivePage = () => {
               color="teal"
               leftSection={<IconDeviceFloppy size={16} />}
               onClick={handleSaveStats}
-              loading={isSaving}
+              loading={isSaving || isCreatingSession || isUpdatingSession}
               disabled={
                 isGameMinStart ||
                 isGameStartNoFinish ||
