@@ -58,6 +58,19 @@ enum AnnouncementType {
   ERROR
 }
 
+enum CoachRole {
+  HEAD_COACH
+  ASSISTANT
+  TRAINER
+}
+
+enum InvitationEvent {
+  REGISTER
+  LOGIN
+  ACCEPT
+  CHECK_IN
+}
+
 // User Model
 model User {
   id                  String    @id @default(cuid())
@@ -87,9 +100,8 @@ model User {
   // Site assets relation
   gallery             Gallery[] @relation("CreatedBy")
   invitations         InvitationLink[] @relation("CreatedBy") // 👈 One-to-many relationship
-  teamId              String?
-  team                AgeGroupTeam?  @relation("TeamPlayers", fields: [teamId], references: [id], onDelete: SetNull)
-  teamsAsCoach        AgeGroupTeam[] @relation("TeamCoach")
+  teamMemberships     TeamMembership[] // Will be used to link users to teams and not use yet
+  coachedTeams        TeamCoach[] // Will be used to link coaches to teams and not use yet
 
   @@index([email])
   @@index([role])
@@ -122,6 +134,7 @@ model Profile {
   relationshipToPlayer  String?
   playerUserId          String?
   profilePhoto          String?
+  // invitedCode           String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -331,22 +344,47 @@ model SkillAssessment {
 
 // PlayerStats Model
 model PlayerStats {
-  id             String    @id @default(cuid())
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameDate       DateTime
-  gameName       String
-  points         Int       @default(0)
-  rebounds       Int       @default(0)
-  assists        Int       @default(0)
-  steals         Int       @default(0)
-  blocks         Int       @default(0)
-  minutesPlayed  Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  liveGameSessionId Int
+  liveGameSession   LiveGameSession  @relation(fields: [liveGameSessionId], references: [id], onDelete: Cascade)
+  points            Int              @default(0)
+  rebounds          Int              @default(0)
+  assists           Int              @default(0)
+  steals            Int              @default(0)
+  blocks            Int              @default(0)
+  minutesPlayed     Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([userId])
+  @@index([liveGameSessionId])
+}
+
+// LiveGameSession Model
+model LiveGameSession {
+  id              Int           @id @default(autoincrement())
+  gameName        String        @unique
+  gameDate        DateTime
+  selectedTeamId  String?
+  team            AgeGroupTeam? @relation(fields: [selectedTeamId], references: [id], onDelete: SetNull)
+  roster          Json          // Array of player user objects with profiles
+  statsMap        Json          // Object mapping userId to their current stats
+  substitutedOut  Json          // Array of substituted out player IDs
+  substitutionLog Json          // Array of substitution event objects
+  gameMinute      Int           @default(1)
+  gameStarted     Boolean       @default(false)
+  gameFinished    Boolean       @default(false)
+  elapsedSeconds  Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  playerStats     PlayerStats[]
+
+  @@index([selectedTeamId])
   @@index([gameDate])
+  @@index([gameName])
 }
 
 // Announcement Model
@@ -477,14 +515,48 @@ model AgeGroupTeam {
   name        String   @unique
   ageGroup    String   // e.g. "U-12", "U-14", "U-16", "U-18"
   description String?
-  coachId     String?
-  coach       User?    @relation("TeamCoach", fields: [coachId], references: [id], onDelete: SetNull)
-  players     User[]   @relation("TeamPlayers")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  memberships TeamMembership[]
+  coaches     TeamCoach[]
+  liveGameSessions LiveGameSession[]
 
   @@index([ageGroup])
   @@index([isActive])
+}
+
+model TeamMembership {
+  id    Int    @id @default(autoincrement())
+
+  userId String
+  teamId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team AgeGroupTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+}
+
+
+model TeamCoach {
+  id    Int    @id @default(autoincrement())
+
+  userId String
+  teamId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team AgeGroupTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  role CoachRole @default(ASSISTANT)
+
+  joinedAt DateTime @default(now())
+  leftAt DateTime?
+  isActive Boolean @default(true)
+
+  @@unique([userId, teamId])
+
+  @@index([userId])
+  @@index([teamId])
 }
 

@@ -10,23 +10,34 @@ import {
   Switch,
   Textarea,
   TextInput,
+  Text,
+  ActionIcon,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { IconPlus, IconTrash } from '@tabler/icons-react'
 
 type UserOption = {
   id: string
   email: string
   role: string
   isActive?: boolean
-  teamId?: string | null
-  team?: {
-    id: string
-    name: string
-  } | null
+  teamMemberships?: Array<{
+    teamId: string
+    team?: { id: string; name: string } | null
+  }>
   profile?: {
     firstName?: string | null
     lastName?: string | null
   } | null
+}
+
+type TeamCoach = {
+  userId: string
+  role: string
+}
+
+type TeamMembership = {
+  userId: string
 }
 
 type TeamData = {
@@ -34,8 +45,8 @@ type TeamData = {
   name?: string | null
   ageGroup?: string | null
   description?: string | null
-  coachId?: string | null
-  players?: UserOption[]
+  coaches?: TeamCoach[]
+  memberships?: TeamMembership[]
   isActive?: boolean | null
 }
 
@@ -81,7 +92,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
       name: '',
       ageGroup: '',
       description: '',
-      coachId: '',
+      coaches: [] as TeamCoach[],
       playerIds: [] as string[],
       isActive: true,
     },
@@ -97,9 +108,11 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: teamData.name || '',
         ageGroup: teamData.ageGroup || '',
         description: teamData.description || '',
-        coachId: teamData.coachId || '',
-        playerIds:
-          teamData.players?.map((player: UserOption) => player.id) || [],
+        coaches: teamData.coaches?.map((c) => ({
+          userId: c.userId,
+          role: c.role,
+        })) || [],
+        playerIds: teamData.memberships?.map((m) => m.userId) || [],
         isActive:
           teamData.isActive !== undefined ? Boolean(teamData.isActive) : true,
       })
@@ -108,7 +121,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: '',
         ageGroup: '',
         description: '',
-        coachId: '',
+        coaches: [],
         playerIds: [],
         isActive: true,
       })
@@ -126,21 +139,40 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
 
   const playerOptions = players
     .filter((player) => player.role === 'PLAYER' && player.isActive !== false)
-    .map((player) => ({
-      value: player.id,
-      label: `${getUserName(player)}${
-        player.team?.name && player.team.id !== teamData?.id
-          ? ` (${player.team.name})`
-          : ''
-      }`,
-    }))
+    .map((player) => {
+      // Get current team name if player is assigned to a different team
+      const currentMembership = player.teamMemberships?.find(
+        (m) => m.teamId !== teamData?.id
+      )
+      const teamLabel = currentMembership?.team?.name
+        ? ` (${currentMembership.team.name})`
+        : ''
+      return {
+        value: player.id,
+        label: `${getUserName(player)}${teamLabel}`,
+      }
+    })
+
+  const addCoach = () => {
+    form.setFieldValue('coaches', [
+      ...form.values.coaches,
+      { userId: '', role: 'ASSISTANT' },
+    ])
+  }
+
+  const removeCoach = (index: number) => {
+    form.setFieldValue(
+      'coaches',
+      form.values.coaches.filter((_, i) => i !== index)
+    )
+  }
 
   const handleSubmit = (values: typeof form.values) => {
     onSave({
       name: values.name.trim(),
       ageGroup: values.ageGroup,
       description: values.description.trim() || null,
-      coachId: values.coachId || null,
+      coaches: values.coaches.filter((c) => c.userId),
       playerIds: values.playerIds,
       isActive: values.isActive,
     })
@@ -179,14 +211,62 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
             {...form.getInputProps('description')}
           />
 
-          <Select
-            label="Coach"
-            placeholder="Assign a coach"
-            data={coachOptions}
-            searchable
-            clearable
-            {...form.getInputProps('coachId')}
-          />
+          <div>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={500}>Coaches & Roles</Text>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconPlus size={14} />}
+                onClick={addCoach}
+              >
+                Add Coach
+              </Button>
+            </Group>
+
+            {form.values.coaches.length === 0 ? (
+              <Text size="xs" c="dimmed" fs="italic" py="xs" style={{ border: '1px dashed #ced4da', borderRadius: '4px', textAlign: 'center' }}>
+                No coaches assigned. Click "Add Coach" to assign a coach.
+              </Text>
+            ) : (
+              <Stack gap="xs">
+                {form.values.coaches.map((item, index) => (
+                  <Group key={index} gap="sm" align="flex-end">
+                    <Select
+                      label={index === 0 ? "Coach" : null}
+                      placeholder="Select coach"
+                      data={coachOptions}
+                      searchable
+                      required
+                      {...form.getInputProps(`coaches.${index}.userId`)}
+                      style={{ flex: 2 }}
+                    />
+                    <Select
+                      label={index === 0 ? "Role" : null}
+                      placeholder="Select role"
+                      data={[
+                        { value: 'HEAD_COACH', label: 'Head Coach' },
+                        { value: 'ASSISTANT', label: 'Assistant Coach' },
+                        { value: 'TRAINER', label: 'Trainer' },
+                      ]}
+                      required
+                      {...form.getInputProps(`coaches.${index}.role`)}
+                      style={{ flex: 1.5 }}
+                    />
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      onClick={() => removeCoach(index)}
+                      size="lg"
+                      style={{ marginBottom: '4px' }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Group>
+                ))}
+              </Stack>
+            )}
+          </div>
 
           <MultiSelect
             label="Players"

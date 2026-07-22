@@ -38,15 +38,31 @@ type UserSummary = {
   email: string
   role: string
   isActive?: boolean | null
-  teamId?: string | null
-  team?: {
-    id: string
-    name: string
-  } | null
+  teamMemberships?: Array<{
+    teamId: string
+    team?: { id: string; name: string; ageGroup?: string } | null
+  }>
   profile?: {
     firstName?: string | null
     lastName?: string | null
   } | null
+}
+
+type TeamCoach = {
+  id: number
+  userId: string
+  teamId: string
+  role: string
+  isActive: boolean
+  joinedAt: string
+  user?: UserSummary | null
+}
+
+type TeamMembership = {
+  id: number
+  userId: string
+  teamId: string
+  user?: UserSummary | null
 }
 
 type AgeGroupTeam = {
@@ -54,9 +70,8 @@ type AgeGroupTeam = {
   name: string
   ageGroup: string
   description?: string | null
-  coachId?: string | null
-  coach?: UserSummary | null
-  players: UserSummary[]
+  coaches: TeamCoach[]
+  memberships: TeamMembership[]
   isActive: boolean
   createdAt?: string
   updatedAt?: string
@@ -242,22 +257,42 @@ const AgeGroupTeamsComponent = () => {
       header: 'Description',
       render: (value) => (
         <Text c="blue" size="sm">
-          {String(value)}
+          {value ? String(value) : '—'}
         </Text>
       ),
     },
     {
-      key: 'coach',
-      header: 'Coach',
-      render: (coach) => (
-        <Text size="sm">{getUserName(coach as UserSummary | null)}</Text>
-      ),
+      key: 'coaches',
+      header: 'Coaches',
+      render: (coaches) => {
+        const coachList = coaches as TeamCoach[]
+        if (!coachList?.length) return <Text size="sm" c="dimmed">Unassigned</Text>
+        const formatRole = (role: string) => {
+          switch (role) {
+            case 'HEAD_COACH':
+              return 'Head'
+            case 'ASSISTANT':
+              return 'Assistant'
+            case 'TRAINER':
+              return 'Trainer'
+            default:
+              return role
+          }
+        }
+        return (
+          <Text size="sm">
+            {coachList.map((c) => `${getUserName(c.user)} (${formatRole(c.role)})`).join(', ')}
+          </Text>
+        )
+      },
     },
     {
-      key: 'players',
+      key: 'memberships',
       header: 'Roster',
-      render: (players) => (
-        <Text size="sm">{(players as UserSummary[])?.length || 0} players</Text>
+      render: (memberships) => (
+        <Text size="sm">
+          {(memberships as TeamMembership[])?.length || 0} players
+        </Text>
       ),
     },
     {
@@ -387,7 +422,7 @@ const AgeGroupTeamsComponent = () => {
       <ConfirmDelete
         isOpen={isDeleteModalOpen}
         title="Delete Team"
-        message={`Are you sure you want to delete "${selectedTeam?.name}"? Assigned players will remain active and lose only this team assignment.`}
+        message={`Are you sure you want to delete "${selectedTeam?.name}"? All coach and player assignments will be removed.`}
         onConfirm={handleConfirmDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
         isLoading={isDeleting}

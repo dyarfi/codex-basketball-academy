@@ -18,9 +18,8 @@ export const schema = gql`
     sentMessages: [Message]
     receivedMessages: [Message]
     classesAsTutor: [Class]
-    teamId: String
-    team: AgeGroupTeam
-    teamsAsCoach: [AgeGroupTeam]
+    teamMemberships: [TeamMembership]
+    coachedTeams: [TeamCoach]
   }
 
   type PaginatedUsers {
@@ -60,7 +59,6 @@ export const schema = gql`
     role: Role!
     isActive: Boolean!
     profile: CreateProfileInput!
-    teamId: String
   }
 
   input CreateProfileInput {
@@ -90,7 +88,6 @@ export const schema = gql`
     role: Role
     isActive: Boolean
     profile: UpdateProfileInput
-    teamId: String
   }
 
   type Mutation {

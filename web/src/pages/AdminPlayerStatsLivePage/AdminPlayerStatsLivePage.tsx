@@ -25,8 +25,13 @@ import {
   Timeline,
   ThemeIcon,
   Switch,
+  Grid,
 } from '@mantine/core'
-import { useDebouncedCallback, useLocalStorage } from '@mantine/hooks'
+import {
+  useDebouncedCallback,
+  useFullscreen,
+  useLocalStorage,
+} from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -46,6 +51,10 @@ import {
   IconRefresh,
   IconTrash,
   IconUsers,
+  IconMaximize,
+  IconMinimize,
+  IconStopwatch,
+  IconUserPlus,
 } from '@tabler/icons-react'
 
 import { Link, navigate, routes } from '@redwoodjs/router'
@@ -54,6 +63,12 @@ import { toast } from '@redwoodjs/web/toast'
 
 import { AdminLayout } from 'src/components/AdminLayout/AdminLayout'
 import { GET_AGE_GROUP_TEAMS } from 'src/graphql/age-group-teams-queries'
+import {
+  // GET_LIVE_GAME_SESSIONS,
+  CREATE_LIVE_GAME_SESSION,
+  UPDATE_LIVE_GAME_SESSION,
+  // DELETE_LIVE_GAME_SESSION,
+} from 'src/graphql/live-game-sessions-queries'
 import { CREATE_BULK_PLAYER_STATS } from 'src/graphql/player-stats-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
 
@@ -97,6 +112,7 @@ const getPlayerName = (player: RosterPlayer) => {
 const DRAFT_KEY = 'live_stats_draft'
 
 interface DraftSession {
+  id?: number | null
   gameName: string
   gameDate: string
   selectedTeamId: string | null
@@ -117,6 +133,10 @@ const AdminPlayerStatsLivePage = () => {
     defaultValue: null,
     getInitialValueInEffect: false,
   })
+
+  const [dbSessionId, setDbSessionId] = useState<number | null>(
+    draft?.id ?? null
+  )
 
   // Game Setup State – seeded from draft when present
   const [gameName, setGameName] = useState(draft?.gameName ?? '')
@@ -185,6 +205,10 @@ const AdminPlayerStatsLivePage = () => {
   )
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // ---- Fullscreen handler -----------------
+  const { ref, toggle, fullscreen } = useFullscreen()
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // ─── Timer interval – auto-syncs elapsed minutes → gameMinute ────────────────
   useEffect(() => {
     if (timerRunning) {
@@ -250,6 +274,7 @@ const AdminPlayerStatsLivePage = () => {
   const handleClearDraft = () => {
     persistDraft.cancel()
     removeDraft()
+    setDbSessionId(null)
     setGameName('')
     const today = new Date()
     setGameDate(today.toISOString().split('T')[0])
@@ -315,6 +340,7 @@ const AdminPlayerStatsLivePage = () => {
   const buildDraftSnapshot = (
     overrides: Partial<DraftSession> = {}
   ): DraftSession => ({
+    id: dbSessionId,
     gameName,
     gameDate,
     selectedTeamId,
@@ -337,12 +363,62 @@ const AdminPlayerStatsLivePage = () => {
   } = useQuery(GET_AGE_GROUP_TEAMS)
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
 
+  // const { data: sessionsData, refetch: refetchSessions } = useQuery(
+  //   GET_LIVE_GAME_SESSIONS
+  // )
+
+  const [createLiveGameSession, { loading: isCreatingSession }] = useMutation(
+    CREATE_LIVE_GAME_SESSION,
+    {
+      onCompleted: (data) => {
+        const newId = data.createLiveGameSession.id
+        setDbSessionId(newId)
+        persistDraft(buildDraftSnapshot({ id: newId }))
+        saveBulkStats(newId)
+        // refetchSessions()
+      },
+      onError: (err) => {
+        toast.error(err.message || 'Failed to save live session')
+      },
+    }
+  )
+
+  const [updateLiveGameSession, { loading: isUpdatingSession }] = useMutation(
+    UPDATE_LIVE_GAME_SESSION,
+    {
+      onCompleted: () => {
+        if (dbSessionId) {
+          saveBulkStats(dbSessionId)
+        }
+        // refetchSessions()
+      },
+      onError: (err) => {
+        toast.error(err.message || 'Failed to update live session')
+      },
+    }
+  )
+
+  // const [deleteLiveGameSession] = useMutation(DELETE_LIVE_GAME_SESSION, {
+  //   onCompleted: () => {
+  //     refetchSessions()
+  //     toast.success('Live session deleted successfully')
+  //   },
+  //   onError: (err) => {
+  //     toast.error(err.message || 'Failed to delete live session')
+  //   },
+  // })
+
   const [createBulkPlayerStats, { loading: isSaving }] = useMutation(
     CREATE_BULK_PLAYER_STATS,
     {
       onCompleted: () => {
         persistDraft.cancel()
         removeDraft()
+        // if (dbSessionId) {
+        //   deleteLiveGameSession({
+        //     variables: { id: dbSessionId },
+        //   }).catch(() => {})
+        // }
         toast.success(
           `Live game stats ${gameName && `${gameName} `}saved successfully`
         )
@@ -353,6 +429,40 @@ const AdminPlayerStatsLivePage = () => {
       },
     }
   )
+
+  // const handleLoadSession = (session: any) => {
+  //   setDbSessionId(session.id)
+  //   setGameName(session.gameName)
+  //   const dateStr = session.gameDate ? session.gameDate.split('T')[0] : ''
+  //   setGameDate(dateStr)
+  //   setSelectedTeamId(session.selectedTeamId)
+  //   setRoster(session.roster)
+  //   setStatsMap(session.statsMap)
+  //   setSubstitutedOut(new Set(session.substitutedOut))
+  //   setSubstitutionLog(session.substitutionLog)
+  //   setGameMinute(session.gameMinute)
+  //   setGameStarted(session.gameStarted)
+  //   setGameFinished(session.gameFinished)
+  //   setElapsedSeconds(session.elapsedSeconds)
+  //   setTimerRunning(false)
+
+  //   setDraft({
+  //     id: session.id,
+  //     gameName: session.gameName,
+  //     gameDate: dateStr,
+  //     selectedTeamId: session.selectedTeamId,
+  //     roster: session.roster,
+  //     statsMap: session.statsMap,
+  //     substitutedOut: session.substitutedOut,
+  //     substitutionLog: session.substitutionLog,
+  //     gameMinute: session.gameMinute,
+  //     gameStarted: session.gameStarted,
+  //     gameFinished: session.gameFinished,
+  //     elapsedSeconds: session.elapsedSeconds,
+  //   })
+
+  //   toast.success(`Loaded live session: ${session.gameName}`)
+  // }
 
   // Format team selections
   const teamOptions = useMemo(() => {
@@ -394,8 +504,10 @@ const AdminPlayerStatsLivePage = () => {
       (t: any) => t.id === teamId
     )
 
-    if (selectedTeam && selectedTeam.players) {
-      const teamPlayers = selectedTeam.players as RosterPlayer[]
+    if (selectedTeam && selectedTeam.memberships) {
+      const teamPlayers = (selectedTeam.memberships as any[])
+        .map((m) => m.user)
+        .filter(Boolean) as RosterPlayer[]
       setRoster(teamPlayers)
 
       // Initialize stats for players
@@ -591,7 +703,7 @@ const AdminPlayerStatsLivePage = () => {
   // Count on-court players
   const onCourtCount = roster.length - substitutedOut.size
 
-  // Save Stats
+  // Save Stats – also upserts the live session to DB for audit trail
   const handleSaveStats = () => {
     if (!gameName.trim()) {
       toast.error('Please enter a Game Name')
@@ -609,6 +721,30 @@ const AdminPlayerStatsLivePage = () => {
     // Normalize date to ISO start of day
     const normalizedDate = new Date(`${gameDate}T00:00:00`).toISOString()
 
+    // Upsert the live session snapshot to DB as an audit record
+    const sessionInput = {
+      gameName: gameName.trim(),
+      gameDate: normalizedDate,
+      selectedTeamId,
+      roster,
+      statsMap,
+      substitutedOut: Array.from(substitutedOut),
+      substitutionLog,
+      gameMinute,
+      gameStarted,
+      gameFinished,
+      elapsedSeconds,
+    }
+    if (dbSessionId) {
+      updateLiveGameSession({
+        variables: { id: dbSessionId, input: sessionInput },
+      })
+    } else {
+      createLiveGameSession({ variables: { input: sessionInput } })
+    }
+  }
+
+  const saveBulkStats = (sessionId: number) => {
     const inputs = roster.map((player) => {
       const stats = statsMap[player.id] || {
         points: 0,
@@ -622,8 +758,7 @@ const AdminPlayerStatsLivePage = () => {
 
       return {
         userId: player.id,
-        gameDate: normalizedDate,
-        gameName: gameName.trim(),
+        liveGameSessionId: sessionId,
         points: stats.points,
         rebounds: stats.rebounds,
         assists: stats.assists,
@@ -638,8 +773,6 @@ const AdminPlayerStatsLivePage = () => {
         inputs,
       },
     })
-
-    toast.success(`Game stats ${gameName && `${gameName} `}saved!`)
   }
 
   // Handle animated class
@@ -656,6 +789,8 @@ const AdminPlayerStatsLivePage = () => {
   const isGameMinStart: boolean = onCourtCount < 3
   // Handle player added
   const isRosterAdded: boolean = roster.length > 0
+  // Handle fullscren css mode
+  const CSSFullscreen: string = fullscreen ? 'white' : ''
   // Handle warning text
   const warningMessage = isGameMinStart
     ? '3 Player minimum'
@@ -679,7 +814,13 @@ const AdminPlayerStatsLivePage = () => {
 
   return (
     <AdminLayout>
-      <Container size="xl" py="md">
+      <Container
+        ref={ref}
+        size="xl"
+        py="md"
+        bg={CSSFullscreen}
+        style={{ overflowY: 'auto', overflowX: 'hidden' }}
+      >
         {/* Navigation Breadcrumbs */}
         <Breadcrumbs mb="lg" separator="→">
           <Anchor component={Link} to={routes.adminPanel()} size="sm">
@@ -693,27 +834,50 @@ const AdminPlayerStatsLivePage = () => {
           </Text>
         </Breadcrumbs>
         {/* Page Header */}
-        <Group justify="space-between" mb="lg">
+        <Group justify="space-between" mb="lg" align="start">
           <Stack gap={2}>
             <Group gap="xs" align="center">
               <Title order={2}>Live Game Scoreboard</Title>
-              {hasDraft && (
+              {dbSessionId ? (
+                <Badge
+                  color="blue"
+                  variant="dot"
+                  rightSection={<IconCircleCheck size={12} />}
+                  size="md"
+                >
+                  Cloud Saved
+                </Badge>
+              ) : hasDraft ? (
                 <Badge
                   color="teal"
                   variant="dot"
                   rightSection={<IconCircleCheck size={12} />}
                   size="md"
                 >
-                  Draft Saved
+                  Local Draft
                 </Badge>
-              )}
+              ) : null}
+              <Button
+                radius={'lg'}
+                onClick={toggle}
+                size="compact-xs"
+                leftSection={
+                  fullscreen ? (
+                    <IconMinimize size={14} />
+                  ) : (
+                    <IconMaximize size={14} />
+                  )
+                }
+              >
+                {fullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              </Button>
             </Group>
             <Text size="sm" c="dimmed">
               Track and log player stats live in real-time during a game.
             </Text>
           </Stack>
           <Group gap="xs">
-            {hasDraft && (
+            {!gameFinished && hasDraft && !gameStarted && (
               <Button
                 leftSection={<IconRefresh size={16} />}
                 variant="light"
@@ -772,7 +936,7 @@ const AdminPlayerStatsLivePage = () => {
                       onClick={handleStopGame}
                       className={classButtonAnim}
                     >
-                      Stop Game
+                      Finish Game
                     </Button>
                   </>
                 )}
@@ -796,18 +960,24 @@ const AdminPlayerStatsLivePage = () => {
         </Group>
 
         {/* Setup and Live Totals Grid */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="sm">
+        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg" mb="sm">
           {/* Game Setup Card */}
           <Card withBorder shadow="sm" p="md" radius="md">
-            <Text size="md" fw={700} mb="sm" c="blue">
-              Game Information & Roster Setup
-            </Text>
+            <Group justify="space-between" align="stretch">
+              <Text size="md" fw={700} mb="sm" c="blue">
+                Game Information & Roster Setup
+                <Text size="xs" c="dimmed">
+                  Live game scoreboard information & roster setup.
+                </Text>
+              </Text>
+              <IconUserPlus size={28} color="var(--mantine-color-blue-8)" />
+            </Group>
             <Stack gap="lg" mb={'md'}>
               <Group grow>
                 <TextInput
                   disabled={gameFinished || gameStarted}
                   label="Game Name"
-                  placeholder="e.g. Springfield Tournament Finals"
+                  placeholder="e.g. Springfield Tournament Finals."
                   value={gameName}
                   onChange={(e) => {
                     const val = e.currentTarget.value
@@ -830,9 +1000,10 @@ const AdminPlayerStatsLivePage = () => {
                 />
               </Group>
               <Select
+                comboboxProps={{ withinPortal: false }}
                 label="Select Team (Loads Roster)"
                 placeholder={
-                  teamsLoading ? 'Loading teams...' : 'Select a team'
+                  teamsLoading ? 'Loading teams...' : 'Select a team.'
                 }
                 data={!teamsLoading && teamOptions}
                 value={selectedTeamId}
@@ -842,37 +1013,98 @@ const AdminPlayerStatsLivePage = () => {
                 searchable
               />
               {/* Roster Selection & Manual Addition */}
-              <Group grow justify="stretch" align="end">
-                <Select
-                  maw={500}
-                  maxDropdownHeight={100}
-                  comboboxProps={{ dropdownPadding: 0 }}
-                  label="Add Individual Players"
-                  placeholder="Search or select player to add..."
-                  data={playerOptions || [{ value: '', label: '' }]}
-                  value={individualPlayerSelect}
-                  onChange={setIndividualPlayerSelect}
-                  searchable
-                  clearable
-                  disabled={usersLoading}
-                  leftSection={<IconUsers size={16} />}
-                />
-                <Button
-                  onClick={handleAddPlayer}
-                  disabled={!individualPlayerSelect}
-                  color="blue"
-                  maw={130}
-                >
-                  Add Player
-                </Button>
-              </Group>
-              {gameFinished && (
-                <Text size="sm" c="red.8" className="animate-pulse">
-                  <b>GAME FINISHED!</b> You can now make final adjustments and{' '}
-                  <b>Save Game Stats</b>!
-                </Text>
-              )}
+              {/* <Group justify="stretch" align="end" grow> */}
+              <Grid grow justify="flex-end" align="end">
+                <Grid.Col span={{ lg: 6 }}>
+                  <Select
+                    comboboxProps={{
+                      withinPortal: false,
+                      dropdownPadding: 0,
+                      // width: 404,
+                    }}
+                    // width={400}
+                    // miw={280}
+                    label="Add Individual Players"
+                    placeholder="Search or select player to add..."
+                    data={playerOptions || [{ value: '', label: '' }]}
+                    value={individualPlayerSelect}
+                    onChange={setIndividualPlayerSelect}
+                    searchable
+                    clearable
+                    disabled={usersLoading}
+                    leftSection={<IconUsers size={16} />}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ lg: 1 }}>
+                  <Button
+                    onClick={handleAddPlayer}
+                    disabled={!individualPlayerSelect}
+                    color="blue"
+                    miw={100}
+                    tt="uppercase"
+                    // size="compact-lg"
+                  >
+                    Add
+                  </Button>
+                </Grid.Col>
+              </Grid>
+              {/* </Group> */}
             </Stack>
+
+            {/* {!gameStarted &&
+              !gameFinished &&
+              sessionsData?.liveGameSessions?.length > 0 && (
+                <>
+                  <Divider
+                    my="md"
+                    label="Resume Saved Live Session"
+                    labelPosition="center"
+                  />
+                  <Stack gap="xs" mt="xs">
+                    {sessionsData.liveGameSessions.map((s: any) => (
+                      <Paper key={s.id} withBorder p="xs" radius="sm">
+                        <Group justify="space-between">
+                          <Stack gap={2}>
+                            <Text size="sm" fw={600}>
+                              {s.gameName}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {s.gameDate ? s.gameDate.split('T')[0] : ''} ·{' '}
+                              {s.roster ? s.roster.length : 0} Players
+                            </Text>
+                          </Stack>
+                          <Group gap="xs">
+                            <Button
+                              size="compact-xs"
+                              color="blue"
+                              onClick={() => handleLoadSession(s)}
+                            >
+                              Load
+                            </Button>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    `Are you sure you want to delete the saved session "${s.gameName}"?`
+                                  )
+                                ) {
+                                  deleteLiveGameSession({
+                                    variables: { id: s.id },
+                                  })
+                                }
+                              }}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Group>
+                      </Paper>
+                    ))}
+                  </Stack>
+                </>
+              )} */}
           </Card>
 
           {/* Live Team Totals Card */}
@@ -884,16 +1116,21 @@ const AdminPlayerStatsLivePage = () => {
             bg="blue.0"
             style={{ border: '1px solid var(--mantine-color-blue-3)' }}
           >
-            <Group justify="space-between" align="stretch" gap={'xl'}>
+            <Group justify="space-between" align="stretch">
               <Text size="md" fw={700} mb="xs" c="blue.8">
                 Live Team Scoreboard Totals
-                <Text size="xs" c="dimmed" mb="md">
-                  Live sums computed from all active player records below.
+                <Text size="xs" c="dimmed">
+                  Live totals from active players.
                 </Text>
               </Text>
               <IconEyePlus size={28} color="var(--mantine-color-blue-8)" />
             </Group>
-            <SimpleGrid cols={5} spacing="xs" style={{ textAlign: 'center' }}>
+            <SimpleGrid
+              cols={5}
+              spacing="xs"
+              style={{ textAlign: 'center' }}
+              my={'lg'}
+            >
               <Paper p="xs" radius="sm" withBorder>
                 <Text size="xs" fw={700} c="dimmed">
                   PTS
@@ -978,7 +1215,7 @@ const AdminPlayerStatsLivePage = () => {
                 <Text size="xs" c="dimmed">
                   ·
                 </Text>
-                <Badge color="green" variant="dot" size="sm">
+                <Badge color="green" variant="dot" size="md">
                   {onCourtCount} On Court
                 </Badge>
                 {substitutedOut.size > 0 && (
@@ -986,7 +1223,7 @@ const AdminPlayerStatsLivePage = () => {
                     <Text size="xs" c="dimmed">
                       ·
                     </Text>
-                    <Badge color="gray" variant="dot" size="sm">
+                    <Badge color="gray" variant="dot" size="md">
                       {substitutedOut.size} Benched
                     </Badge>
                   </>
@@ -1003,161 +1240,186 @@ const AdminPlayerStatsLivePage = () => {
                     : 'Game Not Started'}
               </Badge>
             </Group>
-            {/* Game Clock / Substitution Minute Control */}
-            {isRosterAdded && (
-              <>
-                <Divider />
-                <Stack
-                  align="stretch"
-                  justify="center"
-                  gap="sm"
-                  mt={'sm'}
-                  className={classButtonAnim}
-                >
-                  <Text size="md" fw={700} c="blue.8">
-                    Game Clock
-                  </Text>
+          </Card>
 
-                  {/* Timer Display */}
-                  <Paper
-                    withBorder
-                    p="sm"
-                    radius="md"
+          {/* Game Setup Scoreboard */}
+          <Card withBorder shadow="sm" p="md" radius="md">
+            {/* Game Clock / Substitution Minute Control */}
+            {/* {isRosterAdded && ( */}
+            <>
+              <Stack
+                align="stretch"
+                justify="center"
+                gap="sm"
+                className={classButtonAnim}
+              >
+                <Group justify="space-between" align="stretch">
+                  <Text size="md" fw={700} c="blue.8">
+                    Live Game Clock
+                    <Text size="xs" c="dimmed">
+                      Scoreboard live game clock.
+                    </Text>
+                  </Text>
+                  <IconStopwatch
+                    size={28}
+                    color="var(--mantine-color-blue-8)"
+                  />
+                </Group>
+                {/* Timer Display */}
+                <Paper
+                  withBorder
+                  p="sm"
+                  mt={2}
+                  radius="md"
+                  style={{
+                    background: gameStarted
+                      ? timerRunning
+                        ? 'linear-gradient(135deg, var(--mantine-color-green-0), var(--mantine-color-teal-0))'
+                        : 'linear-gradient(135deg, var(--mantine-color-orange-0), var(--mantine-color-yellow-0))'
+                      : 'var(--mantine-color-gray-0)',
+                    border: gameStarted
+                      ? timerRunning
+                        ? '1.5px solid var(--mantine-color-green-4)'
+                        : '1.5px solid var(--mantine-color-orange-4)'
+                      : '1.5px solid var(--mantine-color-gray-3)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Group justify="center" align="center" gap="xs" mb={2}>
+                    <IconClock
+                      size={14}
+                      color={
+                        gameStarted
+                          ? timerRunning
+                            ? 'var(--mantine-color-green-7)'
+                            : 'var(--mantine-color-orange-7)'
+                          : 'var(--mantine-color-gray-5)'
+                      }
+                    />
+                    <Text
+                      size="xs"
+                      fw={600}
+                      c={
+                        gameFinished
+                          ? 'red.7'
+                          : gameStarted
+                            ? timerRunning
+                              ? 'green.7'
+                              : 'orange.7'
+                            : 'dimmed'
+                      }
+                    >
+                      {gameFinished
+                        ? 'FINISHED'
+                        : gameStarted
+                          ? timerRunning
+                            ? 'LIVE'
+                            : 'PAUSED'
+                          : 'NOT STARTED'}
+                    </Text>
+                  </Group>
+                  <Text
+                    fw={900}
+                    fz={{ base: 'h1', lg: '3.2rem' }}
                     style={{
-                      background: gameStarted
-                        ? timerRunning
-                          ? 'linear-gradient(135deg, var(--mantine-color-green-0), var(--mantine-color-teal-0))'
-                          : 'linear-gradient(135deg, var(--mantine-color-orange-0), var(--mantine-color-yellow-0))'
-                        : 'var(--mantine-color-gray-0)',
-                      border: gameStarted
-                        ? timerRunning
-                          ? '1.5px solid var(--mantine-color-green-4)'
-                          : '1.5px solid var(--mantine-color-orange-4)'
-                        : '1.5px solid var(--mantine-color-gray-3)',
-                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.05em',
+                      color: gameFinished
+                        ? 'var(--mantine-color-red-8)'
+                        : gameStarted
+                          ? timerRunning
+                            ? 'var(--mantine-color-green-8)'
+                            : 'var(--mantine-color-orange-7)'
+                          : 'var(--mantine-color-gray-5)',
                     }}
                   >
-                    <Group justify="center" align="center" gap="xs" mb={2}>
-                      <IconClock
-                        size={14}
-                        color={
-                          gameStarted
-                            ? timerRunning
-                              ? 'var(--mantine-color-green-7)'
-                              : 'var(--mantine-color-orange-7)'
-                            : 'var(--mantine-color-gray-5)'
-                        }
-                      />
-                      <Text
-                        size="xs"
-                        fw={600}
-                        c={
-                          gameFinished
-                            ? 'red.7'
-                            : gameStarted
-                              ? timerRunning
-                                ? 'green.7'
-                                : 'orange.7'
-                              : 'dimmed'
-                        }
-                      >
-                        {gameFinished
-                          ? 'FINISHED'
-                          : gameStarted
-                            ? timerRunning
-                              ? 'LIVE'
-                              : 'PAUSED'
-                            : 'NOT STARTED'}
-                      </Text>
-                    </Group>
-                    <Text
-                      fw={900}
-                      style={{
-                        fontSize: '2.2rem',
-                        fontFamily: 'monospace',
-                        letterSpacing: '0.05em',
-                        color: gameFinished
-                          ? 'var(--mantine-color-red-8)'
-                          : gameStarted
-                            ? timerRunning
-                              ? 'var(--mantine-color-green-8)'
-                              : 'var(--mantine-color-orange-7)'
-                            : 'var(--mantine-color-gray-5)',
-                      }}
-                    >
-                      {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}
-                      :{String(elapsedSeconds % 60).padStart(2, '0')}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Minute{' '}
-                      <Text
-                        span
-                        fw={700}
-                        c={gameStarted ? 'orange.7' : 'dimmed'}
-                      >
-                        {gameMinute}
-                      </Text>
-                    </Text>
-                  </Paper>
-
-                  {/* Pause / Resume Controls (only visible if game started and not finished) */}
-                  {isGameStartNoFinish && (
-                    <Group gap="xs">
-                      {timerRunning ? (
-                        <Button
-                          size="xs"
-                          leftSection={<IconPlayerPause size={13} />}
-                          color="orange"
-                          variant="filled"
-                          onClick={handlePauseTimer}
-                          style={{ flex: 1 }}
-                        >
-                          Pause Clock
-                        </Button>
-                      ) : (
-                        <Button
-                          size="xs"
-                          leftSection={<IconPlayerPlay size={13} />}
-                          color="green"
-                          variant="filled"
-                          onClick={handleResumeTimer}
-                          style={{ flex: 1 }}
-                        >
-                          Resume Clock
-                        </Button>
-                      )}
-                    </Group>
-                  )}
-
-                  <Text size="xs" c="dimmed">
-                    Click the{' '}
-                    <Badge
-                      size="xs"
-                      color="teal"
-                      variant="filled"
-                      title="Playing"
-                      leftSection={<IconArrowsExchange size={10} />}
-                      style={{ verticalAlign: 'middle' }}
-                    >
-                      IN
-                    </Badge>{' '}
-                    /{' '}
-                    <Badge
-                      size="xs"
-                      color="var(--mantine-color-gray-3)"
-                      c="var(--mantine-color-gray-6)"
-                      variant="filled"
-                      title="Benched"
-                      leftSection={<IconArrowsExchange size={10} />}
-                      style={{ verticalAlign: 'middle' }}
-                    >
-                      OUT
-                    </Badge>{' '}
-                    switch on each player row to sub at the current minute.
+                    {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:
+                    {String(elapsedSeconds % 60).padStart(2, '0')}
                   </Text>
-                </Stack>
-              </>
-            )}
+                  <Text size="xs" c="dimmed">
+                    Minute{' '}
+                    <Text span fw={700} c={gameStarted ? 'orange.7' : 'dimmed'}>
+                      {gameMinute}
+                    </Text>
+                  </Text>
+                </Paper>
+
+                {/* Pause / Resume Controls (only visible if game started and not finished) */}
+                {isGameStartNoFinish && (
+                  <Group gap="xs" mt={gameStarted ? 4 : 1}>
+                    {timerRunning ? (
+                      <Button
+                        size="xs"
+                        leftSection={<IconPlayerPause size={13} />}
+                        color="orange"
+                        variant="filled"
+                        onClick={handlePauseTimer}
+                        style={{ flex: 1 }}
+                      >
+                        Pause Clock
+                      </Button>
+                    ) : (
+                      <Button
+                        size="xs"
+                        leftSection={<IconPlayerPlay size={13} />}
+                        color="green"
+                        variant="filled"
+                        onClick={handleResumeTimer}
+                        style={{ flex: 1 }}
+                      >
+                        Resume Clock
+                      </Button>
+                    )}
+                  </Group>
+                )}
+
+                {!gameStarted && !gameFinished && (
+                  <Text
+                    mt={1}
+                    size="sm"
+                    c="blue.8"
+                    className="animate-pulse"
+                    ta="center"
+                  >
+                    Add players to <b>start</b> the game!
+                  </Text>
+                )}
+
+                <Text size="xs" c="dimmed" mt={gameStarted ? 2 : 1}>
+                  Click the{' '}
+                  <Badge
+                    size="xs"
+                    color="teal"
+                    variant="filled"
+                    title="Playing"
+                    leftSection={<IconArrowsExchange size={10} />}
+                    style={{ verticalAlign: 'middle' }}
+                  >
+                    IN
+                  </Badge>{' '}
+                  /{' '}
+                  <Badge
+                    size="xs"
+                    color="var(--mantine-color-gray-3)"
+                    c="var(--mantine-color-gray-6)"
+                    variant="filled"
+                    title="Benched"
+                    leftSection={<IconArrowsExchange size={10} />}
+                    style={{ verticalAlign: 'middle' }}
+                  >
+                    OUT
+                  </Badge>{' '}
+                  switch on each player row to sub at the current minute.
+                </Text>
+                {gameFinished && (
+                  <Text size="sm" c="red.8" className="animate-pulse">
+                    <b>GAME FINISHED!</b> You can now make final adjustments and{' '}
+                    <b>Save Game Stats</b>!
+                  </Text>
+                )}
+              </Stack>
+            </>
+            {/* )} */}
           </Card>
         </SimpleGrid>
 
@@ -1799,7 +2061,7 @@ const AdminPlayerStatsLivePage = () => {
               color="teal"
               leftSection={<IconDeviceFloppy size={16} />}
               onClick={handleSaveStats}
-              loading={isSaving}
+              loading={isSaving || isCreatingSession || isUpdatingSession}
               disabled={
                 isGameMinStart ||
                 isGameStartNoFinish ||

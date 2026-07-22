@@ -80,7 +80,8 @@ const SkillAssessmentsPage = () => {
   const assessments = data?.paginatedSkillAssessments?.items || []
   const totalAssessments = data?.paginatedSkillAssessments?.totalCount || 0
   const programs = programsData?.programs || []
-  const players = usersData?.users || []
+  const players = usersData?.usersQuery || []
+
   const totalPages =
     data?.paginatedSkillAssessments?.totalPages ??
     Math.max(1, Math.ceil(totalAssessments / PAGE_SIZE))

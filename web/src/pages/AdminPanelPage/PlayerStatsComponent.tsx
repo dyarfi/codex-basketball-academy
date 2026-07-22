@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import {
   Alert,
+  AnchorStylesNames,
   Badge,
   Box,
   Button,
@@ -9,15 +10,25 @@ import {
   Group,
   Loader,
   Select,
+  Table,
   Text,
   TextInput,
+  ThemeIcon,
+  Timeline,
+  Title,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconArrowLeft,
+  IconArrowRight,
+  // IconBasketHeart,
   IconEyePlus,
+  // IconHomeStats,
   IconPlus,
   IconSearch,
+  IconStopwatch,
+  // IconStopwatch,
 } from '@tabler/icons-react'
 
 import { routes, useParams, navigate } from '@redwoodjs/router'
@@ -28,14 +39,15 @@ import AdminPagination from 'src/components/AdminPagination/AdminPagination'
 import { CrudTable } from 'src/components/CrudTable'
 import { ConfirmDelete } from 'src/components/Modals/ConfirmDelete'
 import PlayerStatsModal from 'src/components/Modals/PlayerStatsModal'
+import { GET_LIVE_GAME_SESSIONS } from 'src/graphql/live-game-sessions-queries'
 import {
   CREATE_PLAYER_STAT,
   DELETE_PLAYER_STAT,
   GET_PAGINATED_PLAYER_STATS,
   UPDATE_PLAYER_STAT,
-  GET_UNIQUE_GAME_NAME,
 } from 'src/graphql/player-stats-queries'
 import { GET_USERS } from 'src/graphql/users-queries'
+import { formatDatetime } from 'src/lib/formatters'
 
 type RouteQuery = Record<string, boolean | number | string | null | undefined>
 type RouteBuilder = (params?: RouteQuery) => string
@@ -97,9 +109,7 @@ const PlayerStatsComponent = () => {
     pageSize: PAGE_SIZE,
     search: debouncedSearchQuery || undefined,
     userId: playerFilter || undefined,
-    gameName: gameNameFilter || undefined,
-    dateFrom: dateFrom ? toStartOfDayIso(dateFrom) : undefined,
-    dateTo: dateTo ? toEndOfDayIso(dateTo) : undefined,
+    liveGameSessionId: gameNameFilter ? Number(gameNameFilter) : undefined,
   }
 
   const { data, loading, error, refetch } = useQuery(
@@ -108,9 +118,13 @@ const PlayerStatsComponent = () => {
       variables,
     }
   )
+
   const { data: usersData, loading: usersLoading } = useQuery(GET_USERS)
-  const { data: { playerStatsByGameName } = [], loading: gameNameLoading } =
-    useQuery(GET_UNIQUE_GAME_NAME)
+  const {
+    data: sessionsData,
+    loading: sessionsLoading,
+    refetch: refetchSessions,
+  } = useQuery(GET_LIVE_GAME_SESSIONS)
 
   const [createPlayerStat, { loading: isCreating }] = useMutation(
     CREATE_PLAYER_STAT,
@@ -162,6 +176,8 @@ const PlayerStatsComponent = () => {
     }
   )
 
+  const { liveGameSessions = [] } = sessionsData || {}
+
   const stats = data?.paginatedPlayerStats?.items || []
   const totalStats = data?.paginatedPlayerStats?.totalCount || 0
   const totalPages =
@@ -172,13 +188,11 @@ const PlayerStatsComponent = () => {
   }, [usersData])
 
   const gameOptions = useMemo(() => {
-    return (playerStatsByGameName || [{ value: '', label: '' }])
-      .filter(({ gameName }: any) => gameName != null && gameName !== '')
-      .map(({ gameName }: any) => ({
-        value: gameName,
-        label: gameName,
-      }))
-  }, [playerStatsByGameName])
+    return (liveGameSessions || []).map((session: any) => ({
+      value: session.id.toString(),
+      label: `${session.gameName} (${formatDate(session.gameDate)})`,
+    }))
+  }, [liveGameSessions])
 
   const playerOptions = useMemo(() => {
     return players.map((player: any) => ({
@@ -186,6 +200,11 @@ const PlayerStatsComponent = () => {
       label: getPlayerName(player),
     }))
   }, [players])
+
+  const selectedLiveGameSession = useMemo(() => {
+    if (!gameNameFilter || !liveGameSessions) return null
+    return liveGameSessions.find((s: any) => s.id.toString() === gameNameFilter)
+  }, [gameNameFilter, liveGameSessions])
 
   const handleCreate = () => {
     setSelectedStat(null)
@@ -253,12 +272,20 @@ const PlayerStatsComponent = () => {
     {
       key: 'gameDate',
       header: 'Game Date',
-      render: (val: string) => <Text size="sm">{formatDate(val)}</Text>,
+      render: (_val: any, item: any) => (
+        <Text size="sm">
+          {item.liveGameSession
+            ? formatDate(item.liveGameSession.gameDate)
+            : '-'}
+        </Text>
+      ),
     },
     {
       key: 'gameName',
       header: 'Game Name',
-      render: (val: string) => <Text size="sm">{val}</Text>,
+      render: (_val: any, item: any) => (
+        <Text size="sm">{item.liveGameSession?.gameName || '-'}</Text>
+      ),
     },
     {
       key: 'points',
@@ -376,9 +403,9 @@ const PlayerStatsComponent = () => {
         />
 
         <Select
-          placeholder="Filter by game name"
-          description="Game Name"
-          data={[{ value: '', label: 'All Game' }, ...gameOptions]}
+          placeholder="Filter by game session"
+          description="Game Session"
+          data={[{ value: '', label: 'All Games' }, ...gameOptions]}
           value={gameNameFilter || ''}
           onChange={(value) => setGameNameFilter(value || null)}
           clearable
@@ -394,23 +421,77 @@ const PlayerStatsComponent = () => {
           clearable
           searchable
         />
-
-        <TextInput
-          type="date"
-          placeholder="From date"
-          description="From Date"
-          value={dateFrom}
-          onChange={(event) => setDateFrom(event.currentTarget.value)}
-        />
-
-        <TextInput
-          type="date"
-          placeholder="To date"
-          description="To Date"
-          value={dateTo}
-          onChange={(event) => setDateTo(event.currentTarget.value)}
-        />
       </Group>
+
+      {/* Game stats history */}
+      {gameNameFilter && selectedLiveGameSession && (
+        <Alert variant="info" icon={<IconStopwatch />} mb={'lg'}>
+          <Title size="h4" c="blue.8">
+            Game Log: {selectedLiveGameSession.gameName}
+          </Title>
+          <Group>
+            <div>{selectedLiveGameSession?.gameMinute} Minute</div>
+            <div>{formatDate(selectedLiveGameSession?.gameDate)}</div>
+            {selectedLiveGameSession?.team && (
+              <div>
+                {selectedLiveGameSession?.team?.name} - (
+                {selectedLiveGameSession?.team?.ageGroup})
+              </div>
+            )}
+          </Group>
+          <Timeline
+            active={selectedLiveGameSession?.substitutionLog?.length - 1}
+            bulletSize={28}
+            lineWidth={2}
+            mt="sm"
+          >
+            {selectedLiveGameSession?.substitutionLog.map(
+              (event: any, index: number) => (
+                <Timeline.Item
+                  key={`${event.playerId}-${event.timestamp}-${index}`}
+                  bullet={
+                    <ThemeIcon
+                      size={22}
+                      variant="filled"
+                      color={event.type === 'OUT' ? 'red' : 'green'}
+                      radius="xl"
+                    >
+                      {event.type === 'OUT' ? (
+                        <IconArrowRight size={12} />
+                      ) : (
+                        <IconArrowLeft size={12} />
+                      )}
+                    </ThemeIcon>
+                  }
+                  title={
+                    <Group gap="xs">
+                      <Text size="sm" fw={600}>
+                        {event.playerName}
+                      </Text>
+                      <Badge
+                        size="xs"
+                        color={event.type === 'OUT' ? 'red' : 'green'}
+                        variant="filled"
+                      >
+                        {event.type === 'OUT' ? 'Subbed OUT' : 'Subbed IN'}
+                      </Badge>
+                    </Group>
+                  }
+                  className="animate-[pulse_300ms_ease-in-out]"
+                >
+                  <Text size="xs" c="dimmed">
+                    Minute {event.minute} &nbsp;·&nbsp;{' '}
+                    {new Date(event.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </Timeline.Item>
+              )
+            )}
+          </Timeline>
+        </Alert>
+      )}
 
       <CrudTable
         data={stats}
@@ -419,6 +500,7 @@ const PlayerStatsComponent = () => {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
         emptyText="No player stats found"
+        isDisableDelete={true}
       />
 
       {stats.length > 0 && totalPages > 1 && (
@@ -442,8 +524,9 @@ const PlayerStatsComponent = () => {
         onSave={handleSave}
         statData={selectedStat}
         users={players}
+        liveGameSessions={liveGameSessions}
         isLoading={isCreating || isUpdating}
-        isDataLoading={usersLoading}
+        isDataLoading={usersLoading || sessionsLoading}
       />
 
       <ConfirmDelete
@@ -452,8 +535,8 @@ const PlayerStatsComponent = () => {
         message={`Are you sure you want to delete the stats for "${getPlayerName(
           selectedStat?.user
         )}" on ${
-          selectedStat?.gameDate
-            ? formatDate(selectedStat.gameDate)
+          selectedStat?.liveGameSession?.gameDate
+            ? formatDate(selectedStat.liveGameSession.gameDate)
             : 'this game'
         }?`}
         onConfirm={handleConfirmDelete}

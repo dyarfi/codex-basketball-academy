@@ -3,8 +3,8 @@ export const schema = gql`
     id: String!
     userId: String!
     user: User!
-    gameDate: DateTime!
-    gameName: String!
+    liveGameSessionId: Int!
+    liveGameSession: LiveGameSession
     points: Int!
     rebounds: Int!
     assists: Int!
@@ -28,22 +28,18 @@ export const schema = gql`
   type Query {
     playerStats: [PlayerStats!]! @requireAuth
     playerStat(id: String!): PlayerStats @requireAuth
-    playerStatsByGameName: [PlayerStats!]! @requireAuth
     paginatedPlayerStats(
       page: Int = 1
       pageSize: Int = 10
       search: String
       userId: String
-      gameName: String
-      dateFrom: DateTime
-      dateTo: DateTime
+      liveGameSessionId: Int
     ): PaginatedPlayerStats! @requireAuth
   }
 
   input CreatePlayerStatInput {
     userId: String!
-    gameDate: DateTime!
-    gameName: String!
+    liveGameSessionId: Int!
     points: Int!
     rebounds: Int!
     assists: Int!
@@ -54,8 +50,7 @@ export const schema = gql`
 
   input UpdatePlayerStatInput {
     userId: String
-    gameDate: DateTime
-    gameName: String
+    liveGameSessionId: Int
     points: Int
     rebounds: Int
     assists: Int
@@ -76,8 +71,7 @@ export const schema = gql`
 
   input CreateBulkPlayerStatsInput {
     userId: String!
-    gameDate: DateTime!
-    gameName: String!
+    liveGameSessionId: Int!
     points: Int!
     rebounds: Int!
     assists: Int!

@@ -6,29 +6,43 @@ const AGE_GROUP_TEAM_FIELDS = gql`
     name
     ageGroup
     description
-    coachId
     isActive
     createdAt
     updatedAt
-    coach {
+    coaches {
       id
-      email
-      profile {
-        firstName
-        lastName
-        profilePhoto
+      userId
+      teamId
+      role
+      isActive
+      joinedAt
+      user {
+        id
+        email
+        profile {
+          firstName
+          lastName
+          profilePhoto
+        }
       }
     }
-    players {
+    memberships {
       id
-      email
+      userId
       teamId
-      profile {
-        firstName
-        lastName
-        position
-        jerseyNumber
-        profilePhoto
+      user {
+        id
+        email
+        role
+        profile {
+          firstName
+          lastName
+          gender
+          dateOfBirth
+          position
+          jerseyNumber
+          profilePhoto
+        }
       }
     }
   }

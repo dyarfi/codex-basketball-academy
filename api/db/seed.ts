@@ -1,3 +1,6 @@
+// Random UUID generator for creating unique invitation codes
+import { randomUUID } from 'crypto'
+
 // We use the official Redwood hashPassword utility for dbAuth compatibility
 import { hashPassword } from '@redwoodjs/auth-dbauth-api'
 
@@ -141,7 +144,7 @@ export async function seed() {
         name: 'U-12 Thunder',
         ageGroup: 'U-12',
         description: 'Under 12 competitive division team.',
-        coachId: coach1.id,
+        coaches: { create: [{ userId: coach1.id, role: 'HEAD_COACH' }] },
       },
     })
 
@@ -150,7 +153,7 @@ export async function seed() {
         name: 'U-14 Lightning',
         ageGroup: 'U-14',
         description: 'Under 14 development division team.',
-        coachId: coach2.id,
+        coaches: { create: [{ userId: coach2.id, role: 'HEAD_COACH' }] },
       },
     })
 
@@ -159,7 +162,7 @@ export async function seed() {
         name: 'U-16 Warriors',
         ageGroup: 'U-16',
         description: 'Under 16 training division team.',
-        coachId: coach3.id,
+        coaches: { create: [{ userId: coach3.id, role: 'HEAD_COACH' }] },
       },
     })
 
@@ -168,7 +171,7 @@ export async function seed() {
         name: 'U-18 Elite',
         ageGroup: 'U-18',
         description: 'Under 18 elite championship team.',
-        coachId: coach1.id,
+        coaches: { create: [{ userId: coach1.id, role: 'HEAD_COACH' }] },
       },
     })
 
@@ -404,7 +407,9 @@ export async function seed() {
           salt: passwordSalt,
           role: 'PLAYER',
           isActive: true,
-          teamId: assignedTeamId,
+          teamMemberships: assignedTeamId
+            ? { create: [{ teamId: assignedTeamId }] }
+            : undefined,
           profile: {
             create: {
               firstName: player.firstName,
@@ -1006,6 +1011,21 @@ export async function seed() {
       },
     })
 
+    const makeInvite = () => {
+      const code = randomUUID().replace(/-/g, '').slice(0, 12)
+
+      return {
+        code,
+        url: `signup?invite=${code}`,
+        purpose: 'Seed invitation',
+        maxUses: 1,
+      }
+    }
+
+    await db.invitationLink.createMany({
+      data: [makeInvite(), makeInvite(), makeInvite(), makeInvite()],
+    })
+
     console.log('✅ Database seeded successfully!')
     console.log(`Created:`)
     console.log(`  - 1 Admin user`)
@@ -1025,6 +1045,7 @@ export async function seed() {
     console.log(`  - 3 Announcements`)
     console.log(`  - 2 Messages`)
     console.log(`  - 23 Site Settings`)
+    console.log(`  - 4 Invitation Link`)
   } catch (error) {
     console.error('🔥 Error seeding database:', error)
     throw error

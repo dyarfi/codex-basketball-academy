@@ -21,7 +21,7 @@ import {
   Grid,
   NumberInput,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useId, randomId } from '@mantine/hooks'
 import {
   Trash,
   PencilSimple,
@@ -30,7 +30,7 @@ import {
   Check,
   Calendar,
 } from '@phosphor-icons/react'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { IconAlertCircle, IconRecycle } from '@tabler/icons-react'
 
 import { useQuery, useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
@@ -46,7 +46,7 @@ import { useAppTheme } from 'src/providers/ThemeProvider'
 
 export const InvitationLinksComponent = () => {
   const { isDark } = useAppTheme()
-
+  const hash = randomId('')
   const [opened, { open, close }] = useDisclosure(false)
   const [editingLink, setEditingLink] = useState<any>(null)
   const [isDeleteLinkModalOpen, setIsDeleteLinkModalOpen] = useState(false)
@@ -238,6 +238,7 @@ export const InvitationLinksComponent = () => {
       </Container>
     )
   }
+
   return (
     <Container
       size="xl"
@@ -461,6 +462,15 @@ export const InvitationLinksComponent = () => {
             placeholder="e.g., SPRING2026"
             value={formData.code}
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            rightSection={
+              <ActionIcon
+                onClick={() => {
+                  setFormData({ ...formData, code: hash })
+                }}
+              >
+                <IconRecycle size={16} />
+              </ActionIcon>
+            }
           />
           <TextInput
             label="Full URL"

@@ -10,12 +10,16 @@ export const GET_USERS = gql`
       email
       role
       isActive
-      teamId
       createdAt
       updatedAt
-      team {
+      teamMemberships {
         id
-        name
+        teamId
+        team {
+          id
+          name
+          ageGroup
+        }
       }
       profile {
         firstName
@@ -49,12 +53,16 @@ export const GET_PAGINATED_USERS = gql`
         email
         role
         isActive
-        teamId
         createdAt
         updatedAt
-        team {
+        teamMemberships {
           id
-          name
+          teamId
+          team {
+            id
+            name
+            ageGroup
+          }
         }
         profile {
           firstName
@@ -77,6 +85,14 @@ export const GET_PAGINATED_USERS = gql`
           relationshipToPlayer
           profilePhoto
         }
+        coachedTeams {
+          role
+          team {
+            id
+            name
+            ageGroup
+          }
+        }
       }
       totalCount
       currentPage
@@ -98,10 +114,14 @@ export const GET_USER = gql`
       email
       role
       isActive
-      teamId
-      team {
+      teamMemberships {
         id
-        name
+        teamId
+        team {
+          id
+          name
+          ageGroup
+        }
       }
       profile {
         firstName
@@ -138,10 +158,14 @@ export const UPDATE_USER = gql`
       email
       role
       isActive
-      teamId
-      team {
+      teamMemberships {
         id
-        name
+        teamId
+        team {
+          id
+          name
+          ageGroup
+        }
       }
       profile {
         firstName
@@ -178,10 +202,14 @@ export const CREATE_USER = gql`
       email
       role
       isActive
-      teamId
-      team {
+      teamMemberships {
         id
-        name
+        teamId
+        team {
+          id
+          name
+          ageGroup
+        }
       }
       profile {
         firstName
@@ -252,12 +280,16 @@ export const USERS_QUERY = gql`
       email
       role
       isActive
-      teamId
       createdAt
       updatedAt
-      team {
+      teamMemberships {
         id
-        name
+        teamId
+        team {
+          id
+          name
+          ageGroup
+        }
       }
       profile {
         firstName
