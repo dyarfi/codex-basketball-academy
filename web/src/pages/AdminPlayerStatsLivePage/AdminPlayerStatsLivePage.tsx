@@ -112,7 +112,7 @@ const getPlayerName = (player: RosterPlayer) => {
 const DRAFT_KEY = 'live_stats_draft'
 
 interface DraftSession {
-  id?: string | null
+  id?: number | null
   gameName: string
   gameDate: string
   selectedTeamId: string | null
@@ -134,7 +134,7 @@ const AdminPlayerStatsLivePage = () => {
     getInitialValueInEffect: false,
   })
 
-  const [dbSessionId, setDbSessionId] = useState<string | null>(
+  const [dbSessionId, setDbSessionId] = useState<number | null>(
     draft?.id ?? null
   )
 
@@ -374,6 +374,7 @@ const AdminPlayerStatsLivePage = () => {
         const newId = data.createLiveGameSession.id
         setDbSessionId(newId)
         persistDraft(buildDraftSnapshot({ id: newId }))
+        saveBulkStats(newId)
         // refetchSessions()
       },
       onError: (err) => {
@@ -386,6 +387,9 @@ const AdminPlayerStatsLivePage = () => {
     UPDATE_LIVE_GAME_SESSION,
     {
       onCompleted: () => {
+        if (dbSessionId) {
+          saveBulkStats(dbSessionId)
+        }
         // refetchSessions()
       },
       onError: (err) => {
@@ -738,7 +742,9 @@ const AdminPlayerStatsLivePage = () => {
     } else {
       createLiveGameSession({ variables: { input: sessionInput } })
     }
+  }
 
+  const saveBulkStats = (sessionId: number) => {
     const inputs = roster.map((player) => {
       const stats = statsMap[player.id] || {
         points: 0,
@@ -752,8 +758,7 @@ const AdminPlayerStatsLivePage = () => {
 
       return {
         userId: player.id,
-        gameDate: normalizedDate,
-        gameName: gameName.trim(),
+        liveGameSessionId: sessionId,
         points: stats.points,
         rebounds: stats.rebounds,
         assists: stats.assists,

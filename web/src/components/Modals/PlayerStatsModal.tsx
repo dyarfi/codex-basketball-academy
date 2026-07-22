@@ -18,6 +18,7 @@ interface PlayerStatsModalProps {
   onSave: (data: any) => void
   statData?: any
   users: any[]
+  liveGameSessions: any[]
   isLoading?: boolean
   isDataLoading?: boolean
 }
@@ -34,14 +35,14 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({
   onSave,
   statData,
   users = [],
+  liveGameSessions = [],
   isLoading = false,
   isDataLoading = false,
 }) => {
   const form = useForm({
     initialValues: {
       userId: '',
-      gameDate: new Date().toISOString().split('T')[0],
-      gameName: '',
+      liveGameSessionId: null as number | null,
       points: 0,
       rebounds: 0,
       assists: 0,
@@ -51,8 +52,7 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({
     },
     validate: {
       userId: (value) => (!value ? 'Player is required' : null),
-      gameDate: (value) => (!value ? 'Game date is required' : null),
-      gameName: (value) => (!value ? 'Game name is required' : null),
+      liveGameSessionId: (value) => (!value ? 'Game session is required' : null),
       points: (value) => (value < 0 ? 'Points cannot be negative' : null),
       rebounds: (value) => (value < 0 ? 'Rebounds cannot be negative' : null),
       assists: (value) => (value < 0 ? 'Assists cannot be negative' : null),
@@ -67,8 +67,7 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({
     if (statData && isOpen) {
       form.setValues({
         userId: statData.userId || '',
-        gameDate: toDateInputValue(statData.gameDate),
-        gameName: statData.gameName,
+        liveGameSessionId: statData.liveGameSessionId || null,
         points: statData.points ?? 0,
         rebounds: statData.rebounds ?? 0,
         assists: statData.assists ?? 0,
@@ -82,16 +81,25 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({
   }, [statData, isOpen])
 
   const handleSubmit = (values: typeof form.values) => {
-    onSave({
-      ...values,
-      gameDate: new Date(values.gameDate).toISOString(),
-    })
+    onSave(values)
   }
 
   const userOptions = users.map((u) => ({
     value: u.id,
     label:
       `${u.profile?.firstName || ''} ${u.profile?.lastName || ''} (${u.email})`.trim(),
+  }))
+
+  const formatDate = (value: string) =>
+    new Date(value).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+
+  const gameSessionOptions = liveGameSessions.map((session) => ({
+    value: session.id.toString(),
+    label: `${session.gameName} (${formatDate(session.gameDate)})`,
   }))
 
   return (
@@ -118,17 +126,15 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({
                 {...form.getInputProps('userId')}
               />
 
-              <TextInput
-                label="Game Date"
-                type="date"
+              <Select
+                label="Game Session"
+                placeholder="Select live game session"
+                data={gameSessionOptions}
                 required
-                {...form.getInputProps('gameDate')}
-              />
-
-              <TextInput
-                label="Game Name"
-                placeholder="Lakers vs Buls"
-                {...form.getInputProps('gameName')}
+                searchable
+                value={form.values.liveGameSessionId?.toString() || ''}
+                onChange={(val) => form.setFieldValue('liveGameSessionId', val ? Number(val) : null)}
+                error={form.errors.liveGameSessionId}
               />
             </Group>
 

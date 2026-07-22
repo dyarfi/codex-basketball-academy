@@ -49,4 +49,7 @@ export const LiveGameSession: LiveGameSessionRelationResolvers = {
   team: (_obj, { root }) => {
     return db.liveGameSession.findUnique({ where: { id: root?.id } }).team()
   },
+  playerStats: (_obj, { root }) => {
+    return db.liveGameSession.findUnique({ where: { id: root?.id } }).playerStats()
+  },
 }

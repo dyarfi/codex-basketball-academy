@@ -1,6 +1,6 @@
 export const schema = gql`
   type LiveGameSession {
-    id: String!
+    id: Int!
     gameName: String!
     gameDate: DateTime!
     selectedTeamId: String
@@ -15,12 +15,13 @@ export const schema = gql`
     elapsedSeconds: Int!
     createdAt: DateTime!
     updatedAt: DateTime!
+    playerStats: [PlayerStats]!
   }
 
   type Query {
     liveGameSessionsByName(gameName: String!): [LiveGameSession!]! @requireAuth
     liveGameSessions: [LiveGameSession!]! @requireAuth
-    liveGameSession(id: String!): LiveGameSession @requireAuth
+    liveGameSession(id: Int!): LiveGameSession @requireAuth
   }
 
   input CreateLiveGameSessionInput {
@@ -55,9 +56,9 @@ export const schema = gql`
     createLiveGameSession(input: CreateLiveGameSessionInput!): LiveGameSession!
       @requireAuth
     updateLiveGameSession(
-      id: String!
+      id: Int!
       input: UpdateLiveGameSessionInput!
     ): LiveGameSession! @requireAuth
-    deleteLiveGameSession(id: String!): LiveGameSession! @requireAuth
+    deleteLiveGameSession(id: Int!): LiveGameSession! @requireAuth
   }
 `

@@ -5,14 +5,18 @@ export const GET_PLAYER_STATS = gql`
     playerStats {
       id
       userId
-      gameDate
-      gameName
+      liveGameSessionId
       points
       rebounds
       assists
       steals
       blocks
       minutesPlayed
+      liveGameSession {
+        id
+        gameName
+        gameDate
+      }
       createdAt
       updatedAt
       user {
@@ -31,34 +35,34 @@ export const GET_PLAYER_STATS = gql`
 
 export const GET_PAGINATED_PLAYER_STATS = gql`
   query GetPaginatedPlayerStats(
-    $page: Int!
-    $pageSize: Int!
+    $page: Int
+    $pageSize: Int
     $search: String
     $userId: String
-    $gameName: String
-    $dateFrom: DateTime
-    $dateTo: DateTime
+    $liveGameSessionId: Int
   ) {
     paginatedPlayerStats(
       page: $page
       pageSize: $pageSize
       search: $search
       userId: $userId
-      gameName: $gameName
-      dateFrom: $dateFrom
-      dateTo: $dateTo
+      liveGameSessionId: $liveGameSessionId
     ) {
       items {
         id
         userId
-        gameDate
-        gameName
+        liveGameSessionId
         points
         rebounds
         assists
         steals
         blocks
         minutesPlayed
+        liveGameSession {
+          id
+          gameName
+          gameDate
+        }
         createdAt
         updatedAt
         user {
@@ -87,14 +91,18 @@ export const GET_PLAYER_STAT = gql`
     playerStat(id: $id) {
       id
       userId
-      gameDate
-      gameName
+      liveGameSessionId
       points
       rebounds
       assists
       steals
       blocks
       minutesPlayed
+      liveGameSession {
+        id
+        gameName
+        gameDate
+      }
       createdAt
       updatedAt
       user {
@@ -116,8 +124,7 @@ export const CREATE_PLAYER_STAT = gql`
     createPlayerStat(input: $input) {
       id
       userId
-      gameDate
-      gameName
+      liveGameSessionId
       points
       rebounds
       assists
@@ -135,8 +142,7 @@ export const UPDATE_PLAYER_STAT = gql`
     updatePlayerStat(id: $id, input: $input) {
       id
       userId
-      gameDate
-      gameName
+      liveGameSessionId
       points
       rebounds
       assists
@@ -162,8 +168,7 @@ export const CREATE_BULK_PLAYER_STATS = gql`
     createBulkPlayerStats(inputs: $inputs) {
       id
       userId
-      gameDate
-      gameName
+      liveGameSessionId
       points
       rebounds
       assists
@@ -176,11 +181,3 @@ export const CREATE_BULK_PLAYER_STATS = gql`
   }
 `
 
-export const GET_UNIQUE_GAME_NAME = gql`
-  query GetPlayerStatsByGameName {
-    playerStatsByGameName {
-      id
-      gameName
-    }
-  }
-`

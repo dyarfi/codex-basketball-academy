@@ -13,9 +13,7 @@ export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
     pageSize = 10,
     search,
     userId,
-    gameName,
-    dateFrom,
-    dateTo,
+    liveGameSessionId,
   }) => {
     const conditions: Prisma.PlayerStatsWhereInput[] = []
     const searchTerm = search?.trim()
@@ -64,8 +62,13 @@ export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
             },
           },
           {
-            gameName: {
-              contains: searchTerm,
+            liveGameSession: {
+              is: {
+                gameName: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
             },
           },
         ],
@@ -76,17 +79,8 @@ export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
       conditions.push({ userId })
     }
 
-    if (gameName) {
-      conditions.push({ gameName })
-    }
-
-    if (dateFrom || dateTo) {
-      conditions.push({
-        gameDate: {
-          ...(dateFrom ? { gte: dateFrom } : {}),
-          ...(dateTo ? { lte: dateTo } : {}),
-        },
-      })
+    if (liveGameSessionId) {
+      conditions.push({ liveGameSessionId })
     }
 
     const where: Prisma.PlayerStatsWhereInput | undefined =
@@ -99,7 +93,7 @@ export const paginatedPlayerStats: QueryResolvers['paginatedPlayerStats'] =
 
     const items = await db.playerStats.findMany({
       where,
-      orderBy: [{ gameDate: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ id: 'desc' }],
       skip,
       take: safePageSize,
     })
@@ -162,8 +156,7 @@ export const createBulkPlayerStats: MutationResolvers['createBulkPlayerStats'] =
       const existing = await db.playerStats.findFirst({
         where: {
           userId: input.userId,
-          gameDate: input.gameDate,
-          gameName: input.gameName,
+          liveGameSessionId: input.liveGameSessionId,
         },
       })
 
@@ -194,15 +187,7 @@ export const PlayerStats: PlayerStatsRelationResolvers = {
   user: (_obj, { root }) => {
     return db.playerStats.findUniqueOrThrow({ where: { id: root?.id } }).user()
   },
+  liveGameSession: (_obj, { root }) => {
+    return db.playerStats.findUnique({ where: { id: root?.id } }).liveGameSession()
+  },
 }
-
-export const playerStatsByGameName: QueryResolvers['playerStatsByGameName'] =
-  () => {
-    return db.playerStats.findMany({
-      distinct: ['gameName'],
-      select: {
-        gameName: true,
-        id: true,
-      },
-    })
-  }

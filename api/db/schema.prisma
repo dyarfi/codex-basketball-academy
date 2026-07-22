@@ -344,22 +344,47 @@ model SkillAssessment {
 
 // PlayerStats Model
 model PlayerStats {
-  id             String    @id @default(cuid())
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameDate       DateTime
-  gameName       String
-  points         Int       @default(0)
-  rebounds       Int       @default(0)
-  assists        Int       @default(0)
-  steals         Int       @default(0)
-  blocks         Int       @default(0)
-  minutesPlayed  Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  liveGameSessionId Int
+  liveGameSession   LiveGameSession  @relation(fields: [liveGameSessionId], references: [id], onDelete: Cascade)
+  points            Int              @default(0)
+  rebounds          Int              @default(0)
+  assists           Int              @default(0)
+  steals            Int              @default(0)
+  blocks            Int              @default(0)
+  minutesPlayed     Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([userId])
+  @@index([liveGameSessionId])
+}
+
+// LiveGameSession Model
+model LiveGameSession {
+  id              Int           @id @default(autoincrement())
+  gameName        String        @unique
+  gameDate        DateTime
+  selectedTeamId  String?
+  team            AgeGroupTeam? @relation(fields: [selectedTeamId], references: [id], onDelete: SetNull)
+  roster          Json          // Array of player user objects with profiles
+  statsMap        Json          // Object mapping userId to their current stats
+  substitutedOut  Json          // Array of substituted out player IDs
+  substitutionLog Json          // Array of substitution event objects
+  gameMinute      Int           @default(1)
+  gameStarted     Boolean       @default(false)
+  gameFinished    Boolean       @default(false)
+  elapsedSeconds  Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  playerStats     PlayerStats[]
+
+  @@index([selectedTeamId])
   @@index([gameDate])
+  @@index([gameName])
 }
 
 // Announcement Model
@@ -535,25 +560,3 @@ model TeamCoach {
   @@index([teamId])
 }
 
-// LiveGameSession Model
-model LiveGameSession {
-  id              String        @id @default(cuid())
-  gameName        String        @unique
-  gameDate        DateTime
-  selectedTeamId  String?
-  team            AgeGroupTeam? @relation(fields: [selectedTeamId], references: [id], onDelete: SetNull)
-  roster          Json          // Array of player user objects with profiles
-  statsMap        Json          // Object mapping userId to their current stats
-  substitutedOut  Json          // Array of substituted out player IDs
-  substitutionLog Json          // Array of substitution event objects
-  gameMinute      Int           @default(1)
-  gameStarted     Boolean       @default(false)
-  gameFinished    Boolean       @default(false)
-  elapsedSeconds  Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@index([selectedTeamId])
-  @@index([gameDate])
-  @@index([gameName])
-}
