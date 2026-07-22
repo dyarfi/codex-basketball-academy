@@ -179,12 +179,12 @@ const UsersPage = () => {
           },
         },
       })
-      if (values.role === 'PLAYER') {
-        sendEmailMessage({
-          template: 'memberAccepted',
-          subject: 'Your member status',
-        })
-      }
+      // if (values.role === 'PLAYER') {
+      //   sendEmailMessage({
+      //     template: 'memberAccepted',
+      //     subject: 'Your member status',
+      //   })
+      // }
     } else {
       createUser({
         variables: {
@@ -199,6 +199,7 @@ const UsersPage = () => {
               dateOfBirth: values.profile.dateOfBirth
                 ? new Date(values.profile.dateOfBirth).toISOString()
                 : null,
+              gender: values.profile.gender || null,
               phoneNumber: values.profile.phoneNumber || null,
               address: values.profile.address || null,
               city: values.profile.city || null,

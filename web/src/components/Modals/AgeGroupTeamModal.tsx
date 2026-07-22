@@ -16,6 +16,8 @@ import {
 import { useForm } from '@mantine/form'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
 
+import { formatDateOfBirth } from 'src/lib/formatters'
+
 type UserOption = {
   id: string
   email: string
@@ -108,10 +110,11 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
         name: teamData.name || '',
         ageGroup: teamData.ageGroup || '',
         description: teamData.description || '',
-        coaches: teamData.coaches?.map((c) => ({
-          userId: c.userId,
-          role: c.role,
-        })) || [],
+        coaches:
+          teamData.coaches?.map((c) => ({
+            userId: c.userId,
+            role: c.role,
+          })) || [],
         playerIds: teamData.memberships?.map((m) => m.userId) || [],
         isActive:
           teamData.isActive !== undefined ? Boolean(teamData.isActive) : true,
@@ -146,7 +149,8 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
       )
       const teamLabel = currentMembership?.team?.name
         ? ` (${currentMembership.team.name})`
-        : ''
+        : ` ${formatDateOfBirth(player?.profile?.dateOfBirth)} - ${player?.profile?.gender}`
+
       return {
         value: player.id,
         label: `${getUserName(player)}${teamLabel}`,
@@ -213,7 +217,9 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
 
           <div>
             <Group justify="space-between" mb="xs">
-              <Text size="sm" fw={500}>Coaches & Roles</Text>
+              <Text size="sm" fw={500}>
+                Coaches & Roles
+              </Text>
               <Button
                 variant="light"
                 size="xs"
@@ -225,7 +231,17 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
             </Group>
 
             {form.values.coaches.length === 0 ? (
-              <Text size="xs" c="dimmed" fs="italic" py="xs" style={{ border: '1px dashed #ced4da', borderRadius: '4px', textAlign: 'center' }}>
+              <Text
+                size="xs"
+                c="dimmed"
+                fs="italic"
+                py="xs"
+                style={{
+                  border: '1px dashed #ced4da',
+                  borderRadius: '4px',
+                  textAlign: 'center',
+                }}
+              >
                 No coaches assigned. Click "Add Coach" to assign a coach.
               </Text>
             ) : (
@@ -233,7 +249,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
                 {form.values.coaches.map((item, index) => (
                   <Group key={index} gap="sm" align="flex-end">
                     <Select
-                      label={index === 0 ? "Coach" : null}
+                      label={index === 0 ? 'Coach' : null}
                       placeholder="Select coach"
                       data={coachOptions}
                       searchable
@@ -242,7 +258,7 @@ const AgeGroupTeamModal: React.FC<AgeGroupTeamModalProps> = ({
                       style={{ flex: 2 }}
                     />
                     <Select
-                      label={index === 0 ? "Role" : null}
+                      label={index === 0 ? 'Role' : null}
                       placeholder="Select role"
                       data={[
                         { value: 'HEAD_COACH', label: 'Head Coach' },

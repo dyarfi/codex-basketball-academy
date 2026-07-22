@@ -14,7 +14,10 @@ export const liveGameSessionsByName: QueryResolvers['liveGameSessionsByName'] =
   }
 
 export const liveGameSessions: QueryResolvers['liveGameSessions'] = () => {
-  return db.liveGameSession.findMany()
+  return db.liveGameSession.findMany({
+    where: { gameFinished: true },
+    orderBy: { createdAt: 'desc' },
+  })
 }
 
 export const liveGameSession: QueryResolvers['liveGameSession'] = ({ id }) => {
@@ -50,6 +53,8 @@ export const LiveGameSession: LiveGameSessionRelationResolvers = {
     return db.liveGameSession.findUnique({ where: { id: root?.id } }).team()
   },
   playerStats: (_obj, { root }) => {
-    return db.liveGameSession.findUnique({ where: { id: root?.id } }).playerStats()
+    return db.liveGameSession
+      .findUnique({ where: { id: root?.id } })
+      .playerStats()
   },
 }

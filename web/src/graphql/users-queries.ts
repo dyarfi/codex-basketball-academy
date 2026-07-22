@@ -294,6 +294,7 @@ export const USERS_QUERY = gql`
       profile {
         firstName
         lastName
+        dateOfBirth
         gender
       }
     }

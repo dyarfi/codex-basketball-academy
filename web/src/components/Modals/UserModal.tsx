@@ -416,11 +416,7 @@ const UserModal: React.FC<UserModalProps> = ({
         </Tabs>
 
         <Group justify="flex-end" mt="xl">
-          <Button
-            variant="default"
-            onClick={onClose}
-            disabled={prepareSave}
-          >
+          <Button variant="default" onClick={onClose} disabled={prepareSave}>
             Cancel
           </Button>
           <Button
